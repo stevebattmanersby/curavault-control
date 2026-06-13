@@ -31,13 +31,18 @@ class AppRouter {
       initialLocation: AppRoutes.loading,
       refreshListenable: auth,
       redirect: (context, state) {
+        // IMPORTANT: Supabase recovery links often include query/fragment params.
+        // We must decide auth-free routes based on the matched path, not the full
+        // URI string, otherwise GoRouter will incorrectly redirect reset links to
+        // /login.
         final location = state.uri.toString();
+        final matched = state.matchedLocation;
 
-        final isAuthFree = location == AppRoutes.login || location == AppRoutes.loading || location == AppRoutes.resetPassword;
+        final isAuthFree = matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.resetPassword;
         if (auth.isBootstrapping) return isAuthFree ? null : AppRoutes.loading;
 
         if (!auth.isSignedIn) {
-          return location == AppRoutes.login ? null : AppRoutes.login;
+          return matched == AppRoutes.login ? null : AppRoutes.login;
         }
 
         if (!auth.isAuthorized) {
@@ -46,7 +51,7 @@ class AppRouter {
         }
 
         // Authorized admins should never land on login/loading/unauthorized.
-        if (location == AppRoutes.login || location == AppRoutes.loading || location == AppRoutes.unauthorized) {
+        if (matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.unauthorized) {
           // After login, show the admin test page (simple verification screen).
           return AppRoutes.adminTest;
         }

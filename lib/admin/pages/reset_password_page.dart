@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:curavault_admin/nav.dart';
 import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:curavault_admin/theme.dart';
@@ -22,18 +24,73 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   bool _isSaving = false;
   String? _error;
   String? _info;
+  StreamSubscription<AuthState>? _authSub;
 
   @override
   void initState() {
     super.initState();
+    _listenForPasswordRecoveryEvents();
     _recoverFromUrl();
   }
 
   @override
   void dispose() {
+    _authSub?.cancel();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
+  }
+
+  void _listenForPasswordRecoveryEvents() {
+    // Some reset links arrive with recovery tokens in the URL fragment. Supabase
+    // can emit an auth state change event (`passwordRecovery`) once it parses
+    // those tokens. We listen defensively and never display tokens.
+    try {
+      _authSub?.cancel();
+      _authSub = SupabaseConfig.auth.onAuthStateChange.listen((event) {
+        if (!mounted) return;
+        if (event.event == AuthChangeEvent.passwordRecovery) {
+          setState(() {
+            _isRecovering = false;
+            _error = null;
+            _info = 'Recovery session detected. Please set a new password.';
+          });
+        }
+      });
+    } catch (e) {
+      debugPrint('[ResetPasswordPage] Failed to listen for auth recovery events: $e');
+    }
+  }
+
+  Uri _recoveryUriFromBase(Uri base) {
+    // Supabase may provide:
+    // - query params (?code=...)
+    // - fragment params (#access_token=...&type=recovery...)
+    // For Flutter Web hash routing, the fragment may start with the route:
+    //   /reset-password?access_token=...&type=recovery
+    // We rebuild a Uri that contains only the auth parameters in the *query*
+    // section so supabase_flutter can reliably parse it.
+    if (base.queryParameters.isNotEmpty) return base;
+
+    final frag = base.fragment;
+    if (frag.isEmpty) return base;
+
+    // If fragment begins with a route, strip to the query portion.
+    String? query;
+    final qIndex = frag.indexOf('?');
+    if (qIndex >= 0 && qIndex < frag.length - 1) {
+      query = frag.substring(qIndex + 1);
+    } else if (frag.contains('access_token=') || frag.contains('code=')) {
+      // Sometimes fragment is just key/value pairs.
+      query = frag;
+    }
+
+    if (query == null || query.trim().isEmpty) return base;
+
+    // Build a clean URI using the same origin + path, moving auth params into
+    // the query string.
+    final origin = '${base.scheme}://${base.authority}';
+    return Uri.parse('$origin${base.path}?$query');
   }
 
   Future<void> _recoverFromUrl() async {
@@ -44,12 +101,14 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     });
 
     try {
-      final uri = Uri.base;
+      final base = Uri.base;
+      final uri = _recoveryUriFromBase(base);
 
+      // Never print tokens (even in debug), but we can log presence flags.
       if (kDebugMode) {
-        debugPrint('[ResetPasswordPage] Uri.base=$uri');
-        debugPrint('[ResetPasswordPage] Uri.base.fragment=${uri.fragment}');
-        debugPrint('[ResetPasswordPage] Uri.base.query=${uri.query}');
+        final hasQuery = uri.queryParameters.isNotEmpty;
+        final hasFragment = base.fragment.isNotEmpty;
+        debugPrint('[ResetPasswordPage] recoveryLinkDetected hasQuery=$hasQuery hasFragment=$hasFragment');
       }
 
       // Supabase may encode recovery tokens in either:
@@ -97,6 +156,11 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     if (_passwordCtrl.text.trim() != _confirmCtrl.text.trim()) {
       setState(() => _error = 'Passwords do not match');
+      return;
+    }
+
+    if (SupabaseConfig.auth.currentSession == null) {
+      setState(() => _error = 'Reset session expired. Please request a new reset email.');
       return;
     }
 
