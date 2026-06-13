@@ -102,20 +102,18 @@ class _UserChip extends StatelessWidget {
 
   String _roleLabel(AdminRole? role) {
     switch (role) {
-      case AdminRole.superAdmin:
-        return 'super_admin';
-      case AdminRole.supportAgent:
-        return 'support_agent';
-      case AdminRole.billingAdmin:
-        return 'billing_admin';
-      case AdminRole.productAnalyst:
-        return 'product_analyst';
-      case AdminRole.complianceOfficer:
-        return 'compliance_officer';
-      case AdminRole.developerOps:
-        return 'developer_ops';
-      case AdminRole.executiveReadonly:
-        return 'executive_readonly';
+      case AdminRole.owner:
+        return 'owner';
+      case AdminRole.admin:
+        return 'admin';
+      case AdminRole.support:
+        return 'support';
+      case AdminRole.billing:
+        return 'billing';
+      case AdminRole.compliance:
+        return 'compliance';
+      case AdminRole.readOnly:
+        return 'read_only';
       default:
         return '—';
     }

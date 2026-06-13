@@ -5,31 +5,30 @@ import 'package:curavault_admin/nav.dart';
 ///
 /// If a role is missing/unknown, access must be denied.
 enum AdminRole {
-  superAdmin,
-  supportAgent,
-  billingAdmin,
-  productAnalyst,
-  complianceOfficer,
-  developerOps,
-  executiveReadonly,
+  owner,
+  admin,
+  support,
+  billing,
+  compliance,
+  readOnly,
 }
 
 AdminRole? parseAdminRole(String? value) {
   switch ((value ?? '').trim()) {
-    case 'super_admin':
-      return AdminRole.superAdmin;
-    case 'support_agent':
-      return AdminRole.supportAgent;
-    case 'billing_admin':
-      return AdminRole.billingAdmin;
-    case 'product_analyst':
-      return AdminRole.productAnalyst;
-    case 'compliance_officer':
-      return AdminRole.complianceOfficer;
-    case 'developer_ops':
-      return AdminRole.developerOps;
-    case 'executive_readonly':
-      return AdminRole.executiveReadonly;
+    case 'owner':
+      return AdminRole.owner;
+    case 'admin':
+      return AdminRole.admin;
+    case 'support':
+      return AdminRole.support;
+    case 'billing':
+      return AdminRole.billing;
+    case 'compliance':
+      return AdminRole.compliance;
+    case 'read_only':
+    case 'read-only':
+    case 'readonly':
+      return AdminRole.readOnly;
     default:
       return null;
   }
@@ -40,36 +39,29 @@ AdminRole? parseAdminRole(String? value) {
 /// Note: This is UI enforcement; database security still must be enforced with
 /// RLS + safe summary views.
 class AdminRbac {
-  static const all = <AdminRole>{
-    AdminRole.superAdmin,
-    AdminRole.supportAgent,
-    AdminRole.billingAdmin,
-    AdminRole.productAnalyst,
-    AdminRole.complianceOfficer,
-    AdminRole.developerOps,
-    AdminRole.executiveReadonly,
-  };
+  static const all = <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.support, AdminRole.billing, AdminRole.compliance, AdminRole.readOnly};
 
-  static const support = <AdminRole>{AdminRole.superAdmin, AdminRole.supportAgent};
-  static const billing = <AdminRole>{AdminRole.superAdmin, AdminRole.billingAdmin};
-  static const compliance = <AdminRole>{AdminRole.superAdmin, AdminRole.complianceOfficer};
-  static const ops = <AdminRole>{AdminRole.superAdmin, AdminRole.developerOps};
-  static const analytics = <AdminRole>{AdminRole.superAdmin, AdminRole.productAnalyst, AdminRole.executiveReadonly};
+  static const support = <AdminRole>{AdminRole.owner, AdminRole.support};
+  static const billing = <AdminRole>{AdminRole.owner, AdminRole.billing};
+  static const compliance = <AdminRole>{AdminRole.owner, AdminRole.compliance};
+  static const ops = <AdminRole>{AdminRole.owner, AdminRole.admin};
+  static const analytics = <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly};
 
   static const Map<String, Set<AdminRole>> routeAccess = {
     AppRoutes.dashboard: all,
-    AppRoutes.users: <AdminRole>{AdminRole.superAdmin, AdminRole.supportAgent},
+    AppRoutes.users: <AdminRole>{AdminRole.owner, AdminRole.support},
     AppRoutes.support: support,
     AppRoutes.plansPermissions: billing,
     AppRoutes.usageAnalytics: analytics,
-    AppRoutes.storage: <AdminRole>{AdminRole.superAdmin, AdminRole.developerOps, AdminRole.billingAdmin},
+    AppRoutes.storage: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing},
     AppRoutes.aiUsage: analytics,
     AppRoutes.billing: billing,
     AppRoutes.compliance: compliance,
     AppRoutes.systemHealth: ops,
-    AppRoutes.auditLogs: <AdminRole>{AdminRole.superAdmin, AdminRole.complianceOfficer, AdminRole.developerOps},
-    AppRoutes.securityChecklist: <AdminRole>{AdminRole.superAdmin, AdminRole.complianceOfficer, AdminRole.developerOps},
-    AppRoutes.settings: <AdminRole>{AdminRole.superAdmin},
+    AppRoutes.auditLogs: <AdminRole>{AdminRole.owner, AdminRole.compliance},
+    AppRoutes.securityChecklist: <AdminRole>{AdminRole.owner, AdminRole.compliance, AdminRole.admin},
+    AppRoutes.settings: <AdminRole>{AdminRole.owner},
+    AppRoutes.adminTest: all,
   };
 
   static bool canAccessRoute(AdminRole role, String location) {
@@ -84,13 +76,13 @@ class AdminRbac {
 
   /// Email is considered sensitive metadata and is only visible to specific roles.
   static bool canViewUserEmail(AdminRole role) => switch (role) {
-    AdminRole.superAdmin || AdminRole.supportAgent || AdminRole.billingAdmin || AdminRole.complianceOfficer => true,
+    AdminRole.owner || AdminRole.support || AdminRole.billing || AdminRole.compliance => true,
     _ => false,
   };
 
   /// Compliance workflows are more sensitive: only compliance + super admins.
   static bool canViewComplianceEmail(AdminRole role) => switch (role) {
-    AdminRole.superAdmin || AdminRole.complianceOfficer => true,
+    AdminRole.owner || AdminRole.compliance => true,
     _ => false,
   };
 
@@ -99,12 +91,12 @@ class AdminRbac {
   /// This is used for billing tables (subscriptions, failed payments) where email
   /// is only needed for billing workflow.
   static bool canViewBillingEmail(AdminRole role) => switch (role) {
-    AdminRole.superAdmin || AdminRole.billingAdmin => true,
+    AdminRole.owner || AdminRole.billing => true,
     _ => false,
   };
 
   static bool canExportAuditCsv(AdminRole role) => switch (role) {
-    AdminRole.superAdmin || AdminRole.complianceOfficer => true,
+    AdminRole.owner || AdminRole.compliance => true,
     _ => false,
   };
 
@@ -115,7 +107,7 @@ class AdminRbac {
       case BillingAdminAction.addBillingNote:
       case BillingAdminAction.grantManualCompAccess:
       case BillingAdminAction.revokeManualCompAccess:
-        return role == AdminRole.superAdmin || role == AdminRole.billingAdmin;
+        return role == AdminRole.owner || role == AdminRole.billing;
     }
   }
 
@@ -127,22 +119,22 @@ class AdminRbac {
     switch (action) {
       case AdminUserAction.changePlan:
       case AdminUserAction.extendTrial:
-        return role == AdminRole.superAdmin || role == AdminRole.billingAdmin;
+        return role == AdminRole.owner || role == AdminRole.billing;
       case AdminUserAction.adjustStorageLimit:
       case AdminUserAction.adjustAiLimit:
-        return role == AdminRole.superAdmin || role == AdminRole.billingAdmin || role == AdminRole.developerOps;
+        return role == AdminRole.owner || role == AdminRole.billing || role == AdminRole.admin;
       case AdminUserAction.suspendAccount:
       case AdminUserAction.unsuspendAccount:
-        return role == AdminRole.superAdmin;
+        return role == AdminRole.owner;
       case AdminUserAction.forceLogout:
       case AdminUserAction.revokeSessions:
-        return role == AdminRole.superAdmin || role == AdminRole.supportAgent || role == AdminRole.developerOps;
+        return role == AdminRole.owner || role == AdminRole.support || role == AdminRole.admin;
       case AdminUserAction.startSupportSession:
       case AdminUserAction.closeSupportSession:
-        return role == AdminRole.superAdmin || role == AdminRole.supportAgent;
+        return role == AdminRole.owner || role == AdminRole.support;
       case AdminUserAction.triggerComplianceExport:
       case AdminUserAction.triggerDeletionWorkflow:
-        return role == AdminRole.superAdmin || role == AdminRole.complianceOfficer;
+        return role == AdminRole.owner || role == AdminRole.compliance;
     }
   }
 
@@ -156,16 +148,16 @@ class AdminRbac {
       case SupportAction.revokeActiveSessions:
       case SupportAction.addSupportNote:
       case SupportAction.closeSupportSession:
-        return role == AdminRole.superAdmin || role == AdminRole.supportAgent;
+        return role == AdminRole.owner || role == AdminRole.support;
       case SupportAction.extendTrial:
       case SupportAction.temporarilyIncreaseStorageLimit:
       case SupportAction.temporarilyIncreaseAiLimit:
         // Billing-impacting actions must be explicitly allowed. Support agents are
         // read/triage only unless also granted billing-admin role.
-        return role == AdminRole.superAdmin || role == AdminRole.billingAdmin;
+        return role == AdminRole.owner || role == AdminRole.billing;
       case SupportAction.suspendAccount:
       case SupportAction.unsuspendAccount:
-        return role == AdminRole.superAdmin;
+        return role == AdminRole.owner;
     }
   }
 }

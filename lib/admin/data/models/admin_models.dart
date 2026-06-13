@@ -1483,7 +1483,10 @@ class AdminUser {
   const AdminUser({
     required this.id,
     required this.email,
+    this.displayName,
     required this.role,
+    required this.isActive,
+    required this.requireStepUp,
     required this.createdAt,
     required this.updatedAt,
     this.themePreference,
@@ -1491,15 +1494,31 @@ class AdminUser {
 
   final String id;
   final String email;
+  final String? displayName;
   final AdminRole role;
+  final bool isActive;
+  final bool requireStepUp;
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? themePreference;
 
-  AdminUser copyWith({String? id, String? email, AdminRole? role, DateTime? createdAt, DateTime? updatedAt, String? themePreference}) => AdminUser(
+  AdminUser copyWith({
+    String? id,
+    String? email,
+    String? displayName,
+    AdminRole? role,
+    bool? isActive,
+    bool? requireStepUp,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    String? themePreference,
+  }) => AdminUser(
     id: id ?? this.id,
     email: email ?? this.email,
+    displayName: displayName ?? this.displayName,
     role: role ?? this.role,
+    isActive: isActive ?? this.isActive,
+    requireStepUp: requireStepUp ?? this.requireStepUp,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     themePreference: themePreference ?? this.themePreference,
@@ -1508,7 +1527,10 @@ class AdminUser {
   Map<String, dynamic> toJson() => {
     'id': id,
     'email': email,
+    if (displayName != null) 'display_name': displayName,
     'role': role.name,
+    'is_active': isActive,
+    'require_step_up': requireStepUp,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     if (themePreference != null) 'theme_preference': themePreference,
@@ -1517,7 +1539,10 @@ class AdminUser {
   static AdminUser fromJson(Map<String, dynamic> json) => AdminUser(
     id: (json['id'] ?? '').toString(),
     email: (json['email'] ?? '').toString(),
-    role: parseAdminRole((json['role'] ?? '').toString()) ?? AdminRole.executiveReadonly,
+    displayName: (json['display_name'] as String?)?.trim().isEmpty == true ? null : (json['display_name'] as String?),
+    role: parseAdminRole((json['role'] ?? '').toString()) ?? AdminRole.readOnly,
+    isActive: json['is_active'] == true,
+    requireStepUp: json['require_step_up'] == true,
     createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
     updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
     themePreference: (json['theme_preference'] ?? json['theme_mode'])?.toString(),

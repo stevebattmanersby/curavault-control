@@ -9,8 +9,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Returns `null` if Supabase isn't initialized or configuration is missing.
 class ControlSupabaseClient {
   static SupabaseClient? tryGet() {
-    if (AdminAuthStore.supabaseUrl.isEmpty || AdminAuthStore.supabaseAnonKey.isEmpty) return null;
-
     // Fail closed if a service role key was accidentally bundled.
     if (AdminAuthStore.supabaseServiceRoleKey.isNotEmpty) {
       debugPrint('SECURITY: SUPABASE_SERVICE_ROLE_KEY detected; refusing Supabase client access.');

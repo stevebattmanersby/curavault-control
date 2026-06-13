@@ -42,6 +42,37 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
+  Future<void> _requestPasswordReset(AdminAuthStore auth) async {
+    setState(() => _error = null);
+
+    final email = _emailCtrl.text.trim();
+    if (!_looksLikeEmail(email)) {
+      setState(() => _error = 'Enter your email first, then click “Forgot password”.');
+      return;
+    }
+
+    try {
+      await auth.sendPasswordResetEmail(email: email);
+      if (!mounted) return;
+      setState(() => _error = null);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Password reset email sent (if the account exists).',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onInverseSurface),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.inverseSurface,
+          behavior: SnackBarBehavior.floating,
+          showCloseIcon: true,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Failed to send reset email. Please try again.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
@@ -139,6 +170,17 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: auth.isSigningIn ? null : () => _requestPasswordReset(auth),
+                            icon: Icon(Icons.lock_reset, color: cs.primary),
+                            label: Text(
+                              'Forgot password?',
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w800),
+                            ),
+                          ),
+                        ),
                         Text(
                           kIsWeb ? 'Tip: Use an approved admin account. Access is allow-listed in admin_users.' : 'Use an approved admin account.',
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.3),

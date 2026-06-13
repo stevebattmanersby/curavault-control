@@ -36,7 +36,7 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
     final cs = Theme.of(context).colorScheme;
     final store = context.watch<AdminStore>();
     final snap = store.compliance;
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -751,7 +751,7 @@ class _ExportActionsCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAct = role == AdminRole.superAdmin || role == AdminRole.complianceOfficer;
+    final canAct = role == AdminRole.owner || role == AdminRole.compliance;
     if (!canAct) {
       return const Text('—');
     }
@@ -875,7 +875,7 @@ class _DeletionActionsCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAct = role == AdminRole.superAdmin || role == AdminRole.complianceOfficer;
+    final canAct = role == AdminRole.owner || role == AdminRole.compliance;
     if (!canAct) return const Text('—');
 
     return PopupMenuButton<String>(
@@ -973,7 +973,7 @@ class _SupportAccessActionsCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAct = role == AdminRole.superAdmin || role == AdminRole.complianceOfficer || role == AdminRole.supportAgent;
+    final canAct = role == AdminRole.owner || role == AdminRole.compliance || role == AdminRole.support;
     if (!canAct) return const Text('—');
     final id = row.ticketReference ?? '${row.userId}:${row.adminUser}:${row.accessExpiresAt?.millisecondsSinceEpoch ?? 0}';
 

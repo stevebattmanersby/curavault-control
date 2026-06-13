@@ -3,6 +3,7 @@ import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/jwt_inspector.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -18,7 +19,7 @@ class SecurityChecklistPage extends StatelessWidget {
     final snap = store.securityChecklist;
     final isLoading = store.isLoading || store.isSecurityChecklistLoading;
 
-    final anonKey = AdminAuthStore.supabaseAnonKey;
+    final anonKey = SupabaseConfig.anonKey;
     final roleClaim = JwtInspector.tryGetRoleClaim(anonKey);
     final noServiceRoleKeyDetected =
         AdminAuthStore.supabaseServiceRoleKey.isEmpty && (roleClaim == null || roleClaim.toLowerCase() != 'service_role');
@@ -177,7 +178,7 @@ class _SecurityChecklistBody extends StatelessWidget {
               ),
               if (kDebugMode) ...[
                 const SizedBox(height: AppSpacing.md),
-                Text('Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(AdminAuthStore.supabaseAnonKey) ?? 'n/a'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                 Text('Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(SupabaseConfig.anonKey) ?? 'n/a'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ],
           ),

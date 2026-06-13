@@ -21,35 +21,36 @@ class SupabaseAdminQueries {
     final authUser = _client.auth.currentUser;
     if (authUser == null) throw StateError('Not signed in.');
 
-    Map<String, dynamic>? row;
-    try {
-      row = await _client
-          .schema('control')
-          .from('admin_users')
-          // Only admin metadata (no health data).
-          .select('id, email, role, status, created_at, updated_at, theme_preference, theme_mode')
-          .eq('auth_user_id', authUser.id)
-          .maybeSingle();
-    } catch (_) {
-      row = await _client
-          .from('admin_users')
-          .select('id, email, role, status, created_at, updated_at, theme_preference, theme_mode')
-          .eq('auth_user_id', authUser.id)
-          .maybeSingle();
-    }
+    // Bootstrapped schema is `public.admin_users` with:
+    // - admin_user_id (Supabase Auth user id)
+    // - role (enum type: admin_role)
+    // - is_active
+    final row = await _client
+        .from('admin_users')
+        // Only admin metadata (no health data).
+        // IMPORTANT: column is named `role` (type `admin_role`).
+        .select('admin_user_id, email, display_name, role, is_active, require_step_up, created_at, updated_at, theme_preference, theme_mode')
+        .eq('admin_user_id', authUser.id)
+        // Enforce allow-list rule at the query level.
+        .eq('is_active', true)
+        .maybeSingle();
 
-    if (row == null) throw StateError('Not an admin user (no admin_users row).');
-    final status = (row['status'] as String?) ?? 'unknown';
-    if (status.toLowerCase() != 'active') throw StateError('Admin is not active.');
+    if (row == null) throw StateError('Not an active admin user (no matching admin_users row).');
+    // Row already filtered by is_active=true, but keep defensive checks.
+    final isActive = row['is_active'] == true;
+    if (!isActive) throw StateError('Admin is not active.');
 
     final role = parseAdminRole((row['role'] as String?) ?? '');
     if (role == null) throw StateError('Unknown admin role.');
 
     // Normalize to AdminUser model.
     return AdminUser(
-      id: (row['id'] ?? authUser.id).toString(),
+      id: (row['admin_user_id'] ?? authUser.id).toString(),
       email: (row['email'] as String?) ?? (authUser.email ?? ''),
+      displayName: (row['display_name'] as String?)?.trim().isEmpty == true ? null : (row['display_name'] as String?),
       role: role,
+      isActive: isActive,
+      requireStepUp: row['require_step_up'] == true,
       createdAt: DateTime.tryParse((row['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
       updatedAt: DateTime.tryParse((row['updated_at'] ?? '').toString()) ?? DateTime.now().toUtc(),
       themePreference: (row['theme_preference'] ?? row['theme_mode'])?.toString(),
@@ -65,37 +66,24 @@ class SupabaseAdminQueries {
     final authUser = _client.auth.currentUser;
     if (authUser == null) throw StateError('Not signed in.');
 
-    Future<void> attempt(String schema, String column) async {
-      final table = schema.isEmpty ? _client.from('admin_users') : _client.schema(schema).from('admin_users');
-      await table.update({column: themePreference, 'updated_at': DateTime.now().toUtc().toIso8601String()}).eq('auth_user_id', authUser.id);
-    }
+    Future<void> attempt(String column) async => _client
+        .from('admin_users')
+        .update({column: themePreference, 'updated_at': DateTime.now().toUtc().toIso8601String()})
+        .eq('admin_user_id', authUser.id);
 
-    // Try control schema first.
+    // Best-effort only. Many deployments don't include a theme column.
+    // Never let this block the UI.
     try {
-      await attempt('control', 'theme_preference');
-      return;
-    } catch (e) {
-      debugPrint('setAdminThemePreference(control.theme_preference) failed: $e');
-    }
-    try {
-      await attempt('control', 'theme_mode');
-      return;
-    } catch (e) {
-      debugPrint('setAdminThemePreference(control.theme_mode) failed: $e');
-    }
-    // Then public.
-    try {
-      await attempt('', 'theme_preference');
+      await attempt('theme_preference');
       return;
     } catch (e) {
       debugPrint('setAdminThemePreference(theme_preference) failed: $e');
     }
     try {
-      await attempt('', 'theme_mode');
+      await attempt('theme_mode');
       return;
     } catch (e) {
       debugPrint('setAdminThemePreference(theme_mode) failed: $e');
-      rethrow;
     }
   }
 
@@ -132,7 +120,7 @@ class SupabaseAdminQueries {
   }
 
   Future<List<UserAccountSummary>> getUsersList({required AdminUser admin, required UserListQuery query, required int limit}) async {
-    _requireRole(admin, <AdminRole>{AdminRole.superAdmin, AdminRole.supportAgent}, capability: 'users_list');
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.support}, capability: 'users_list');
     final canEmail = AdminRbac.canViewUserEmail(admin.role);
     final select = canEmail
         ? 'user_id, email, plan_name, status, created_at, last_active_at, country, platform, app_version, storage_used_bytes, storage_limit_bytes, ai_tokens_monthly, ai_tokens_limit_monthly'
@@ -173,7 +161,7 @@ class SupabaseAdminQueries {
   }
 
   Future<UserUsageSummary> getUserUsageSummary({required AdminUser admin, required String userId}) async {
-    _requireRole(admin, <AdminRole>{AdminRole.superAdmin, AdminRole.supportAgent, AdminRole.developerOps, AdminRole.billingAdmin}, capability: 'user_usage_summary');
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.support, AdminRole.admin, AdminRole.billing}, capability: 'user_usage_summary');
 
     try {
       final row = await _client
@@ -221,7 +209,7 @@ class SupabaseAdminQueries {
   }
 
   Future<StorageSnapshot> getStorageUsage({required AdminUser admin, required StorageQuery query}) async {
-    _requireRole(admin, <AdminRole>{AdminRole.superAdmin, AdminRole.developerOps, AdminRole.billingAdmin}, capability: 'storage_usage');
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing}, capability: 'storage_usage');
     try {
       final res = await _client.rpc('control_get_storage_snapshot', params: _storageQueryParams(query));
       if (res is Map<String, dynamic>) return _parseStorageSnapshot(res, query);
@@ -270,7 +258,7 @@ class SupabaseAdminQueries {
   }
 
   Future<List<AuditLogEntry>> getAuditLogs({required AdminUser admin, required AuditLogQuery query, required int limit}) async {
-    _requireRole(admin, <AdminRole>{AdminRole.superAdmin, AdminRole.complianceOfficer, AdminRole.developerOps}, capability: 'audit_logs');
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.compliance}, capability: 'audit_logs');
 
     try {
       var builder = _client

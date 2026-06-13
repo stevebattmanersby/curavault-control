@@ -36,7 +36,7 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
     final cs = Theme.of(context).colorScheme;
     final store = context.watch<AdminStore>();
     final billing = store.billing;
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -925,7 +925,7 @@ class _ExtendTrialButton extends StatelessWidget {
 
               final newEnd = currentEnd.add(Duration(days: extraDays));
               final store = context.read<AdminStore>();
-              final role = context.read<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+              final role = context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
               final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
               final confirm = await AdminChangeConfirmSheet.show(

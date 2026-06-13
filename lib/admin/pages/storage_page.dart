@@ -238,7 +238,7 @@ class _HighUsageUsersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final canViewEmail = AdminRbac.canViewUserEmail(role);
     final cs = Theme.of(context).colorScheme;
 

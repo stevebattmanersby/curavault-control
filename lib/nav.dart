@@ -18,6 +18,8 @@ import 'package:curavault_admin/admin/pages/unauthorized_page.dart';
 import 'package:curavault_admin/admin/pages/usage_analytics_page.dart';
 import 'package:curavault_admin/admin/pages/users_page.dart';
 import 'package:curavault_admin/admin/pages/user_detail_page.dart';
+import 'package:curavault_admin/admin/pages/admin_test_page.dart';
+import 'package:curavault_admin/admin/pages/reset_password_page.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +33,7 @@ class AppRouter {
       redirect: (context, state) {
         final location = state.uri.toString();
 
-        final isAuthFree = location == AppRoutes.login || location == AppRoutes.loading;
+        final isAuthFree = location == AppRoutes.login || location == AppRoutes.loading || location == AppRoutes.resetPassword;
         if (auth.isBootstrapping) return isAuthFree ? null : AppRoutes.loading;
 
         if (!auth.isSignedIn) {
@@ -45,7 +47,8 @@ class AppRouter {
 
         // Authorized admins should never land on login/loading/unauthorized.
         if (location == AppRoutes.login || location == AppRoutes.loading || location == AppRoutes.unauthorized) {
-          return AppRoutes.dashboard;
+          // After login, show the admin test page (simple verification screen).
+          return AppRoutes.adminTest;
         }
 
         // RBAC: route-level enforcement.
@@ -58,11 +61,13 @@ class AppRouter {
       routes: [
         GoRoute(path: AppRoutes.loading, name: 'loading', builder: (context, state) => const LoadingPage()),
         GoRoute(path: AppRoutes.login, name: 'login', builder: (context, state) => const LoginPage()),
+        GoRoute(path: AppRoutes.resetPassword, name: 'resetPassword', builder: (context, state) => const ResetPasswordPage()),
         GoRoute(path: AppRoutes.unauthorized, name: 'unauthorized', builder: (context, state) => const UnauthorizedPage()),
         ShellRoute(
           builder: (context, state, child) => AdminShell(currentLocation: state.uri.toString(), child: child),
           routes: [
             GoRoute(path: AppRoutes.dashboard, name: 'dashboard', pageBuilder: (context, state) => const NoTransitionPage(child: DashboardPage())),
+            GoRoute(path: AppRoutes.adminTest, name: 'adminTest', pageBuilder: (context, state) => const NoTransitionPage(child: AdminTestPage())),
             GoRoute(
               path: AppRoutes.users,
               name: 'users',
@@ -116,8 +121,10 @@ class AppRouter {
 class AppRoutes {
   static const String loading = '/loading';
   static const String login = '/login';
+  static const String resetPassword = '/reset-password';
   static const String unauthorized = '/unauthorized';
   static const String dashboard = '/dashboard';
+  static const String adminTest = '/admin-test';
   static const String users = '/users';
   static const String support = '/support';
   static const String plansPermissions = '/plans-permissions';

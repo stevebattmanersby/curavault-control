@@ -443,7 +443,7 @@ class _CostMonitoringTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final canViewEmail = AdminRbac.canViewUserEmail(role);
 
     return ListView(
@@ -539,7 +539,7 @@ class _LimitMonitoringTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final canViewEmail = AdminRbac.canViewUserEmail(role);
 
     final rows = snapshot.limitMonitoring;

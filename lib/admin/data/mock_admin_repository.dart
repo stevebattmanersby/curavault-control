@@ -235,7 +235,10 @@ class MockAdminRepository implements AdminRepository {
     return AdminUser(
       id: 'admin_01',
       email: 'admin@curavault.internal',
-      role: AdminRole.supportAgent,
+      displayName: 'Mock Admin',
+      role: AdminRole.support,
+      isActive: true,
+      requireStepUp: false,
       createdAt: t.subtract(const Duration(days: 90)),
       updatedAt: t,
     );

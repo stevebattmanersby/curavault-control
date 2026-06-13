@@ -61,7 +61,7 @@ class UnauthorizedPage extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'If you believe this is an error, contact a super admin to add/activate your account in admin_users.',
+                  'If you believe this is an error, contact an owner to add/activate your account in admin_users.',
                   style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
                 ),
               ],

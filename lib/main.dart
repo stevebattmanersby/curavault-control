@@ -7,6 +7,7 @@ import 'package:curavault_admin/theme.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
+import 'package:curavault_admin/supabase/supabase_config.dart';
 
 /// Main entry point for the application
 ///
@@ -15,7 +16,15 @@ import 'package:curavault_admin/admin/state/admin_theme_store.dart';
 /// - Material 3 theming with light/dark modes
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AdminAuthStore.initializeSupabase();
+
+  // Ensure Supabase is initialized BEFORE any stores/widgets attempt to access it.
+  // We keep --dart-define overrides for production, but provide safe preview fallbacks.
+  SupabaseConfig.debugPrintEnvStatus(source: 'main(beforeSupabaseInitialize)');
+  await SupabaseConfig.initialize();
+  SupabaseConfig.debugPrintEnvStatus(source: 'main(afterSupabaseInitialize)');
+
+  // Temporary diagnostics (prints only true/false flags).
+  AdminAuthStore.debugPrintSupabaseBootstrapStatus(source: 'main(afterSupabaseInitialize)');
   runApp(const MyApp());
 }
 

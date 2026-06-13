@@ -7,17 +7,85 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Uses environment variables only (no secrets in source control).
 /// - Fails closed if a service role key is ever bundled into the client build.
 class SupabaseConfig {
-  static const String supabaseUrl = String.fromEnvironment('');
-  static const String anonKey = String.fromEnvironment('');
-  static const String serviceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY');
+  /// The Auth Site URL configured in Supabase.
+  ///
+  /// This is used for email links (password reset / magic link redirects).
+  static const String authSiteUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app';
+
+  /// Redirect URL used for password recovery.
+  ///
+  /// IMPORTANT (Flutter Web + hash routing): We use `/#/reset-password` to land
+  /// inside the SPA and then parse the recovery session details from the URL.
+  static const String resetPasswordRedirectUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/reset-password';
+
+  /// Supabase project URL.
+  ///
+  /// Provided at build time via:
+  /// - `--dart-define==...`
+  ///
+  /// For Flutter Web this must be passed at build time; it cannot be supplied at
+  /// runtime via server environment variables.
+  static const String supabaseUrl = String.fromEnvironment(
+    'SUPABASE_URL',
+    // Preview fallback (can be overridden by --dart-define in production)
+    defaultValue: 'https://rzqgxtizragjhenmjykg.supabase.co',
+  );
+
+  /// Supabase anon key.
+  ///
+  /// Provided at build time via:
+  /// - `--dart-define==...`
+  static const String anonKey = String.fromEnvironment(
+    'SUPABASE_ANON_KEY',
+    // Preview fallback (public publishable anon key). Override with --dart-define in production.
+    defaultValue: '<sb_publishable_YwSkLV_EOM2DlvosS8GChQ_OMnzR-GD>',
+  );
+
+  /// This should NEVER be set in a frontend build.
+  static const String serviceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
+
+  /// Whether a service-role key was bundled into this client build.
+  ///
+  /// This should always be false for Flutter apps.
+  static bool get serviceRoleDetected => serviceRoleKey.isNotEmpty;
 
   static bool _initialized = false;
+
+  /// Whether `SupabaseConfig.initialize()` has successfully initialized the
+  /// Supabase client in this process.
+  static bool get isInitialized => _initialized;
+
+  /// Debug-only environment diagnostics (true/false only; never prints values).
+  static void debugPrintEnvStatus({String source = 'SupabaseConfig'}) {
+    if (!kDebugMode) return;
+    final hasUrl = supabaseUrl.isNotEmpty;
+    final hasAnon = anonKey.isNotEmpty;
+    final serviceRoleDetected = serviceRoleKey.isNotEmpty;
+    bool instanceClientAvailable;
+    try {
+      // Accessing `Supabase.instance.client` throws if not initialized.
+      Supabase.instance.client;
+      instanceClientAvailable = true;
+    } catch (_) {
+      instanceClientAvailable = false;
+    }
+    debugPrint(
+      '[$source] Supabase env status: '
+      'clientAvailable=$instanceClientAvailable '
+      'supabaseConfigInitialized=$_initialized '
+      'hasSUPABASE_URL=$hasUrl '
+      'hasSUPABASE_ANON_KEY=$hasAnon '
+      'serviceRoleDetected=$serviceRoleDetected',
+    );
+  }
 
   static Future<void> initialize() async {
     if (_initialized) return;
 
+    debugPrintEnvStatus(source: 'SupabaseConfig.initialize(before)');
+
     if (supabaseUrl.isEmpty || anonKey.isEmpty) {
-      debugPrint('Supabase not configured (missing  / ).');
+      debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
       return;
     }
 
@@ -30,6 +98,7 @@ class SupabaseConfig {
     try {
       await Supabase.initialize(url: supabaseUrl, anonKey: anonKey, debug: kDebugMode);
       _initialized = true;
+      debugPrintEnvStatus(source: 'SupabaseConfig.initialize(after)');
     } catch (e) {
       debugPrint('Supabase.initialize failed: $e');
     }
@@ -161,15 +230,15 @@ class SupabaseService {
       SupabaseConfig.client.from(table);
 
   /// Handle database errors
-  static String _handleDatabaseError(
+  static Exception _handleDatabaseError(
     String operation,
     String table,
     dynamic error,
   ) {
     if (error is PostgrestException) {
-      return 'Failed to $operation from $table: ${error.message}';
-    } else {
-      return 'Failed to $operation from $table: ${error.toString()}';
+      return Exception('Failed to $operation on $table: ${error.message}');
     }
+
+    return Exception('Failed to $operation on $table: ${error.toString()}');
   }
 }

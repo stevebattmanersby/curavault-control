@@ -33,7 +33,7 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -292,7 +292,7 @@ class _UserPlanEditorTabState extends State<_UserPlanEditorTab> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final store = context.watch<AdminStore>();
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
@@ -808,13 +808,13 @@ class _FeatureFlagsTab extends StatelessWidget {
   const _FeatureFlagsTab();
 
   Future<void> _toggle(BuildContext context, FeatureFlagDefinition flag, bool enabled) async {
-    final role = context.read<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
     final store = context.read<AdminStore>();
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
-    // For now, only super_admin can toggle global flags.
-    if (role != AdminRole.superAdmin) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request-only: only super_admin can change global flags.')));
+    // For now, only owner can toggle global flags.
+    if (role != AdminRole.owner) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request-only: only owner can change global flags.')));
       return;
     }
 
@@ -857,7 +857,7 @@ class _FeatureFlagsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final store = context.watch<AdminStore>();
     final cs = Theme.of(context).colorScheme;
-    final role = context.watch<AdminAuthStore>().role ?? AdminRole.executiveReadonly;
+    final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final flags = store.featureFlags;
 
     return Container(
@@ -882,7 +882,7 @@ class _FeatureFlagsTab extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            role == AdminRole.superAdmin
+            role == AdminRole.owner
                 ? 'Toggling a flag affects all users. All changes are audited.'
                 : 'Read-only for your role. You can request changes via your support/billing workflow.',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
@@ -898,7 +898,7 @@ class _FeatureFlagsTab extends StatelessWidget {
                       final f = flags[i];
                       return _FlagRow(
                         flag: f,
-                        canEdit: role == AdminRole.superAdmin,
+                        canEdit: role == AdminRole.owner,
                         onToggle: (v) => _toggle(context, f, v),
                       );
                     },

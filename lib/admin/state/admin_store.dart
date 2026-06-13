@@ -5,6 +5,7 @@ import 'package:curavault_admin/admin/data/mock_admin_repository.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_repository.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
+import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 
 class AdminStore extends ChangeNotifier {
@@ -16,7 +17,7 @@ class AdminStore extends ChangeNotifier {
 
   static AdminRepository _buildRepository() {
     // Prefer Supabase-backed repository when env is configured.
-    if (AdminAuthStore.supabaseUrl.isNotEmpty && AdminAuthStore.supabaseAnonKey.isNotEmpty && AdminAuthStore.supabaseServiceRoleKey.isEmpty) {
+    if (SupabaseConfig.supabaseUrl.isNotEmpty && SupabaseConfig.anonKey.isNotEmpty && AdminAuthStore.supabaseServiceRoleKey.isEmpty) {
       return SupabaseAdminRepository();
     }
     return MockAdminRepository();
