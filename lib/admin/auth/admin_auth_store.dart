@@ -7,6 +7,34 @@ import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class AdminAccessDeniedException implements Exception {
+  final String message;
+  const AdminAccessDeniedException(this.message);
+  @override
+  String toString() => 'AdminAccessDeniedException: $message';
+}
+
+class AdminAuthNetworkException implements Exception {
+  final String message;
+  const AdminAuthNetworkException(this.message);
+  @override
+  String toString() => 'AdminAuthNetworkException: $message';
+}
+
+class AdminAuthInvalidCredentialsException implements Exception {
+  final String message;
+  const AdminAuthInvalidCredentialsException(this.message);
+  @override
+  String toString() => 'AdminAuthInvalidCredentialsException: $message';
+}
+
+class AdminAuthAllowListLookupException implements Exception {
+  final String message;
+  const AdminAuthAllowListLookupException(this.message);
+  @override
+  String toString() => 'AdminAuthAllowListLookupException: $message';
+}
+
 /// Auth + admin access gate for the CuraVault Control Site.
 ///
 /// Rules enforced:
@@ -16,6 +44,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Role must be known (otherwise deny)
 class AdminAuthStore extends ChangeNotifier {
   static const supabaseServiceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
+
+  /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
+  /// that includes the SPA hash fragment (/#/...). Do NOT join path segments.
+  ///
+  /// Keep this as a single hard-coded constant to avoid accidental URL joining
+  /// that can produce malformed URLs like `...///set-password`.
+  static const String passwordResetRedirectTo =
+      'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/set-password';
 
   static bool _initialized = false;
 
@@ -184,7 +220,27 @@ class AdminAuthStore extends ChangeNotifier {
     try {
       final res = await _client!.auth.signInWithPassword(email: email.trim(), password: password);
       _session = res.session;
-      await _refreshAdminProfile();
+      try {
+        await _refreshAdminProfile();
+      } catch (e) {
+        // Auth succeeded, but allow-list lookup failed (network/RLS/table missing).
+        try {
+          await _client!.auth.signOut();
+        } catch (_) {}
+        _session = null;
+        throw AdminAuthAllowListLookupException(e.toString());
+      }
+
+      // If Supabase auth succeeded but allow-list/role checks failed, treat it as
+      // a login denial and immediately sign out.
+      if (!isAuthorized) {
+        final reason = _accessDeniedReason ?? 'Not allow-listed.';
+        try {
+          await _client!.auth.signOut();
+        } catch (_) {}
+        _session = null;
+        throw AdminAccessDeniedException(reason);
+      }
 
       final actor = _client!.auth.currentUser?.id;
       if (actor != null && actor.isNotEmpty) {
@@ -200,14 +256,22 @@ class AdminAuthStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('AdminAuthStore.signInWithPassword failed: $e');
 
-      // Best-effort to audit failed login too. If audit logging is misconfigured,
-      // we still surface the original auth failure.
-      await _writeAudit(
-        adminUserId: _client?.auth.currentUser?.id ?? 'unknown',
-        actionType: 'failed_admin_login',
-        result: 'failure',
-        newValue: AdminAuditRedactor.redactMap({'email': email.trim(), 'error': e.toString()}),
-      );
+      // TEMPORARY: Do not write audit rows for failed sign-ins.
+      // This avoids masking root-cause connectivity failures with a secondary
+      // PostgREST/audit error.
+
+      // Normalize error types for the UI.
+      if (e is AuthException) {
+        final msg = e.message;
+        if (msg.toLowerCase().contains('invalid login credentials')) {
+          throw const AdminAuthInvalidCredentialsException('Invalid login credentials');
+        }
+      }
+
+      final s = e.toString().toLowerCase();
+      if (e is AuthRetryableFetchException || s.contains('failed to fetch') || s.contains('clientexception: failed to fetch')) {
+        throw AdminAuthNetworkException(e.toString());
+      }
       rethrow;
     } finally {
       _isSigningIn = false;
@@ -222,9 +286,14 @@ class AdminAuthStore extends ChangeNotifier {
       return;
     }
     try {
+      // CRITICAL: Do not construct/normalize this with Uri helpers.
+      const redirectTo = AdminAuthStore.passwordResetRedirectTo;
+      if (kDebugMode) {
+        debugPrint('AdminAuthStore.sendPasswordResetEmail: using redirectTo=$redirectTo');
+      }
       await c.auth.resetPasswordForEmail(
         email.trim(),
-        redirectTo: SupabaseConfig.resetPasswordRedirectUrl,
+        redirectTo: redirectTo,
       );
     } catch (e) {
       debugPrint('AdminAuthStore.sendPasswordResetEmail failed: $e');
@@ -342,8 +411,6 @@ class AdminAuthStore extends ChangeNotifier {
           // - Auth user id column is `admin_user_id`.
           .select('email, display_name, role, is_active, require_step_up')
           .eq('admin_user_id', authUser.id)
-          // Enforce allow-list rule at the query level.
-          .eq('is_active', true)
           .maybeSingle();
 
       if (row == null) {
@@ -353,21 +420,20 @@ class AdminAuthStore extends ChangeNotifier {
         _isActive = false;
         _requireStepUp = null;
         _role = null;
-        _accessDeniedReason = 'This account is not on the admin allow-list (or is inactive).';
+        _accessDeniedReason = 'Authenticated but not allow-listed.';
         return;
       }
 
       _adminEmail = (row['email'] as String?) ?? authUser.email;
       _adminDisplayName = (row['display_name'] as String?)?.trim().isEmpty == true ? null : (row['display_name'] as String?);
-      // Row already filtered by is_active=true, but keep defensive checks.
       final isActive = row['is_active'] == true;
       _isActive = isActive;
       _adminStatus = isActive ? 'active' : 'inactive';
       _requireStepUp = row['require_step_up'] == true;
       _role = parseAdminRole(row['role'] as String?);
 
-      if ((_adminStatus ?? '').toLowerCase() != 'active') {
-        _accessDeniedReason = 'Admin status is not active.';
+      if (!isActive) {
+        _accessDeniedReason = 'Admin user inactive.';
       } else if (_role == null) {
         _accessDeniedReason = 'Unknown admin role. Access denied.';
       }

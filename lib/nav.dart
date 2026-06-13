@@ -20,6 +20,8 @@ import 'package:curavault_admin/admin/pages/users_page.dart';
 import 'package:curavault_admin/admin/pages/user_detail_page.dart';
 import 'package:curavault_admin/admin/pages/admin_test_page.dart';
 import 'package:curavault_admin/admin/pages/reset_password_page.dart';
+import 'package:curavault_admin/admin/pages/set_password_page.dart';
+import 'package:curavault_admin/admin/pages/supabase_connectivity_test_page.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:flutter/material.dart';
@@ -38,7 +40,12 @@ class AppRouter {
         final location = state.uri.toString();
         final matched = state.matchedLocation;
 
-        final isAuthFree = matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.resetPassword;
+        final isAuthFree =
+            matched == AppRoutes.login ||
+            matched == AppRoutes.loading ||
+            matched == AppRoutes.resetPassword ||
+            matched == AppRoutes.setPassword ||
+            matched == AppRoutes.supabaseConnectivityTest;
         if (auth.isBootstrapping) return isAuthFree ? null : AppRoutes.loading;
 
         if (!auth.isSignedIn) {
@@ -67,6 +74,8 @@ class AppRouter {
         GoRoute(path: AppRoutes.loading, name: 'loading', builder: (context, state) => const LoadingPage()),
         GoRoute(path: AppRoutes.login, name: 'login', builder: (context, state) => const LoginPage()),
         GoRoute(path: AppRoutes.resetPassword, name: 'resetPassword', builder: (context, state) => const ResetPasswordPage()),
+        GoRoute(path: AppRoutes.setPassword, name: 'setPassword', builder: (context, state) => const SetPasswordPage()),
+        GoRoute(path: AppRoutes.supabaseConnectivityTest, name: 'supabaseConnectivityTest', builder: (context, state) => const SupabaseConnectivityTestPage()),
         GoRoute(path: AppRoutes.unauthorized, name: 'unauthorized', builder: (context, state) => const UnauthorizedPage()),
         ShellRoute(
           builder: (context, state, child) => AdminShell(currentLocation: state.uri.toString(), child: child),
@@ -127,6 +136,8 @@ class AppRoutes {
   static const String loading = '/loading';
   static const String login = '/login';
   static const String resetPassword = '/reset-password';
+  static const String setPassword = '/set-password';
+  static const String supabaseConnectivityTest = '/supabase-connectivity-test';
   static const String unauthorized = '/unauthorized';
   static const String dashboard = '/dashboard';
   static const String adminTest = '/admin-test';

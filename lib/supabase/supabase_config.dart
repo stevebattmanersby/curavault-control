@@ -16,7 +16,10 @@ class SupabaseConfig {
   ///
   /// IMPORTANT (Flutter Web + hash routing): We use `/#/reset-password` to land
   /// inside the SPA and then parse the recovery session details from the URL.
-  static const String resetPasswordRedirectUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/reset-password';
+  ///
+  /// NOTE: For this control site we unify invite + recovery into a single
+  /// password setup screen.
+  static const String setPasswordRedirectUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/set-password';
 
   /// Supabase project URL.
   ///
@@ -87,6 +90,11 @@ class SupabaseConfig {
     if (supabaseUrl.isEmpty || anonKey.isEmpty) {
       debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
       return;
+    }
+
+    // Sanity check: Supabase.initialize expects the project root URL, not /rest/v1.
+    if (kDebugMode && supabaseUrl.contains('/rest/v1')) {
+      debugPrint('CONFIG WARNING: SUPABASE_URL contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
     }
 
     // This should NEVER be set in a frontend build.
