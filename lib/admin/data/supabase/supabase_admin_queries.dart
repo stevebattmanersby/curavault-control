@@ -262,10 +262,9 @@ class SupabaseAdminQueries {
 
     try {
       var builder = _client
-          .schema('control')
           .from('admin_audit_log')
           // Never select raw content beyond redacted maps.
-          .select('id, admin_user_id, target_user_id, action_type, previous_value, new_value, reason, ticket_reference, ip_address, user_agent, result, created_at');
+          .select('id, admin_user_id, target_user_id, action_type, prev, next, reason, ticket_id, ip, user_agent, result, created_at');
 
       if (query.actionType != null && query.actionType!.trim().isNotEmpty) builder = builder.eq('action_type', query.actionType!.trim());
       if (query.adminUserId != null && query.adminUserId!.trim().isNotEmpty) builder = builder.eq('admin_user_id', query.adminUserId!.trim());

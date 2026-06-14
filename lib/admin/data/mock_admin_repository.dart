@@ -256,11 +256,7 @@ class MockAdminRepository implements AdminRepository {
     final c = _client;
     if (c == null) return;
     try {
-      try {
-        await c.schema('control').from('admin_audit_log').insert(row);
-      } catch (_) {
-        await c.from('admin_audit_log').insert(row);
-      }
+      await c.from('admin_audit_log').insert(row);
     } catch (e) {
       debugPrint('MockAdminRepository audit insert failed: $e');
       // Fail-closed: if audit logging is unavailable, the associated admin
@@ -277,9 +273,9 @@ class MockAdminRepository implements AdminRepository {
 
     final row = {
       ...entry.toInsertJson(),
-      if (redactedPrev != null) 'previous_value': redactedPrev,
-      if (redactedNew != null) 'new_value': redactedNew,
-      if (entry.ipAddress == null && AdminClientContext.ipAddress != null) 'ip_address': AdminClientContext.ipAddress,
+      if (redactedPrev != null) 'prev': redactedPrev,
+      if (redactedNew != null) 'next': redactedNew,
+      if (entry.ipAddress == null && AdminClientContext.ipAddress != null) 'ip': AdminClientContext.ipAddress,
       if (entry.userAgent == null && AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
       'created_at': now.toUtc().toIso8601String(),
     };
@@ -295,7 +291,7 @@ class MockAdminRepository implements AdminRepository {
         newValue: redactedNew,
         reason: entry.reason,
         ticketReference: entry.ticketReference,
-        ipAddress: row['ip_address']?.toString(),
+        ipAddress: row['ip']?.toString(),
         userAgent: row['user_agent']?.toString(),
         result: entry.result,
         createdAt: now,
@@ -1657,7 +1653,7 @@ class MockAdminRepository implements AdminRepository {
       try {
         PostgrestFilterBuilder<dynamic> q;
         try {
-          q = c.schema('control').from('admin_audit_log').select('*');
+          q = c.from('admin_audit_log').select('*');
         } catch (_) {
           q = c.from('admin_audit_log').select('*');
         }

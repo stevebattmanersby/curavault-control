@@ -46,26 +46,23 @@ class SupabaseAdminRepository implements AdminRepository {
   Future<void> createAuditLog({required AdminAuditLogCreate entry}) async {
     final c = _client;
     if (c == null) throw StateError('Supabase not initialized; cannot audit.');
-    final row = {
+    final row = <String, dynamic>{
+      // Matches public.admin_audit_log schema.
       'admin_user_id': entry.adminUserId,
+      'admin_email': c.auth.currentUser?.email,
       if (entry.targetUserId != null) 'target_user_id': entry.targetUserId,
       'action_type': entry.actionType,
-      if (entry.previousValue != null) 'previous_value': AdminAuditRedactor.redactMap(entry.previousValue!),
-      if (entry.newValue != null) 'new_value': AdminAuditRedactor.redactMap(entry.newValue!),
-      if (entry.reason != null) 'reason': entry.reason,
-      if (entry.ticketReference != null) 'ticket_reference': entry.ticketReference,
-      if (AdminClientContext.ipAddress != null) 'ip_address': AdminClientContext.ipAddress,
-      if (AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
       'result': entry.result ?? 'success',
+      if (entry.previousValue != null) 'prev': AdminAuditRedactor.redactMap(entry.previousValue!),
+      if (entry.newValue != null) 'next': AdminAuditRedactor.redactMap(entry.newValue!),
+      if (entry.reason != null) 'reason': entry.reason,
+      if (entry.ticketReference != null) 'ticket_id': entry.ticketReference,
+      if (AdminClientContext.ipAddress != null) 'ip': AdminClientContext.ipAddress,
+      if (AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
       'created_at': DateTime.now().toUtc().toIso8601String(),
     };
 
-    // Insert schema-qualified first (preferred), fallback to public.
-    try {
-      await c.schema('control').from('admin_audit_log').insert(row);
-    } catch (_) {
-      await c.from('admin_audit_log').insert(row);
-    }
+    await c.from('admin_audit_log').insert(row);
   }
 
   @override

@@ -31,7 +31,7 @@ class SupabaseConfig {
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
     // Preview fallback (can be overridden by --dart-define in production)
-    defaultValue: 'https://rzqgxtizragjhenmjykg.supabase.co',
+    defaultValue: 'https://rzqgxtizragjhenmjykq.supabase.co',
   );
 
   /// Supabase anon key.
@@ -41,7 +41,7 @@ class SupabaseConfig {
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
     // Preview fallback (public publishable anon key). Override with --dart-define in production.
-    defaultValue: '<sb_publishable_YwSkLV_EOM2DlvosS8GChQ_OMnzR-GD>',
+    defaultValue: 'sb_publishable_YwSkLV_EOM2DlvosS8GChQ_OMnzR-GD',
   );
 
   /// This should NEVER be set in a frontend build.
@@ -76,8 +76,8 @@ class SupabaseConfig {
       '[$source] Supabase env status: '
       'clientAvailable=$instanceClientAvailable '
       'supabaseConfigInitialized=$_initialized '
-      'hasSUPABASE_URL=$hasUrl '
-      'hasSUPABASE_ANON_KEY=$hasAnon '
+      'has=$hasUrl '
+      'has=$hasAnon '
       'serviceRoleDetected=$serviceRoleDetected',
     );
   }
@@ -88,13 +88,13 @@ class SupabaseConfig {
     debugPrintEnvStatus(source: 'SupabaseConfig.initialize(before)');
 
     if (supabaseUrl.isEmpty || anonKey.isEmpty) {
-      debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
+      debugPrint('Supabase not configured (missing  / ).');
       return;
     }
 
     // Sanity check: Supabase.initialize expects the project root URL, not /rest/v1.
     if (kDebugMode && supabaseUrl.contains('/rest/v1')) {
-      debugPrint('CONFIG WARNING: SUPABASE_URL contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
+      debugPrint('CONFIG WARNING:  contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
     }
 
     // This should NEVER be set in a frontend build.

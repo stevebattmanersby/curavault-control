@@ -68,6 +68,11 @@ class _LoginPageState extends State<LoginPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     try {
       await auth.signInWithPassword(email: _emailCtrl.text, password: _passwordCtrl.text);
+
+      // Requirement: on successful auth + allow-list check, route to /admin-test.
+      // (Router redirect should also do this, but we navigate explicitly so the
+      // result is immediate + deterministic while debugging.)
+      if (mounted) context.go(AppRoutes.adminTest);
     } catch (e) {
       debugPrint('LoginPage sign-in failed: $e');
       if (!mounted) return;
@@ -87,7 +92,8 @@ class _LoginPageState extends State<LoginPage> {
           setState(() => _error = e.message);
         }
       } else {
-        setState(() => _error = 'Authentication failed.');
+        // Avoid showing “Authentication failed” unless Supabase Auth itself failed.
+        setState(() => _error = 'Authenticated, but an unexpected error occurred.');
       }
     }
   }
@@ -260,6 +266,8 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                           if (kDebugMode) ...[
                             const SizedBox(height: AppSpacing.sm),
+                            DevLoginStagePanel(diagnostics: auth.loginDiagnostics),
+                            const SizedBox(height: AppSpacing.sm),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton.icon(
@@ -354,6 +362,70 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// DEV-ONLY: Displays safe, non-secret login stage diagnostics to debug the
+/// “signInWithPassword ok but login flow fails” scenario.
+///
+/// Never shows: password, access tokens, refresh tokens, API keys.
+class DevLoginStagePanel extends StatelessWidget {
+  final AdminLoginDiagnostics diagnostics;
+
+  const DevLoginStagePanel({super.key, required this.diagnostics});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    String line(String k, Object? v) => '$k: ${v ?? '—'}';
+
+    final rows = <String>[
+      'DEV: Login stages',
+      line('signInWithPassword attempted', diagnostics.signInAttempted ? 'yes' : 'no'),
+      line('signInWithPassword succeeded', diagnostics.signInSucceeded ? 'yes' : 'no'),
+      line('auth.uid()', diagnostics.authUid),
+      line('auth.email', diagnostics.authEmail),
+      line('admin_users lookup attempted', diagnostics.adminUsersLookupAttempted ? 'yes' : 'no'),
+      line('admin_users row found', diagnostics.adminUsersRowFound ? 'yes' : 'no'),
+      line('admin_users.admin_user_id', diagnostics.adminUsersAdminUserId),
+      line('admin_users.email', diagnostics.adminUsersEmail),
+      line('role', diagnostics.role),
+      line('is_active', diagnostics.isActive),
+      line('route target after login', diagnostics.routeTargetAfterLogin),
+      '—',
+      line('login audit attempted', diagnostics.loginAuditAttempted ? 'yes' : 'no'),
+      line('login audit succeeded', diagnostics.loginAuditSucceeded ? 'yes' : 'no'),
+      line('audit table', diagnostics.loginAuditTable),
+      line('attempted action_type', diagnostics.loginAuditActionType),
+      line('auth.uid present', diagnostics.loginAuditAuthUidPresent),
+      line('admin role present', diagnostics.loginAuditRolePresent),
+      line('audit exception type', diagnostics.loginAuditExceptionType),
+      line('audit exception message', diagnostics.loginAuditExceptionMessage),
+      line('exception type', diagnostics.exceptionType),
+      line('exception message', diagnostics.exceptionMessage),
+    ];
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: cs.outline.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(rows.first, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900)),
+          const SizedBox(height: AppSpacing.xs),
+          SelectableText(
+            rows.skip(1).join('\n'),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.35),
+          ),
+        ],
       ),
     );
   }

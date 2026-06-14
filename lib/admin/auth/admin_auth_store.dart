@@ -7,6 +7,126 @@ import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+class AdminLoginDiagnostics {
+  final bool signInAttempted;
+  final bool signInSucceeded;
+  final String? authUid;
+  final String? authEmail;
+  final bool adminUsersLookupAttempted;
+  final bool adminUsersRowFound;
+  final String? adminUsersAdminUserId;
+  final String? adminUsersEmail;
+  final String? role;
+  final bool? isActive;
+  final String? routeTargetAfterLogin;
+  final bool loginAuditAttempted;
+  final bool loginAuditSucceeded;
+  final String? loginAuditTable;
+  final String? loginAuditActionType;
+  final String? loginAuditExceptionType;
+  final String? loginAuditExceptionMessage;
+  final bool? loginAuditAuthUidPresent;
+  final bool? loginAuditRolePresent;
+  final String? exceptionType;
+  final String? exceptionMessage;
+
+  const AdminLoginDiagnostics({
+    required this.signInAttempted,
+    required this.signInSucceeded,
+    required this.authUid,
+    required this.authEmail,
+    required this.adminUsersLookupAttempted,
+    required this.adminUsersRowFound,
+    required this.adminUsersAdminUserId,
+    required this.adminUsersEmail,
+    required this.role,
+    required this.isActive,
+    required this.routeTargetAfterLogin,
+    required this.loginAuditAttempted,
+    required this.loginAuditSucceeded,
+    required this.loginAuditTable,
+    required this.loginAuditActionType,
+    required this.loginAuditExceptionType,
+    required this.loginAuditExceptionMessage,
+    required this.loginAuditAuthUidPresent,
+    required this.loginAuditRolePresent,
+    required this.exceptionType,
+    required this.exceptionMessage,
+  });
+
+  AdminLoginDiagnostics copyWith({
+    bool? signInAttempted,
+    bool? signInSucceeded,
+    String? authUid,
+    String? authEmail,
+    bool? adminUsersLookupAttempted,
+    bool? adminUsersRowFound,
+    String? adminUsersAdminUserId,
+    String? adminUsersEmail,
+    String? role,
+    bool? isActive,
+    String? routeTargetAfterLogin,
+    bool? loginAuditAttempted,
+    bool? loginAuditSucceeded,
+    String? loginAuditTable,
+    String? loginAuditActionType,
+    String? loginAuditExceptionType,
+    String? loginAuditExceptionMessage,
+    bool? loginAuditAuthUidPresent,
+    bool? loginAuditRolePresent,
+    String? exceptionType,
+    String? exceptionMessage,
+  }) {
+    return AdminLoginDiagnostics(
+      signInAttempted: signInAttempted ?? this.signInAttempted,
+      signInSucceeded: signInSucceeded ?? this.signInSucceeded,
+      authUid: authUid ?? this.authUid,
+      authEmail: authEmail ?? this.authEmail,
+      adminUsersLookupAttempted: adminUsersLookupAttempted ?? this.adminUsersLookupAttempted,
+      adminUsersRowFound: adminUsersRowFound ?? this.adminUsersRowFound,
+      adminUsersAdminUserId: adminUsersAdminUserId ?? this.adminUsersAdminUserId,
+      adminUsersEmail: adminUsersEmail ?? this.adminUsersEmail,
+      role: role ?? this.role,
+      isActive: isActive ?? this.isActive,
+      routeTargetAfterLogin: routeTargetAfterLogin ?? this.routeTargetAfterLogin,
+      loginAuditAttempted: loginAuditAttempted ?? this.loginAuditAttempted,
+      loginAuditSucceeded: loginAuditSucceeded ?? this.loginAuditSucceeded,
+      loginAuditTable: loginAuditTable ?? this.loginAuditTable,
+      loginAuditActionType: loginAuditActionType ?? this.loginAuditActionType,
+      loginAuditExceptionType: loginAuditExceptionType ?? this.loginAuditExceptionType,
+      loginAuditExceptionMessage: loginAuditExceptionMessage ?? this.loginAuditExceptionMessage,
+      loginAuditAuthUidPresent: loginAuditAuthUidPresent ?? this.loginAuditAuthUidPresent,
+      loginAuditRolePresent: loginAuditRolePresent ?? this.loginAuditRolePresent,
+      exceptionType: exceptionType ?? this.exceptionType,
+      exceptionMessage: exceptionMessage ?? this.exceptionMessage,
+    );
+  }
+
+  static AdminLoginDiagnostics empty() => const AdminLoginDiagnostics(
+        signInAttempted: false,
+        signInSucceeded: false,
+        authUid: null,
+        authEmail: null,
+        adminUsersLookupAttempted: false,
+        adminUsersRowFound: false,
+        adminUsersAdminUserId: null,
+        adminUsersEmail: null,
+        role: null,
+        isActive: null,
+        routeTargetAfterLogin: null,
+        loginAuditAttempted: false,
+        loginAuditSucceeded: false,
+        loginAuditTable: null,
+        loginAuditActionType: null,
+        loginAuditExceptionType: null,
+        loginAuditExceptionMessage: null,
+        loginAuditAuthUidPresent: null,
+        loginAuditRolePresent: null,
+        exceptionType: null,
+        exceptionMessage: null,
+      );
+}
+
 class AdminAccessDeniedException implements Exception {
   final String message;
   const AdminAccessDeniedException(this.message);
@@ -43,6 +163,9 @@ class AdminAuthAllowListLookupException implements Exception {
   /// - Must be `is_active = true`
 /// - Role must be known (otherwise deny)
 class AdminAuthStore extends ChangeNotifier {
+  // Keep route strings here to avoid circular imports with nav.dart.
+  static const String _routeUnauthorized = '/unauthorized';
+  static const String _routeAdminTest = '/admin-test';
   static const supabaseServiceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
 
   /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
@@ -139,6 +262,9 @@ class AdminAuthStore extends ChangeNotifier {
   String? _adminEmail;
   String? get adminEmail => _adminEmail;
 
+  String? _adminUserId;
+  String? get adminUserId => _adminUserId;
+
   String? _adminDisplayName;
   String? get adminDisplayName => _adminDisplayName;
 
@@ -156,6 +282,22 @@ class AdminAuthStore extends ChangeNotifier {
 
   String? _accessDeniedReason;
   String? get accessDeniedReason => _accessDeniedReason;
+
+  AdminLoginDiagnostics _loginDiagnostics = AdminLoginDiagnostics.empty();
+  AdminLoginDiagnostics get loginDiagnostics => _loginDiagnostics;
+
+  void _resetLoginDiagnostics() => _loginDiagnostics = AdminLoginDiagnostics.empty();
+
+  void _recordLoginDiag(AdminLoginDiagnostics next) {
+    _loginDiagnostics = next;
+    notifyListeners();
+  }
+
+  /// Auth user id from Supabase Auth (auth.uid()).
+  String? get authUid => _client?.auth.currentUser?.id;
+
+  /// Auth email from Supabase Auth (may be null depending on provider).
+  String? get authEmail => _client?.auth.currentUser?.email;
 
   bool get isSignedIn => _session != null;
 
@@ -216,45 +358,101 @@ class AdminAuthStore extends ChangeNotifier {
     if (_isSigningIn) return;
     _isSigningIn = true;
     _accessDeniedReason = null;
+    _resetLoginDiagnostics();
+    _recordLoginDiag(
+      loginDiagnostics.copyWith(
+        signInAttempted: true,
+        exceptionType: null,
+        exceptionMessage: null,
+        routeTargetAfterLogin: null,
+      ),
+    );
     notifyListeners();
     try {
       final res = await _client!.auth.signInWithPassword(email: email.trim(), password: password);
       _session = res.session;
+
+      final authUser = _client!.auth.currentUser;
+      _recordLoginDiag(
+        loginDiagnostics.copyWith(
+          signInSucceeded: _session != null,
+          authUid: authUser?.id,
+          authEmail: authUser?.email,
+        ),
+      );
+
       try {
-        await _refreshAdminProfile();
+        await _refreshAdminProfile(recordLoginDiagnostics: true);
       } catch (e) {
         // Auth succeeded, but allow-list lookup failed (network/RLS/table missing).
-        try {
-          await _client!.auth.signOut();
-        } catch (_) {}
-        _session = null;
         throw AdminAuthAllowListLookupException(e.toString());
       }
 
       // If Supabase auth succeeded but allow-list/role checks failed, treat it as
-      // a login denial and immediately sign out.
+      // a login denial.
+      //
+      // IMPORTANT: For the normal login flow we MUST NOT sign out automatically.
+      // The connectivity test page may sign out after probing, but the real login
+      // flow keeps the session so we can debug allow-list/RLS issues.
       if (!isAuthorized) {
         final reason = _accessDeniedReason ?? 'Not allow-listed.';
-        try {
-          await _client!.auth.signOut();
-        } catch (_) {}
-        _session = null;
+        _recordLoginDiag(
+          loginDiagnostics.copyWith(
+            routeTargetAfterLogin: _routeUnauthorized,
+            exceptionType: 'AdminAccessDeniedException',
+            exceptionMessage: reason,
+          ),
+        );
         throw AdminAccessDeniedException(reason);
       }
 
+      _recordLoginDiag(loginDiagnostics.copyWith(routeTargetAfterLogin: _routeAdminTest));
+
       final actor = _client!.auth.currentUser?.id;
       if (actor != null && actor.isNotEmpty) {
-        // Audit log is mandatory; if we cannot write it, deny access.
-        await _writeAudit(
-          adminUserId: actor,
-          actionType: 'admin_login',
-          result: 'success',
-          newValue: AdminAuditRedactor.redactMap({'email': email.trim()}),
-          failClosed: true,
+        const actionType = 'admin_login';
+        _recordLoginDiag(
+          loginDiagnostics.copyWith(
+            loginAuditAttempted: true,
+            loginAuditSucceeded: false,
+            loginAuditTable: 'public.admin_audit_log',
+            loginAuditActionType: actionType,
+            loginAuditAuthUidPresent: true,
+            loginAuditRolePresent: role != null,
+            loginAuditExceptionType: null,
+            loginAuditExceptionMessage: null,
+          ),
         );
+        try {
+          // LOGIN audit is best-effort: never block a successful login.
+          await _writeAudit(
+            adminUserId: actor,
+            actionType: actionType,
+            result: 'success',
+            newValue: {'email': email.trim()},
+            failClosed: false,
+          );
+          _recordLoginDiag(loginDiagnostics.copyWith(loginAuditSucceeded: true));
+        } catch (e) {
+          debugPrint('AdminAuthStore.signInWithPassword login audit insert failed (best-effort): $e');
+          _recordLoginDiag(
+            loginDiagnostics.copyWith(
+              loginAuditSucceeded: false,
+              loginAuditExceptionType: e.runtimeType.toString(),
+              loginAuditExceptionMessage: e.toString(),
+            ),
+          );
+        }
       }
     } catch (e) {
       debugPrint('AdminAuthStore.signInWithPassword failed: $e');
+
+      _recordLoginDiag(
+        loginDiagnostics.copyWith(
+          exceptionType: e.runtimeType.toString(),
+          exceptionMessage: e.toString(),
+        ),
+      );
 
       // TEMPORARY: Do not write audit rows for failed sign-ins.
       // This avoids masking root-cause connectivity failures with a secondary
@@ -264,12 +462,26 @@ class AdminAuthStore extends ChangeNotifier {
       if (e is AuthException) {
         final msg = e.message;
         if (msg.toLowerCase().contains('invalid login credentials')) {
+          _recordLoginDiag(
+            loginDiagnostics.copyWith(
+              routeTargetAfterLogin: '/login',
+              exceptionType: 'AdminAuthInvalidCredentialsException',
+              exceptionMessage: 'Invalid email or password.',
+            ),
+          );
           throw const AdminAuthInvalidCredentialsException('Invalid login credentials');
         }
       }
 
       final s = e.toString().toLowerCase();
       if (e is AuthRetryableFetchException || s.contains('failed to fetch') || s.contains('clientexception: failed to fetch')) {
+        _recordLoginDiag(
+          loginDiagnostics.copyWith(
+            routeTargetAfterLogin: '/login',
+            exceptionType: 'AdminAuthNetworkException',
+            exceptionMessage: e.toString(),
+          ),
+        );
         throw AdminAuthNetworkException(e.toString());
       }
       rethrow;
@@ -332,25 +544,24 @@ class AdminAuthStore extends ChangeNotifier {
       return;
     }
     try {
-      final row = {
+      final row = <String, dynamic>{
+        // Matches public.admin_audit_log schema.
         'admin_user_id': adminUserId,
+        'admin_email': c.auth.currentUser?.email,
         if (targetUserId != null) 'target_user_id': targetUserId,
         'action_type': actionType,
-        if (previousValue != null) 'previous_value': AdminAuditRedactor.redactMap(previousValue),
-        if (newValue != null) 'new_value': AdminAuditRedactor.redactMap(newValue),
-        if (reason != null) 'reason': reason,
-        if (ticketReference != null) 'ticket_reference': ticketReference,
-        if (AdminClientContext.ipAddress != null) 'ip_address': AdminClientContext.ipAddress,
-        if (AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
         'result': result ?? 'success',
+        if (previousValue != null) 'prev': AdminAuditRedactor.redactMap(previousValue),
+        if (newValue != null) 'next': AdminAuditRedactor.redactMap(newValue),
+        if (reason != null) 'reason': reason,
+        if (ticketReference != null) 'ticket_id': ticketReference,
+        if (AdminClientContext.ipAddress != null) 'ip': AdminClientContext.ipAddress,
+        if (AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
+        // created_at is NOT NULL; keep explicit for clarity.
         'created_at': DateTime.now().toUtc().toIso8601String(),
       };
 
-      try {
-        await c.schema('control').from('admin_audit_log').insert(row);
-      } catch (_) {
-        await c.from('admin_audit_log').insert(row);
-      }
+      await c.from('admin_audit_log').insert(row);
     } catch (e) {
       debugPrint('AdminAuthStore._writeAudit failed: $e');
       if (failClosed) {
@@ -377,6 +588,7 @@ class AdminAuthStore extends ChangeNotifier {
     } finally {
       _session = null;
       _adminEmail = null;
+      _adminUserId = null;
       _adminDisplayName = null;
       _adminStatus = null;
       _isActive = null;
@@ -387,12 +599,17 @@ class AdminAuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _refreshAdminProfile() async {
+  Future<void> _refreshAdminProfile({bool recordLoginDiagnostics = false}) async {
     _accessDeniedReason = null;
+
+    if (recordLoginDiagnostics) {
+      _recordLoginDiag(loginDiagnostics.copyWith(adminUsersLookupAttempted: true));
+    }
 
     final authUser = _client?.auth.currentUser;
     if (authUser == null) {
       _adminEmail = null;
+      _adminUserId = null;
       _adminDisplayName = null;
       _adminStatus = null;
       _isActive = null;
@@ -409,21 +626,34 @@ class AdminAuthStore extends ChangeNotifier {
           // IMPORTANT:
           // - Column is named `role` (type `admin_role`).
           // - Auth user id column is `admin_user_id`.
-          .select('email, display_name, role, is_active, require_step_up')
+          .select('admin_user_id, email, display_name, role, is_active, require_step_up')
           .eq('admin_user_id', authUser.id)
           .maybeSingle();
 
       if (row == null) {
         _adminEmail = authUser.email;
+        _adminUserId = null;
         _adminDisplayName = null;
         _adminStatus = 'missing';
         _isActive = false;
         _requireStepUp = null;
         _role = null;
         _accessDeniedReason = 'Authenticated but not allow-listed.';
+        if (recordLoginDiagnostics) {
+          _recordLoginDiag(
+            loginDiagnostics.copyWith(
+              adminUsersRowFound: false,
+              adminUsersAdminUserId: null,
+              adminUsersEmail: null,
+              role: null,
+              isActive: false,
+            ),
+          );
+        }
         return;
       }
 
+      _adminUserId = (row['admin_user_id'] as String?) ?? authUser.id;
       _adminEmail = (row['email'] as String?) ?? authUser.email;
       _adminDisplayName = (row['display_name'] as String?)?.trim().isEmpty == true ? null : (row['display_name'] as String?);
       final isActive = row['is_active'] == true;
@@ -431,6 +661,18 @@ class AdminAuthStore extends ChangeNotifier {
       _adminStatus = isActive ? 'active' : 'inactive';
       _requireStepUp = row['require_step_up'] == true;
       _role = parseAdminRole(row['role'] as String?);
+
+      if (recordLoginDiagnostics) {
+        _recordLoginDiag(
+          loginDiagnostics.copyWith(
+            adminUsersRowFound: true,
+            adminUsersAdminUserId: _adminUserId,
+            adminUsersEmail: _adminEmail,
+            role: row['role']?.toString(),
+            isActive: _isActive,
+          ),
+        );
+      }
 
       if (!isActive) {
         _accessDeniedReason = 'Admin user inactive.';
@@ -440,12 +682,23 @@ class AdminAuthStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('AdminAuthStore._refreshAdminProfile failed: $e');
       _adminEmail = authUser.email;
+      _adminUserId = null;
       _adminDisplayName = null;
       _adminStatus = 'error';
       _isActive = false;
       _requireStepUp = null;
       _role = null;
       _accessDeniedReason = 'Failed to validate admin access. Try again later.';
+
+      if (recordLoginDiagnostics) {
+        _recordLoginDiag(
+          loginDiagnostics.copyWith(
+            adminUsersRowFound: false,
+            exceptionType: e.runtimeType.toString(),
+            exceptionMessage: e.toString(),
+          ),
+        );
+      }
     }
   }
 

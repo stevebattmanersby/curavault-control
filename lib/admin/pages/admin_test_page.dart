@@ -27,6 +27,10 @@ class AdminTestPage extends StatelessWidget {
     final auth = context.watch<AdminAuthStore>();
     final cs = Theme.of(context).colorScheme;
 
+    final authUid = auth.authUid ?? '—';
+    final authEmail = auth.authEmail ?? '—';
+
+    final adminUserId = auth.adminUserId ?? '—';
     final email = auth.adminEmail ?? '—';
     final displayName = (auth.adminDisplayName ?? '').trim().isEmpty ? '—' : auth.adminDisplayName!;
     final role = auth.role;
@@ -66,6 +70,16 @@ class AdminTestPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('Supabase Auth', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+                const SizedBox(height: AppSpacing.sm),
+                _InfoRow(label: 'auth.uid()', value: authUid),
+                const SizedBox(height: AppSpacing.sm),
+                _InfoRow(label: 'auth email', value: authEmail),
+                const SizedBox(height: AppSpacing.md),
+                Text('public.admin_users', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+                const SizedBox(height: AppSpacing.sm),
+                _InfoRow(label: 'admin_user_id', value: adminUserId),
+                const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'Email', value: email),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'Name', value: displayName),
