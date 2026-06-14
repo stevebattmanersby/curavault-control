@@ -5,6 +5,7 @@ import 'package:curavault_admin/admin/data/mock_admin_repository.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_repository.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
+import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 
@@ -43,19 +44,36 @@ class AdminStore extends ChangeNotifier {
     if (!_auth.isSignedIn) {
       _currentAdmin = null;
       _users = const [];
+      _userSummaryLoad = const AdminDataLoadStatus();
       _supportSessions = const [];
       _auditLogs = const [];
       _dashboard = null;
+      _dashboardLoad = const AdminDataLoadStatus();
       _usageAnalytics = null;
+      _usageEventsLoad = const AdminDataLoadStatus();
       _storage = null;
       _aiUsage = null;
       _billing = null;
+      _billingLoad = const AdminDataLoadStatus();
       _compliance = null;
       _systemHealth = null;
       _securityChecklist = null;
       notifyListeners();
     }
   }
+
+  // --- Data source load/status tracking (used by Dashboard “Data source status”) ---
+  AdminDataLoadStatus _dashboardLoad = const AdminDataLoadStatus();
+  AdminDataLoadStatus get dashboardLoad => _dashboardLoad;
+
+  AdminDataLoadStatus _userSummaryLoad = const AdminDataLoadStatus();
+  AdminDataLoadStatus get userSummaryLoad => _userSummaryLoad;
+
+  AdminDataLoadStatus _usageEventsLoad = const AdminDataLoadStatus();
+  AdminDataLoadStatus get usageEventsLoad => _usageEventsLoad;
+
+  AdminDataLoadStatus _billingLoad = const AdminDataLoadStatus();
+  AdminDataLoadStatus get billingLoad => _billingLoad;
 
   AdminUser? _currentAdmin;
   AdminUser? get currentAdmin => _currentAdmin;
@@ -282,11 +300,14 @@ class AdminStore extends ChangeNotifier {
   Future<void> refreshBilling() async {
     if (_isBillingLoading) return;
     _isBillingLoading = true;
+    _billingLoad = _billingLoad.markAttempted();
     notifyListeners();
     try {
       _billing = await _repository.getBillingSnapshot(query: _billingQuery);
+      _billingLoad = _billingLoad.markSuccess();
     } catch (e) {
       debugPrint('AdminStore.refreshBilling failed: $e');
+      _billingLoad = _billingLoad.markFailure(queryName: 'admin_get_billing_summary', error: formatAdminSafeError(e));
     } finally {
       _isBillingLoading = false;
       notifyListeners();
@@ -326,11 +347,15 @@ class AdminStore extends ChangeNotifier {
   }
 
   Future<void> refreshUsers() async {
+    _userSummaryLoad = _userSummaryLoad.markAttempted();
     try {
       _users = await _repository.listUsers(query: UserListQuery(search: _userSearch, filters: _userFilters), limit: 50);
+      _userSummaryLoad = _userSummaryLoad.markSuccess();
       notifyListeners();
     } catch (e) {
       debugPrint('AdminStore.refreshUsers failed: $e');
+      _userSummaryLoad = _userSummaryLoad.markFailure(queryName: 'admin_get_user_usage_summary', error: formatAdminSafeError(e));
+      notifyListeners();
     }
   }
 
@@ -397,11 +422,14 @@ class AdminStore extends ChangeNotifier {
   Future<void> refreshDashboard() async {
     if (_isDashboardLoading) return;
     _isDashboardLoading = true;
+    _dashboardLoad = _dashboardLoad.markAttempted();
     notifyListeners();
     try {
       _dashboard = await _repository.getDashboardSnapshot(query: _dashboardQuery);
+      _dashboardLoad = _dashboardLoad.markSuccess();
     } catch (e) {
       debugPrint('AdminStore.refreshDashboard failed: $e');
+      _dashboardLoad = _dashboardLoad.markFailure(queryName: 'admin_get_dashboard_metrics', error: formatAdminSafeError(e));
     } finally {
       _isDashboardLoading = false;
       notifyListeners();
@@ -417,11 +445,14 @@ class AdminStore extends ChangeNotifier {
   Future<void> refreshUsageAnalytics() async {
     if (_isUsageAnalyticsLoading) return;
     _isUsageAnalyticsLoading = true;
+    _usageEventsLoad = _usageEventsLoad.markAttempted();
     notifyListeners();
     try {
       _usageAnalytics = await _repository.getUsageAnalyticsSnapshot(query: _usageAnalyticsQuery);
+      _usageEventsLoad = _usageEventsLoad.markSuccess();
     } catch (e) {
       debugPrint('AdminStore.refreshUsageAnalytics failed: $e');
+      _usageEventsLoad = _usageEventsLoad.markFailure(queryName: 'admin_get_usage_events_summary', error: formatAdminSafeError(e));
     } finally {
       _isUsageAnalyticsLoading = false;
       notifyListeners();
@@ -548,4 +579,23 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshLimitOverrides failed: $e');
     }
   }
+}
+
+@immutable
+class AdminDataLoadStatus {
+  const AdminDataLoadStatus({this.attempted = false, this.loaded = false, this.queryName, this.error});
+
+  final bool attempted;
+  final bool loaded;
+  final String? queryName;
+  final String? error;
+
+  bool get isOk => loaded && error == null;
+  bool get hasError => attempted && error != null;
+
+  AdminDataLoadStatus markAttempted() => AdminDataLoadStatus(attempted: true, loaded: loaded, queryName: queryName, error: error);
+
+  AdminDataLoadStatus markSuccess() => const AdminDataLoadStatus(attempted: true, loaded: true);
+
+  AdminDataLoadStatus markFailure({required String queryName, required String error}) => AdminDataLoadStatus(attempted: true, loaded: false, queryName: queryName, error: error);
 }

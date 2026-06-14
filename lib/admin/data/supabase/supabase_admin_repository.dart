@@ -153,7 +153,16 @@ class SupabaseAdminRepository implements AdminRepository {
   Future<List<LimitOverrideRow>> listLimitOverrides({required int limit}) async => _fallback.listLimitOverrides(limit: limit);
 
   @override
-  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot({required UsageAnalyticsQuery query}) async => _fallback.getUsageAnalyticsSnapshot(query: query);
+  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot({required UsageAnalyticsQuery query}) async {
+    try {
+      final admin = await _admin();
+      return await _queries.getUsageAnalyticsSummary(admin: admin, query: query);
+    } catch (e) {
+      debugPrint('SupabaseAdminRepository.getUsageAnalyticsSnapshot failed: $e');
+      if (_isMissingRelationError(e)) return _fallback.getUsageAnalyticsSnapshot(query: query);
+      rethrow;
+    }
+  }
 
   @override
   Future<StorageSnapshot> getStorageSnapshot({required StorageQuery query}) async {

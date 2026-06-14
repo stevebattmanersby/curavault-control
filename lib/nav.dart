@@ -19,6 +19,7 @@ import 'package:curavault_admin/admin/pages/usage_analytics_page.dart';
 import 'package:curavault_admin/admin/pages/users_page.dart';
 import 'package:curavault_admin/admin/pages/user_detail_page.dart';
 import 'package:curavault_admin/admin/pages/admin_test_page.dart';
+import 'package:curavault_admin/admin/pages/admin_data_test_page.dart';
 import 'package:curavault_admin/admin/pages/reset_password_page.dart';
 import 'package:curavault_admin/admin/pages/set_password_page.dart';
 import 'package:curavault_admin/admin/pages/supabase_connectivity_test_page.dart';
@@ -139,6 +140,7 @@ class AppRouter {
           routes: [
             GoRoute(path: AppRoutes.dashboard, name: 'dashboard', pageBuilder: (context, state) => const NoTransitionPage(child: DashboardPage())),
             GoRoute(path: AppRoutes.adminTest, name: 'adminTest', pageBuilder: (context, state) => const NoTransitionPage(child: AdminTestPage())),
+            GoRoute(path: AppRoutes.adminDataTest, name: 'adminDataTest', pageBuilder: (context, state) => const NoTransitionPage(child: AdminDataTestPage())),
             GoRoute(
               path: AppRoutes.users,
               name: 'users',
@@ -198,6 +200,7 @@ class AppRoutes {
   static const String unauthorized = '/unauthorized';
   static const String dashboard = '/dashboard';
   static const String adminTest = '/admin-test';
+  static const String adminDataTest = '/admin-data-test';
   static const String users = '/users';
   static const String support = '/support';
   static const String plansPermissions = '/plans-permissions';

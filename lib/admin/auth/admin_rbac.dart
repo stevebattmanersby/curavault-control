@@ -62,6 +62,7 @@ class AdminRbac {
     AppRoutes.securityChecklist: <AdminRole>{AdminRole.owner, AdminRole.compliance, AdminRole.admin},
     AppRoutes.settings: <AdminRole>{AdminRole.owner},
     AppRoutes.adminTest: all,
+    AppRoutes.adminDataTest: all,
   };
 
   static bool canAccessRoute(AdminRole role, String location) {

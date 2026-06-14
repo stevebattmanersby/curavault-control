@@ -345,7 +345,7 @@ class _BillingOverviewTab extends StatelessWidget {
     if (isLoading && overview == null) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
     final o = overview;
-    if (o == null) return const _EmptyState(label: 'No billing snapshot loaded yet.');
+    if (o == null) return const _EmptyState(label: 'No usage data has been collected yet.');
 
     return ListView(
       padding: const EdgeInsets.all(14),

@@ -39,9 +39,9 @@ class UsageAnalyticsPage extends StatelessWidget {
                     children: [
                       Icon(Icons.insights_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
                       const SizedBox(height: AppSpacing.sm),
-                      Text('No analytics data yet.', style: Theme.of(context).textTheme.titleMedium),
+                      Text('No usage data has been collected yet.', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: AppSpacing.sm),
-                      Text('Connect Supabase summary views or refresh to load mock data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text('Once events are collected, this page will show aggregate-only usage signals.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 )

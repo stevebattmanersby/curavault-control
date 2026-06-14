@@ -15,6 +15,7 @@ class DashboardPage extends StatelessWidget {
     final store = context.watch<AdminStore>();
     final isLoading = store.isLoading || store.isDashboardLoading;
     final dash = store.dashboard;
+    final cs = Theme.of(context).colorScheme;
 
     return AdminPageScaffold(
       title: 'Dashboard',
@@ -34,20 +35,136 @@ class DashboardPage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : dash == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.query_stats, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('No dashboard data yet.', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Click refresh or connect Supabase to load real aggregates.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    ],
-                  ),
-                )
-              : _DashboardBody(dash: dash),
+          : SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _DataSourceStatusPanel(store: store),
+                  const SizedBox(height: AppSpacing.lg),
+                  if (store.dashboardLoad.hasError)
+                    AdminCard(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.error_outline, color: cs.error),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Dashboard query failed', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 6),
+                                Text('Query: ${store.dashboardLoad.queryName ?? 'unknown'}', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                                const SizedBox(height: 6),
+                                Text(store.dashboardLoad.error ?? 'Unknown error', style: Theme.of(context).textTheme.bodyMedium),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  if (dash == null && !store.dashboardLoad.hasError)
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 56),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.query_stats, size: 44, color: cs.onSurfaceVariant),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text('No data collected yet.', style: Theme.of(context).textTheme.titleMedium),
+                            const SizedBox(height: AppSpacing.sm),
+                            Text('Once aggregates are available, metrics will appear here.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  if (dash != null) _DashboardBody(dash: dash),
+                ],
+              ),
+            ),
+    );
+  }
+}
+
+class _DataSourceStatusPanel extends StatelessWidget {
+  const _DataSourceStatusPanel({required this.store});
+  final AdminStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    Widget row({required String label, required AdminDataLoadStatus status}) {
+      final ok = status.isOk;
+      final icon = ok ? Icons.check_circle_outline : status.hasError ? Icons.error_outline : status.attempted ? Icons.hourglass_empty : Icons.help_outline;
+      final iconColor = ok ? cs.primary : status.hasError ? cs.error : cs.onSurfaceVariant;
+      final value = ok ? 'Yes' : status.hasError ? 'No (error)' : status.attempted ? 'No (loading/empty)' : 'No';
+
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          children: [
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: 10),
+            Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge)),
+            Text(value, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: ok ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      );
+    }
+
+    return AdminCard(
+      header: Row(
+        children: [
+          Text('Data source status', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          const Spacer(),
+          Text('Admin-safe RPCs only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+        ],
+      ),
+      child: Column(
+        children: [
+          row(label: 'Dashboard metrics loaded', status: store.dashboardLoad),
+          row(label: 'User summary loaded', status: store.userSummaryLoad),
+          row(label: 'Usage events loaded', status: store.usageEventsLoad),
+          row(label: 'Billing summary loaded', status: store.billingLoad),
+          if (store.userSummaryLoad.hasError || store.usageEventsLoad.hasError || store.billingLoad.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: AppSpacing.sm),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Errors', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 6),
+                  if (store.userSummaryLoad.hasError) _StatusErrorLine(name: store.userSummaryLoad.queryName, message: store.userSummaryLoad.error),
+                  if (store.usageEventsLoad.hasError) _StatusErrorLine(name: store.usageEventsLoad.queryName, message: store.usageEventsLoad.error),
+                  if (store.billingLoad.hasError) _StatusErrorLine(name: store.billingLoad.queryName, message: store.billingLoad.error),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusErrorLine extends StatelessWidget {
+  const _StatusErrorLine({required this.name, required this.message});
+  final String? name;
+  final String? message;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.error_outline, size: 16, color: cs.error),
+          const SizedBox(width: 8),
+          Expanded(child: Text('${name ?? 'unknown'}: ${message ?? 'Unknown error'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
+        ],
+      ),
     );
   }
 }
@@ -409,7 +526,7 @@ class _UserGrowthLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (series.isEmpty) return Center(child: Text('No data', style: Theme.of(context).textTheme.bodyMedium));
+    if (series.isEmpty) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
 
     final spots = <FlSpot>[];
     for (int i = 0; i < series.length; i++) {
@@ -480,7 +597,7 @@ class _PlatformPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final total = platformUsage.values.fold<int>(0, (a, b) => a + b);
-    if (total == 0) return Center(child: Text('No data', style: Theme.of(context).textTheme.bodyMedium));
+    if (total == 0) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
 
     final colors = <String, Color>{
       'iOS': cs.primary,
@@ -549,7 +666,7 @@ class _FeatureBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (featureUsage.isEmpty) return Center(child: Text('No data', style: Theme.of(context).textTheme.bodyMedium));
+    if (featureUsage.isEmpty) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
 
     final entries = featureUsage.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
     final maxY = entries.map((e) => e.value).fold<int>(1, (a, b) => a > b ? a : b).toDouble();
@@ -633,35 +750,40 @@ class _CountryUsageTable extends StatelessWidget {
           Text('Counts only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowHeight: 44,
-          dataRowMinHeight: 44,
-          dataRowMaxHeight: 56,
-          columns: const [
-            DataColumn(label: Text('Country')),
-            DataColumn(label: Text('Total users'), numeric: true),
-            DataColumn(label: Text('Active users'), numeric: true),
-            DataColumn(label: Text('Storage used'), numeric: true),
-            DataColumn(label: Text('AI tokens'), numeric: true),
-            DataColumn(label: Text('Paid users'), numeric: true),
-          ],
-          rows: [
-            for (final r in rows)
-              DataRow(
-                cells: [
-                  DataCell(Text(r.country)),
-                  DataCell(Text(formatCompactInt(r.totalUsers))),
-                  DataCell(Text(formatCompactInt(r.activeUsers))),
-                  DataCell(Text(formatBytes(r.storageUsedBytes))),
-                  DataCell(Text(formatCompactInt(r.aiTokensUsed))),
-                  DataCell(Text(formatCompactInt(r.paidUsers))),
+      child: rows.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowHeight: 44,
+                dataRowMinHeight: 44,
+                dataRowMaxHeight: 56,
+                columns: const [
+                  DataColumn(label: Text('Country')),
+                  DataColumn(label: Text('Total users'), numeric: true),
+                  DataColumn(label: Text('Active users'), numeric: true),
+                  DataColumn(label: Text('Storage used'), numeric: true),
+                  DataColumn(label: Text('AI tokens'), numeric: true),
+                  DataColumn(label: Text('Paid users'), numeric: true),
+                ],
+                rows: [
+                  for (final r in rows)
+                    DataRow(
+                      cells: [
+                        DataCell(Text(r.country)),
+                        DataCell(Text(formatCompactInt(r.totalUsers))),
+                        DataCell(Text(formatCompactInt(r.activeUsers))),
+                        DataCell(Text(formatBytes(r.storageUsedBytes))),
+                        DataCell(Text(formatCompactInt(r.aiTokensUsed))),
+                        DataCell(Text(formatCompactInt(r.paidUsers))),
+                      ],
+                    ),
                 ],
               ),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }
@@ -680,32 +802,37 @@ class _AlertsTable extends StatelessWidget {
     };
 
     return AdminCard(
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowHeight: 44,
-          dataRowMinHeight: 44,
-          dataRowMaxHeight: 64,
-          columns: const [
-            DataColumn(label: Text('Alert')),
-            DataColumn(label: Text('Count'), numeric: true),
-            DataColumn(label: Text('Severity')),
-            DataColumn(label: Text('Operational note')),
-          ],
-          rows: [
-            for (final r in rows)
-              DataRow(
-                cells: [
-                  DataCell(Text(r.type)),
-                  DataCell(Text(formatCompactInt(r.count))),
-                  DataCell(Text(r.severity.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: severityColor(r.severity), fontWeight: FontWeight.w800))),
-                  // PRIVACY: avoid rendering free-text notes (could include user content).
-                  DataCell(SizedBox(width: 380, child: Text(r.note.trim().isEmpty ? '—' : 'Redacted', maxLines: 1, overflow: TextOverflow.ellipsis))),
+      child: rows.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28),
+              child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+            )
+          : SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: DataTable(
+                headingRowHeight: 44,
+                dataRowMinHeight: 44,
+                dataRowMaxHeight: 64,
+                columns: const [
+                  DataColumn(label: Text('Alert')),
+                  DataColumn(label: Text('Count'), numeric: true),
+                  DataColumn(label: Text('Severity')),
+                  DataColumn(label: Text('Operational note')),
+                ],
+                rows: [
+                  for (final r in rows)
+                    DataRow(
+                      cells: [
+                        DataCell(Text(r.type)),
+                        DataCell(Text(formatCompactInt(r.count))),
+                        DataCell(Text(r.severity.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: severityColor(r.severity), fontWeight: FontWeight.w800))),
+                        // PRIVACY: avoid rendering free-text notes (could include user content).
+                        DataCell(SizedBox(width: 380, child: Text(r.note.trim().isEmpty ? '—' : 'Redacted', maxLines: 1, overflow: TextOverflow.ellipsis))),
+                      ],
+                    ),
                 ],
               ),
-          ],
-        ),
-      ),
+            ),
     );
   }
 }
@@ -717,6 +844,14 @@ class _SystemStatusGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    if (items.isEmpty) {
+      return AdminCard(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 28),
+          child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+        ),
+      );
+    }
     Color statusColor(String s) => switch (s.toLowerCase()) {
       'down' => cs.error,
       'warn' => cs.tertiary,

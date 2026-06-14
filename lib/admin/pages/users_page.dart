@@ -3,6 +3,7 @@ import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/data/supabase/supabase_client.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -17,24 +18,67 @@ class UsersPage extends StatefulWidget {
 
 class _UsersPageState extends State<UsersPage> {
   late final TextEditingController _searchController;
+  bool _isLoading = false;
+  String? _loadError;
+  List<_AdminUserUsageSummaryRow> _rows = const [];
 
   @override
   void initState() {
     super.initState();
     _searchController = TextEditingController(text: context.read<AdminStore>().userQuery);
+    _searchController.addListener(_onSearchChanged);
+    _load();
   }
 
   @override
   void dispose() {
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
   }
 
+  void _onSearchChanged() {
+    // Keep the store in sync (other pages may depend on it), but the table on
+    // this page is backed by the admin-safe RPC.
+    context.read<AdminStore>().setUserQuery(_searchController.text);
+    setState(() {});
+  }
+
+  Future<void> _load() async {
+    if (_isLoading) return;
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+
+    try {
+      final client = ControlSupabaseClient.tryGet();
+      if (client == null) throw StateError('Supabase not initialized.');
+      final res = await client.rpc('admin_get_user_usage_summary');
+      if (res is! List) throw StateError('Unexpected RPC response.');
+      final rows = res.cast<Map>().map((e) => _AdminUserUsageSummaryRow.fromJson(e.cast<String, dynamic>())).toList();
+      setState(() => _rows = rows);
+    } catch (e) {
+      setState(() => _loadError = e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final users = context.select<AdminStore, List<UserAccountSummary>>((s) => s.users);
     final filters = context.select<AdminStore, UserListFilters>((s) => s.userFilters);
     final cs = Theme.of(context).colorScheme;
+
+    final canEmail = _canShowEmail(context);
+    final q = _searchController.text.trim().toLowerCase();
+    final filtered = q.isEmpty
+        ? _rows
+        : _rows.where((r) {
+            if (r.userId.toLowerCase().contains(q)) return true;
+            if (canEmail && (r.email ?? '').toLowerCase().contains(q)) return true;
+            return false;
+          }).toList();
 
     return AdminPageScaffold(
       title: 'Users',
@@ -42,11 +86,19 @@ class _UsersPageState extends State<UsersPage> {
       actions: [
         _UsersFilterButton(filters: filters),
         const SizedBox(width: AppSpacing.sm),
+        IconButton(
+          onPressed: _load,
+          icon: Icon(Icons.refresh, color: cs.onSurface),
+          tooltip: 'Refresh',
+          splashColor: Colors.transparent,
+          highlightColor: cs.primary.withValues(alpha: 0.06),
+          hoverColor: cs.primary.withValues(alpha: 0.06),
+        ),
+        const SizedBox(width: AppSpacing.sm),
         SizedBox(
           width: 360,
           child: TextField(
             controller: _searchController,
-            onChanged: (v) => context.read<AdminStore>().setUserQuery(v),
             decoration: InputDecoration(
               hintText: 'Search by user ID${_emailSearchHint(context)}',
               prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
@@ -66,60 +118,68 @@ class _UsersPageState extends State<UsersPage> {
           children: [
             Text('User summaries', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
             const Spacer(),
-            Text('${users.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text('${filtered.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
           ],
         ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
-            dataTextStyle: Theme.of(context).textTheme.labelLarge,
-            columns: [
-              const DataColumn(label: Text('User ID')),
-              if (_canShowEmail(context)) const DataColumn(label: Text('Email')),
-              const DataColumn(label: Text('Country')),
-              const DataColumn(label: Text('Plan')),
-              const DataColumn(label: Text('Account status')),
-              const DataColumn(label: Text('Storage used')),
-              const DataColumn(label: Text('Storage limit')),
-              const DataColumn(label: Text('AI tokens (mo)')),
-              const DataColumn(label: Text('AI limit')),
-              const DataColumn(label: Text('Profiles')),
-              const DataColumn(label: Text('Documents')),
-              const DataColumn(label: Text('Records')),
-              const DataColumn(label: Text('Last active')),
-              const DataColumn(label: Text('Last sync')),
-              const DataColumn(label: Text('Platform')),
-              const DataColumn(label: Text('App ver')),
-              const DataColumn(label: Text('Billing status')),
-            ],
-            rows: [
-              for (final u in users)
-                DataRow(
-                  onSelectChanged: (_) => context.go('/users/${u.userId}'),
-                  cells: [
-                    DataCell(SelectableText(u.userId)),
-                    if (_canShowEmail(context)) DataCell(Text(u.email ?? '—')),
-                    DataCell(Text(u.country)),
-                    DataCell(Text(u.plan)),
-                    DataCell(_StatusPill(value: u.accountStatus)),
-                    DataCell(Text(formatBytes(u.storageUsedBytes))),
-                    DataCell(Text(formatBytes(u.storageLimitBytes))),
-                    DataCell(_LimitCell(used: u.aiTokensThisMonth, limit: u.aiTokenLimitThisMonth, formatter: formatCompactInt)),
-                    DataCell(Text(formatCompactInt(u.aiTokenLimitThisMonth))),
-                    DataCell(Text(u.profileCount.toString())),
-                    DataCell(Text(u.documentCount.toString())),
-                    DataCell(Text(u.recordCount.toString())),
-                    DataCell(Text(formatDateTimeShort(u.lastActiveAt))),
-                    DataCell(Text(formatDateTimeShort(u.lastSyncAt))),
-                    DataCell(Text(u.platform)),
-                    DataCell(Text(u.appVersion)),
-                    DataCell(Text(u.billingStatus)),
-                  ],
-                ),
-            ],
-          ),
-        ),
+        child: _isLoading
+            ? const Center(child: Padding(padding: EdgeInsets.all(24), child: SizedBox(width: 32, height: 32, child: CircularProgressIndicator())))
+            : _loadError != null
+                ? Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Text('Failed to load user usage summary.\n${_loadError!}', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  )
+                : filtered.isEmpty
+                    ? Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text('No usage data has been collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      )
+                    : SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: DataTable(
+                          headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
+                          dataTextStyle: Theme.of(context).textTheme.labelLarge,
+                          columns: [
+                            const DataColumn(label: Text('User ID')),
+                            if (canEmail) const DataColumn(label: Text('Email')),
+                            const DataColumn(label: Text('Created')),
+                            const DataColumn(label: Text('Last sign-in')),
+                            const DataColumn(label: Text('Profiles'), numeric: true),
+                            const DataColumn(label: Text('Family'), numeric: true),
+                            const DataColumn(label: Text('Records'), numeric: true),
+                            const DataColumn(label: Text('Appts'), numeric: true),
+                            const DataColumn(label: Text('Meds'), numeric: true),
+                            const DataColumn(label: Text('Vax'), numeric: true),
+                            const DataColumn(label: Text('BP'), numeric: true),
+                            const DataColumn(label: Text('Docs'), numeric: true),
+                            const DataColumn(label: Text('Usage events'), numeric: true),
+                            const DataColumn(label: Text('Entitlements'), numeric: true),
+                            const DataColumn(label: Text('Sub events'), numeric: true),
+                          ],
+                          rows: [
+                            for (final r in filtered)
+                              DataRow(
+                                onSelectChanged: (_) => context.go('/users/${r.userId}'),
+                                cells: [
+                                  DataCell(SelectableText(r.userId)),
+                                  if (canEmail) DataCell(Text(r.email ?? '—')),
+                                  DataCell(Text(formatDateTimeShort(r.createdAt))),
+                                  DataCell(Text(formatDateTimeShort(r.lastSignInAt))),
+                                  DataCell(Text(formatCompactInt(r.profileCount))),
+                                  DataCell(Text(formatCompactInt(r.familyMemberCount))),
+                                  DataCell(Text(formatCompactInt(r.medicalRecordCount))),
+                                  DataCell(Text(formatCompactInt(r.appointmentCount))),
+                                  DataCell(Text(formatCompactInt(r.medicationCount))),
+                                  DataCell(Text(formatCompactInt(r.vaccinationCount))),
+                                  DataCell(Text(formatCompactInt(r.bloodPressureEntryCount))),
+                                  DataCell(Text(formatCompactInt(r.medicalDocumentCount))),
+                                  DataCell(Text(formatCompactInt(r.usageEventCount))),
+                                  DataCell(Text(formatCompactInt(r.entitlementCount))),
+                                  DataCell(Text(formatCompactInt(r.subscriptionEventCount))),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
       ),
     );
   }
@@ -131,6 +191,62 @@ class _UsersPageState extends State<UsersPage> {
   }
 
   static String _emailSearchHint(BuildContext context) => _canShowEmail(context) ? ' or email' : '';
+}
+
+class _AdminUserUsageSummaryRow {
+  const _AdminUserUsageSummaryRow({
+    required this.userId,
+    required this.email,
+    required this.createdAt,
+    required this.lastSignInAt,
+    required this.profileCount,
+    required this.familyMemberCount,
+    required this.medicalRecordCount,
+    required this.appointmentCount,
+    required this.medicationCount,
+    required this.vaccinationCount,
+    required this.bloodPressureEntryCount,
+    required this.medicalDocumentCount,
+    required this.usageEventCount,
+    required this.entitlementCount,
+    required this.subscriptionEventCount,
+  });
+
+  final String userId;
+  final String? email;
+  final DateTime createdAt;
+  final DateTime? lastSignInAt;
+  final int profileCount;
+  final int familyMemberCount;
+  final int medicalRecordCount;
+  final int appointmentCount;
+  final int medicationCount;
+  final int vaccinationCount;
+  final int bloodPressureEntryCount;
+  final int medicalDocumentCount;
+  final int usageEventCount;
+  final int entitlementCount;
+  final int subscriptionEventCount;
+
+  static int _i(dynamic v) => (v is num) ? v.toInt() : int.tryParse(v?.toString() ?? '') ?? 0;
+
+  static _AdminUserUsageSummaryRow fromJson(Map<String, dynamic> json) => _AdminUserUsageSummaryRow(
+        userId: (json['user_id'] ?? '').toString(),
+        email: json['email']?.toString(),
+        createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+        lastSignInAt: DateTime.tryParse((json['last_sign_in_at'] ?? '').toString()),
+        profileCount: _i(json['profile_count']),
+        familyMemberCount: _i(json['family_member_count']),
+        medicalRecordCount: _i(json['medical_record_count']),
+        appointmentCount: _i(json['appointment_count']),
+        medicationCount: _i(json['medication_count']),
+        vaccinationCount: _i(json['vaccination_count']),
+        bloodPressureEntryCount: _i(json['blood_pressure_entry_count']),
+        medicalDocumentCount: _i(json['medical_document_count']),
+        usageEventCount: _i(json['usage_event_count']),
+        entitlementCount: _i(json['entitlement_count']),
+        subscriptionEventCount: _i(json['subscription_event_count']),
+      );
 }
 
 class _UsersFilterButton extends StatelessWidget {
