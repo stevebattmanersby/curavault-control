@@ -9,11 +9,12 @@ import 'package:flutter/foundation.dart';
 /// Minimal HTTP probe for Flutter Web.
 ///
 /// Uses `dart:html` directly to avoid adding dependencies.
-Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD'}) async {
+Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD', Map<String, String>? headers}) async {
   try {
     final res = await html.HttpRequest.request(
       url.toString(),
       method: method,
+      requestHeaders: headers,
       // Don't send cookies. Supabase APIs are bearer-token based.
       withCredentials: false,
     );

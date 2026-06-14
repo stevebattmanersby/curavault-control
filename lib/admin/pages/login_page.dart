@@ -263,7 +263,8 @@ class _LoginPageState extends State<LoginPage> {
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton.icon(
-                                onPressed: () => context.push(AppRoutes.supabaseConnectivityTest),
+                                // Requirement: navigate to exactly /supabase-connectivity-test
+                                onPressed: () => context.go(AppRoutes.supabaseConnectivityTest),
                                 icon: Icon(Icons.wifi, color: cs.onSurfaceVariant),
                                 label: Text(
                                   'Supabase connectivity test (dev)',

@@ -24,6 +24,7 @@ import 'package:curavault_admin/admin/pages/set_password_page.dart';
 import 'package:curavault_admin/admin/pages/supabase_connectivity_test_page.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -39,35 +40,91 @@ class AppRouter {
         // /login.
         final location = state.uri.toString();
         final matched = state.matchedLocation;
+        // Use the parsed path for auth-free checks instead of matchedLocation.
+        // In some web/share scenarios, matchedLocation can briefly be `/` or include
+        // trailing slashes, which can incorrectly trigger auth redirects.
+        final path = state.uri.path;
 
-        final isAuthFree =
-            matched == AppRoutes.login ||
-            matched == AppRoutes.loading ||
-            matched == AppRoutes.resetPassword ||
-            matched == AppRoutes.setPassword ||
-            matched == AppRoutes.supabaseConnectivityTest;
-        if (auth.isBootstrapping) return isAuthFree ? null : AppRoutes.loading;
+        void trace(String message) {
+          if (!kDebugMode) return;
+          debugPrint(
+            '[router.redirect] matched=$matched location=$location '
+            'bootstrapping=${auth.isBootstrapping} signedIn=${auth.isSignedIn} authorized=${auth.isAuthorized} role=${auth.role} :: $message',
+          );
+        }
+
+        bool isAuthFreePath(String p) {
+          final normalized = p.endsWith('/') && p.length > 1 ? p.substring(0, p.length - 1) : p;
+          return normalized == AppRoutes.login ||
+              normalized == AppRoutes.resetPassword ||
+              normalized == AppRoutes.setPassword ||
+              normalized == AppRoutes.supabaseConnectivityTest;
+        }
+
+        final isAuthFree = isAuthFreePath(path) || isAuthFreePath(matched);
+
+        // While bootstrapping, keep the user on the loading screen unless they're
+        // on an explicitly auth-free route.
+        if (auth.isBootstrapping) {
+          final target = isAuthFree ? null : AppRoutes.loading;
+          trace('bootstrapping => ${target ?? 'allow'}');
+          return target;
+        }
+
+        // Once bootstrapping completes, never allow the app to remain on /loading.
+        // Decide the next page deterministically based on auth + allow-list.
+        if (matched == AppRoutes.loading) {
+          final target = !auth.isSignedIn
+              ? AppRoutes.login
+              : (!auth.isAuthorized ? AppRoutes.unauthorized : AppRoutes.adminTest);
+          trace('leaving /loading => $target');
+          return target;
+        }
 
         if (!auth.isSignedIn) {
-          return matched == AppRoutes.login ? null : AppRoutes.login;
+          // IMPORTANT: Auth-free routes must remain reachable when signed out.
+          // This includes password setup/recovery and the dev connectivity test page.
+          final target = isAuthFree ? null : AppRoutes.login;
+          trace('signed out => ${target ?? 'allow'}');
+          return target;
         }
 
         if (!auth.isAuthorized) {
           // Signed in but not allow-listed / inactive / unknown role.
-          return location == AppRoutes.unauthorized ? null : AppRoutes.unauthorized;
+          // Still allow auth-free routes (e.g. dev connectivity test, password flows)
+          // to be reachable even if the current session isn't allow-listed.
+          final target = isAuthFree
+              ? null
+              : (matched == AppRoutes.unauthorized ? null : AppRoutes.unauthorized);
+          trace('signed in but not authorized => ${target ?? 'allow'}');
+          return target;
         }
 
         // Authorized admins should never land on login/loading/unauthorized.
         if (matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.unauthorized) {
           // After login, show the admin test page (simple verification screen).
+          trace('authorized but on auth gate page => ${AppRoutes.adminTest}');
           return AppRoutes.adminTest;
+        }
+
+        // Dev-only route: keep reachable regardless of RBAC.
+        if (matched == AppRoutes.supabaseConnectivityTest) {
+          trace('connectivity test => allow');
+          return null;
         }
 
         // RBAC: route-level enforcement.
         final role = auth.role;
-        if (role == null) return AppRoutes.unauthorized;
-        if (!AdminRbac.canAccessRoute(role, location)) return AppRoutes.unauthorized;
+        if (role == null) {
+          trace('authorized=true but role=null => ${AppRoutes.unauthorized}');
+          return AppRoutes.unauthorized;
+        }
+        if (!AdminRbac.canAccessRoute(role, location)) {
+          trace('RBAC deny => ${AppRoutes.unauthorized}');
+          return AppRoutes.unauthorized;
+        }
 
+        trace('allow');
         return null;
       },
       routes: [

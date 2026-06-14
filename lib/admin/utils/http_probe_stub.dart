@@ -12,10 +12,11 @@ class HttpProbeResult {
 }
 
 /// Minimal HTTP probe for non-web platforms.
-Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD'}) async {
+Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD', Map<String, String>? headers}) async {
   final client = HttpClient();
   try {
     final req = await client.openUrl(method, url);
+    headers?.forEach((k, v) => req.headers.set(k, v));
     final res = await req.close();
     return HttpProbeResult(ok: true, statusCode: res.statusCode);
   } catch (e) {
