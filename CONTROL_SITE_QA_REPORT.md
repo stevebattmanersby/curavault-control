@@ -72,7 +72,9 @@ Legend: ✅ Pass / ⚠️ Risk / ❌ Fail
 ### Error handling / logging
 23. Error states do not leak sensitive data: ✅ (UI uses generic snackbars; exceptions are printed)
 24. Logs do not contain sensitive user content: ⚠️ (debug logs print exceptions; if Supabase errors contain row payloads, they could appear in logs)
-25. Mock data is clearly separated from live data: ✅ (`MockAdminRepository` and `MockFallbackData` are isolated; `SupabaseAdminRepository` falls back when views/RPCs are missing)
+25. Mock data is clearly separated from live data: ✅
+   - Debug/dev may use mock repositories/fallbacks, clearly labeled.
+   - Release builds fail closed (no mock data is returned).
 
 ---
 
@@ -137,6 +139,56 @@ Rationale: any free-text field (notes, messages) can accidentally contain user-p
 - `performComplianceAction`
 - `getSystemHealthSnapshot`
 - plans/flags/overrides + usage analytics
+
+---
+
+## Production hardening checklist (2026-06-14)
+
+### Build-time configuration
+- [ ] `SUPABASE_URL` set (no default fallback in source)
+- [ ] `SUPABASE_ANON_KEY` set (no default fallback in source)
+- [ ] `CONTROL_SITE_BASE_URL` set (used for `redirectTo` / Auth Site URL)
+
+### Dev-only routes / pages
+- [ ] `/supabase-connectivity-test` disabled in release builds
+- [ ] `/admin-test` disabled in release builds
+- [ ] `/admin-data-test` disabled in release builds
+
+### Diagnostics UI
+- [ ] Login diagnostics panel only renders in `kDebugMode`
+
+### Edge Functions
+- [ ] `bootstrap_admin_auth_user` NOT deployed for public production (`enabled=false`)
+- [ ] If temporarily enabled: owner-only invocation + `BOOTSTRAP_SECRET` + server audit logs + remove before public launch
+
+### Mock / fallback behavior
+- [ ] Release builds never return mock fallback data (must show "not instrumented" / error)
+
+### Admin access enforcement
+- [ ] Signed-in session required
+- [ ] Must have `public.admin_users` row
+- [ ] `is_active = true`
+- [ ] Role must be valid and route must pass RBAC table
+
+### Secrets
+- [ ] No `SUPABASE_SERVICE_ROLE_KEY` bundled in frontend build (app fails closed if present)
+
+---
+
+## Flagged-token repo search findings (2026-06-14)
+
+Searched for:
+- `rzqgxtizragjhenmjykg`: none found
+- `xh23x34884agk2qv1p4a.share.dreamflow.app`: none found (removed)
+- `sb_publishable_`: none used as config (only redacted in dev connectivity page)
+- `SUPABASE_SERVICE_ROLE_KEY`: referenced only as a **detection guard** (no values stored)
+- `connectivity-test`: exists only for dev route/page (disabled in release)
+- `bootstrap_admin_auth_user`: exists in edge-function source; config disabled for production
+
+### Notes on remaining matches
+- `mock`: expected to remain in **debug-only** repositories (`MockAdminRepository`, `MockFallbackData`) and in UI copy that explicitly labels mock states.
+- `debug`: expected to remain for `kDebugMode` logging and dev panels; these do not render/execute in release builds.
+- `connectivity-test`: expected to remain for the dev-only route implementation; the route is not registered in release builds.
 
 **Risk:** UI is privacy-safe, but some production workflows are not yet executing server-side.
 

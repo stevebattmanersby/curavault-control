@@ -180,7 +180,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       if (!mounted) return;
 
       if (allowListed) {
-        context.go(AppRoutes.adminTest);
+        context.go(AppRoutes.dashboard);
       } else {
         context.go(AppRoutes.unauthorized);
       }

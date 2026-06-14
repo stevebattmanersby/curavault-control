@@ -7,19 +7,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Uses environment variables only (no secrets in source control).
 /// - Fails closed if a service role key is ever bundled into the client build.
 class SupabaseConfig {
+  /// Base URL where the Control Site is hosted (e.g. https://admin.curavault.com).
+  ///
+  /// Provided at build time via `--dart-define=CONTROL_SITE_BASE_URL=...`.
+  static const String controlSiteBaseUrl = String.fromEnvironment('CONTROL_SITE_BASE_URL', defaultValue: '');
+
   /// The Auth Site URL configured in Supabase.
   ///
   /// This is used for email links (password reset / magic link redirects).
-  static const String authSiteUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app';
+  static String get authSiteUrl => _stripTrailingSlash(controlSiteBaseUrl);
 
   /// Redirect URL used for password recovery.
   ///
-  /// IMPORTANT (Flutter Web + hash routing): We use `/#/reset-password` to land
-  /// inside the SPA and then parse the recovery session details from the URL.
-  ///
-  /// NOTE: For this control site we unify invite + recovery into a single
-  /// password setup screen.
-  static const String setPasswordRedirectUrl = 'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/set-password';
+  /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
+  /// that includes the SPA hash fragment (/#/...).
+  static String get setPasswordRedirectUrl => '${_stripTrailingSlash(controlSiteBaseUrl)}/#/set-password';
 
   /// Supabase project URL.
   ///
@@ -30,8 +32,7 @@ class SupabaseConfig {
   /// runtime via server environment variables.
   static const String supabaseUrl = String.fromEnvironment(
     'SUPABASE_URL',
-    // Preview fallback (can be overridden by --dart-define in production)
-    defaultValue: 'https://rzqgxtizragjhenmjykq.supabase.co',
+    defaultValue: '',
   );
 
   /// Supabase anon key.
@@ -40,8 +41,7 @@ class SupabaseConfig {
   /// - `--dart-define==...`
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    // Preview fallback (public publishable anon key). Override with --dart-define in production.
-    defaultValue: 'sb_publishable_YwSkLV_EOM2DlvosS8GChQ_OMnzR-GD',
+    defaultValue: '',
   );
 
   /// This should NEVER be set in a frontend build.
@@ -88,7 +88,7 @@ class SupabaseConfig {
     debugPrintEnvStatus(source: 'SupabaseConfig.initialize(before)');
 
     if (supabaseUrl.isEmpty || anonKey.isEmpty) {
-      debugPrint('Supabase not configured (missing  / ).');
+      debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
       return;
     }
 
@@ -114,6 +114,11 @@ class SupabaseConfig {
 
   static SupabaseClient get client => Supabase.instance.client;
   static GoTrueClient get auth => client.auth;
+
+  static String _stripTrailingSlash(String input) {
+    if (input.isEmpty) return '';
+    return input.endsWith('/') ? input.substring(0, input.length - 1) : input;
+  }
 }
 
 /// Generic database service for CRUD operations

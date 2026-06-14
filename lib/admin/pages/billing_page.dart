@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
@@ -37,13 +38,19 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
     final store = context.watch<AdminStore>();
     final billing = store.billing;
     final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
+    final status = store.dataSource(AdminDataSourceKey.billing);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Billing', style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text('Billing', style: Theme.of(context).textTheme.headlineMedium)),
+              AdminDataSourceBadge(status: status),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(
             'Track plans, trials, paid users, payment failures, and revenue. No health data is shown.',
@@ -52,6 +59,9 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
           const SizedBox(height: 14),
           _BillingToolbar(role: role),
           const SizedBox(height: 14),
+          if (status.kind == AdminDataSourceKind.notInstrumented)
+            const Expanded(child: AdminNotInstrumentedPanel())
+          else
           TabBar(
             controller: _tabController,
             isScrollable: true,
@@ -66,27 +76,29 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
               Tab(text: 'Revenue by country'),
             ],
           ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
-              ),
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _BillingOverviewTab(overview: billing?.overview, isLoading: store.isBillingLoading, generatedAt: billing?.generatedAt),
-                  _SubscriptionsTab(rows: billing?.subscriptions ?? const [], isLoading: store.isBillingLoading, role: role),
-                  _TrialsTab(rows: billing?.trials ?? const [], isLoading: store.isBillingLoading, role: role),
-                  _FailedPaymentsTab(rows: billing?.failedPayments ?? const [], isLoading: store.isBillingLoading, role: role),
-                  _RevenueByPlanTab(rows: billing?.revenueByPlan ?? const [], isLoading: store.isBillingLoading),
-                  _RevenueByCountryTab(rows: billing?.revenueByCountry ?? const [], isLoading: store.isBillingLoading),
-                ],
+          if (status.kind != AdminDataSourceKind.notInstrumented) ...[
+            const SizedBox(height: 14),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _BillingOverviewTab(overview: billing?.overview, isLoading: store.isBillingLoading, generatedAt: billing?.generatedAt),
+                    _SubscriptionsTab(rows: billing?.subscriptions ?? const [], isLoading: store.isBillingLoading, role: role),
+                    _TrialsTab(rows: billing?.trials ?? const [], isLoading: store.isBillingLoading, role: role),
+                    _FailedPaymentsTab(rows: billing?.failedPayments ?? const [], isLoading: store.isBillingLoading, role: role),
+                    _RevenueByPlanTab(rows: billing?.revenueByPlan ?? const [], isLoading: store.isBillingLoading),
+                    _RevenueByCountryTab(rows: billing?.revenueByCountry ?? const [], isLoading: store.isBillingLoading),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

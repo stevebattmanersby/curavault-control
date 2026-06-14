@@ -2207,6 +2207,44 @@ class SupportSessionSummary {
 }
 
 @immutable
+class SupportSummarySnapshot {
+  const SupportSummarySnapshot({
+    required this.totalSessions,
+    required this.openSessions,
+    required this.activeSessions,
+    required this.closedSessions,
+    required this.expiredSessions,
+    this.latestSessionAt,
+    required this.generatedAt,
+  });
+
+  final int totalSessions;
+  final int openSessions;
+  final int activeSessions;
+  final int closedSessions;
+  final int expiredSessions;
+  final DateTime? latestSessionAt;
+  final DateTime generatedAt;
+}
+
+@immutable
+class AuditSummarySnapshot {
+  const AuditSummarySnapshot({
+    required this.totalAuditEvents,
+    required this.auditEvents24h,
+    required this.failedAdminActions24h,
+    this.latestAuditEventAt,
+    required this.generatedAt,
+  });
+
+  final int totalAuditEvents;
+  final int auditEvents24h;
+  final int failedAdminActions24h;
+  final DateTime? latestAuditEventAt;
+  final DateTime generatedAt;
+}
+
+@immutable
 class TechnicalEvent {
   const TechnicalEvent({
     required this.timestamp,

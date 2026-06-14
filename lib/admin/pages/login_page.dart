@@ -69,10 +69,8 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await auth.signInWithPassword(email: _emailCtrl.text, password: _passwordCtrl.text);
 
-      // Requirement: on successful auth + allow-list check, route to /admin-test.
-      // (Router redirect should also do this, but we navigate explicitly so the
-      // result is immediate + deterministic while debugging.)
-      if (mounted) context.go(AppRoutes.adminTest);
+      // Post-login destination is handled by the router.
+      if (mounted) context.go(AppRoutes.dashboard);
     } catch (e) {
       debugPrint('LoginPage sign-in failed: $e');
       if (!mounted) return;

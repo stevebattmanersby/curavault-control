@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
 import 'package:curavault_admin/admin/utils/client_context.dart';
+import 'package:curavault_admin/services/usage_event_service.dart';
 import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -173,8 +174,7 @@ class AdminAuthStore extends ChangeNotifier {
   ///
   /// Keep this as a single hard-coded constant to avoid accidental URL joining
   /// that can produce malformed URLs like `...///set-password`.
-  static const String passwordResetRedirectTo =
-      'https://xh23x34884agk2qv1p4a.share.dreamflow.app/#/set-password';
+  static String get passwordResetRedirectTo => SupabaseConfig.setPasswordRedirectUrl;
 
   static bool _initialized = false;
 
@@ -372,6 +372,13 @@ class AdminAuthStore extends ChangeNotifier {
       final res = await _client!.auth.signInWithPassword(email: email.trim(), password: password);
       _session = res.session;
 
+      // Best-effort usage instrumentation (no PHI).
+      UsageEventService.instance.trackFeatureEvent(
+        eventName: 'login_succeeded',
+        featureArea: 'auth',
+        result: _session != null ? 'success' : 'failure',
+      );
+
       final authUser = _client!.auth.currentUser;
       _recordLoginDiag(
         loginDiagnostics.copyWith(
@@ -447,6 +454,13 @@ class AdminAuthStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('AdminAuthStore.signInWithPassword failed: $e');
 
+      UsageEventService.instance.trackFeatureEvent(
+        eventName: 'login_failed',
+        featureArea: 'auth',
+        result: 'failure',
+        errorCode: e.runtimeType.toString(),
+      );
+
       _recordLoginDiag(
         loginDiagnostics.copyWith(
           exceptionType: e.runtimeType.toString(),
@@ -499,7 +513,7 @@ class AdminAuthStore extends ChangeNotifier {
     }
     try {
       // CRITICAL: Do not construct/normalize this with Uri helpers.
-      const redirectTo = AdminAuthStore.passwordResetRedirectTo;
+      final redirectTo = AdminAuthStore.passwordResetRedirectTo;
       if (kDebugMode) {
         debugPrint('AdminAuthStore.sendPasswordResetEmail: using redirectTo=$redirectTo');
       }
@@ -582,9 +596,21 @@ class AdminAuthStore extends ChangeNotifier {
 
   Future<void> signOut() async {
     try {
+      UsageEventService.instance.trackFeatureEvent(
+        eventName: 'logout',
+        featureArea: 'auth',
+        result: 'success',
+      );
       await _client?.auth.signOut();
     } catch (e) {
       debugPrint('AdminAuthStore.signOut failed: $e');
+
+      UsageEventService.instance.trackFeatureEvent(
+        eventName: 'logout',
+        featureArea: 'auth',
+        result: 'failure',
+        errorCode: e.runtimeType.toString(),
+      );
     } finally {
       _session = null;
       _adminEmail = null;

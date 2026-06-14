@@ -1,4 +1,5 @@
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
@@ -20,6 +21,8 @@ class UsageAnalyticsPage extends StatelessWidget {
       title: 'Usage Analytics',
       subtitle: 'Product usage signals (privacy-safe; never content).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.usageAnalytics)),
+        const SizedBox(width: AppSpacing.sm),
         _UsageAnalyticsFiltersBar(query: store.usageAnalyticsQuery, onChanged: store.setUsageAnalyticsQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshUsageAnalytics(),
@@ -32,7 +35,9 @@ class UsageAnalyticsPage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : snap == null
+          : store.dataSource(AdminDataSourceKey.usageAnalytics).kind == AdminDataSourceKind.notInstrumented
+              ? const AdminNotInstrumentedPanel()
+              : (snap == null || snap.totalEvents == 0)
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,

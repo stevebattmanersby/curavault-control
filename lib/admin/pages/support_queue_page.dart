@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
 import 'package:curavault_admin/theme.dart';
@@ -41,6 +42,8 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
       title: 'Support',
       subtitle: 'Privacy-safe troubleshooting. No user health content is accessible here.',
       actions: [
+        AdminDataSourceBadge(status: context.watch<AdminStore>().dataSource(AdminDataSourceKey.support)),
+        const SizedBox(width: AppSpacing.sm),
         _SupportFilterButton(filters: filters),
         const SizedBox(width: AppSpacing.sm),
         TextButton.icon(
@@ -70,17 +73,44 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
           ),
         ),
       ],
-      child: AdminCard(
-        header: Row(
-          children: [
-            Text('Support queue', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-            const Spacer(),
-            Text('${sessions.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
-          ],
-        ),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
+      child: Builder(
+        builder: (context) {
+          final status = context.watch<AdminStore>().dataSource(AdminDataSourceKey.support);
+          if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
+          final summary = context.watch<AdminStore>().supportSummary;
+
+          return Column(
+            children: [
+              if (summary != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                  child: AdminCard(
+                    header: Text('Support summary', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    child: Wrap(
+                      spacing: AppSpacing.lg,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        _Kpi(label: 'Total', value: formatCompactInt(summary.totalSessions)),
+                        _Kpi(label: 'Open', value: formatCompactInt(summary.openSessions)),
+                        _Kpi(label: 'Active', value: formatCompactInt(summary.activeSessions)),
+                        _Kpi(label: 'Expired', value: formatCompactInt(summary.expiredSessions)),
+                        _Kpi(label: 'Latest', value: formatDateTimeShort(summary.latestSessionAt)),
+                      ],
+                    ),
+                  ),
+                ),
+              Expanded(
+                child: AdminCard(
+                  header: Row(
+                    children: [
+                      Text('Support queue', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const Spacer(),
+                      Text('${sessions.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
             headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
             dataTextStyle: Theme.of(context).textTheme.labelLarge,
             columns: [
@@ -113,8 +143,13 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
                   ],
                 ),
             ],
-          ),
-        ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -126,6 +161,34 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
   }
 
   static String _emailSearchHint(BuildContext context) => _canShowEmail(context) ? ', email' : '';
+}
+
+class _Kpi extends StatelessWidget {
+  const _Kpi({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
 }
 
 class _SupportFilterButton extends StatelessWidget {

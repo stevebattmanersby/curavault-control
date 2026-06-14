@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
@@ -37,13 +38,19 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
     final store = context.watch<AdminStore>();
     final snap = store.compliance;
     final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
+    final status = store.dataSource(AdminDataSourceKey.compliance);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Compliance', style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text('Compliance', style: Theme.of(context).textTheme.headlineMedium)),
+              AdminDataSourceBadge(status: status),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(
             'Track privacy, deletion, export, consent, and admin-access workflows. No health content is shown.',
@@ -52,43 +59,47 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
           const SizedBox(height: 14),
           _ComplianceToolbar(role: role),
           const SizedBox(height: 14),
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
-            tabAlignment: TabAlignment.start,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Data exports'),
-              Tab(text: 'Deletions'),
-              Tab(text: 'Consent records'),
-              Tab(text: 'Support access'),
-              Tab(text: 'Privacy/Terms acceptance'),
-              Tab(text: 'Retention'),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: cs.surface,
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
-              ),
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _ComplianceOverviewTab(overview: snap?.overview, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
-                  _ExportRequestsTab(rows: snap?.exportRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
-                  _DeletionRequestsTab(rows: snap?.deletionRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
-                  _ConsentRecordsTab(rows: snap?.consentRecords ?? const [], isLoading: store.isComplianceLoading),
-                  _SupportAccessRecordsTab(rows: snap?.supportAccessRecords ?? const [], isLoading: store.isComplianceLoading, role: role),
-                  _PolicyAcceptanceTab(rows: snap?.privacyTermsAcceptances ?? const [], isLoading: store.isComplianceLoading),
-                  _RetentionTab(metrics: snap?.retention, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
-                ],
+          if (status.kind == AdminDataSourceKind.notInstrumented)
+            const Expanded(child: AdminNotInstrumentedPanel())
+          else ...[
+            TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
+              tabAlignment: TabAlignment.start,
+              tabs: const [
+                Tab(text: 'Overview'),
+                Tab(text: 'Data exports'),
+                Tab(text: 'Deletions'),
+                Tab(text: 'Consent records'),
+                Tab(text: 'Support access'),
+                Tab(text: 'Privacy/Terms acceptance'),
+                Tab(text: 'Retention'),
+              ],
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _ComplianceOverviewTab(overview: snap?.overview, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
+                    _ExportRequestsTab(rows: snap?.exportRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
+                    _DeletionRequestsTab(rows: snap?.deletionRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
+                    _ConsentRecordsTab(rows: snap?.consentRecords ?? const [], isLoading: store.isComplianceLoading),
+                    _SupportAccessRecordsTab(rows: snap?.supportAccessRecords ?? const [], isLoading: store.isComplianceLoading, role: role),
+                    _PolicyAcceptanceTab(rows: snap?.privacyTermsAcceptances ?? const [], isLoading: store.isComplianceLoading),
+                    _RetentionTab(metrics: snap?.retention, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
+                  ],
+                ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

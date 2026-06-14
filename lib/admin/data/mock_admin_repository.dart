@@ -1472,6 +1472,25 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
+  Future<SupportSummarySnapshot> getSupportSummary() async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    final now = _now;
+
+    int countWhere(bool Function(SupportSessionSummary s) pred) => _supportSessions.where(pred).length;
+    final latest = _supportSessions.isEmpty ? null : _supportSessions.map((s) => s.updatedAt).reduce((a, b) => a.isAfter(b) ? a : b);
+
+    return SupportSummarySnapshot(
+      totalSessions: _supportSessions.length,
+      openSessions: countWhere((s) => s.status == SupportSessionStatus.pending),
+      activeSessions: countWhere((s) => s.status == SupportSessionStatus.active),
+      closedSessions: countWhere((s) => s.status == SupportSessionStatus.closed),
+      expiredSessions: countWhere((s) => s.status == SupportSessionStatus.expired),
+      latestSessionAt: latest,
+      generatedAt: now,
+    );
+  }
+
+  @override
   Future<SupportSessionDetail> getSupportSessionDetail({required String supportSessionId}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
     final s = _supportSessions.firstWhere((x) => x.supportSessionId == supportSessionId, orElse: () => _supportSessions.first);
@@ -1699,6 +1718,30 @@ class MockAdminRepository implements AdminRepository {
       logs = logs.where((l) => !l.createdAt.isBefore(start) && !l.createdAt.isAfter(end));
     }
     return logs.take(limit).toList(growable: false);
+  }
+
+  @override
+  Future<AuditSummarySnapshot> getAuditSummary() async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    final now = _now;
+    final total = _auditLogs.length;
+    final audit24h = _auditLogs.where((e) => e.createdAt.isAfter(now.subtract(const Duration(hours: 24)))).length;
+    final failed24h = _auditLogs
+        .where((e) => e.createdAt.isAfter(now.subtract(const Duration(hours: 24))) && e.result.toLowerCase() != 'success')
+        .length;
+
+    DateTime? latest;
+    for (final e in _auditLogs) {
+      if (latest == null || e.createdAt.isAfter(latest)) latest = e.createdAt;
+    }
+
+    return AuditSummarySnapshot(
+      totalAuditEvents: total,
+      auditEvents24h: audit24h,
+      failedAdminActions24h: failed24h,
+      latestAuditEventAt: latest,
+      generatedAt: now,
+    );
   }
 
   @override

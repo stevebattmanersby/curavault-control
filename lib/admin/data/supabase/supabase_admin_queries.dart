@@ -11,6 +11,20 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Prefer summary tables/views or RPCs that return aggregate-only data.
 /// - RBAC is enforced client-side (best-effort) AND must be enforced by RLS.
 class SupabaseAdminQueries {
+  AiFeatureArea? _parseAiFeatureArea(String raw) {
+    final v = raw.trim().toLowerCase();
+    return switch (v) {
+      'ai_assistant' || 'assistant' || 'aiassistant' => AiFeatureArea.aiAssistant,
+      'document_summary' || 'documentsummary' || 'doc_summary' => AiFeatureArea.documentSummary,
+      'timeline_summary' || 'timelinesummary' => AiFeatureArea.timelineSummary,
+      'search_helper' || 'searchhelper' || 'search' => AiFeatureArea.searchHelper,
+      'appointment_helper' || 'appointmenthelper' || 'appointments' => AiFeatureArea.appointmentHelper,
+      'health_organisation_helper' || 'healthorganizationhelper' || 'health_organization_helper' || 'organisation_helper' || 'organization_helper' => AiFeatureArea.healthOrganisationHelper,
+      'export_helper' || 'exporthelper' || 'export' => AiFeatureArea.exportHelper,
+      _ => null,
+    };
+  }
+
   SupabaseClient get _client {
     final c = ControlSupabaseClient.tryGet();
     if (c == null) throw StateError('Supabase not initialized/configured.');
@@ -99,27 +113,61 @@ class SupabaseAdminQueries {
     // Preferred: admin-safe reporting RPC (aggregate-only).
     try {
       final res = await _client.rpc('admin_get_dashboard_metrics');
-      if (res is Map<String, dynamic>) {
-        // Adapt RPC output into the existing DashboardSnapshot shape.
+      if (res is List && res.isEmpty) {
         final featureUsage = <String, int>{
-          'Profiles': (res['total_profiles'] as num?)?.toInt() ?? 0,
-          'Family members': (res['total_family_members'] as num?)?.toInt() ?? 0,
-          'Medical records': (res['total_medical_records_count'] as num?)?.toInt() ?? 0,
-          'Appointments': (res['total_appointments_count'] as num?)?.toInt() ?? 0,
-          'Medications': (res['total_medications_count'] as num?)?.toInt() ?? 0,
-          'Vaccinations': (res['total_vaccinations_count'] as num?)?.toInt() ?? 0,
-          'BP entries': (res['total_blood_pressure_entries_count'] as num?)?.toInt() ?? 0,
-          'Documents': (res['total_medical_documents_count'] as num?)?.toInt() ?? 0,
-          'Usage events': (res['total_usage_events_count'] as num?)?.toInt() ?? 0,
-          'Subscription events': (res['total_subscription_events_count'] as num?)?.toInt() ?? 0,
-          'Entitlements': (res['total_entitlements_count'] as num?)?.toInt() ?? 0,
-          'Audit events': (res['total_audit_events_count'] as num?)?.toInt() ?? 0,
-          'Support sessions': (res['total_support_sessions_count'] as num?)?.toInt() ?? 0,
-          'Compliance requests': (res['total_compliance_requests_count'] as num?)?.toInt() ?? 0,
+          'User profiles': 0,
+          'Family members': 0,
+          'Medical records': 0,
+          'Appointments': 0,
+          'Medications': 0,
+          'Vaccinations': 0,
+          'Blood pressure entries': 0,
+          'Documents': 0,
+          'Insurance cards': 0,
+          'Usage events': 0,
+          'Audit events': 0,
+          'Support sessions': 0,
+          'Compliance requests': 0,
+        };
+        return _parseDashboardSnapshot(
+          {
+            'total_registered_users': 0,
+            'feature_usage': featureUsage,
+            'generated_at': DateTime.now().toUtc().toIso8601String(),
+          },
+          query,
+        );
+      }
+
+      // IMPORTANT: admin_get_dashboard_metrics() returns a TABLE, so Supabase
+      // returns a List<Map<String,dynamic>> (even if it's a single row).
+      final Map<String, dynamic>? row = switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+
+      if (row != null) {
+        // Adapt RPC output into the existing DashboardSnapshot shape.
+        // Field names MUST match the migration return names exactly.
+        final featureUsage = <String, int>{
+          'User profiles': (row['total_user_profiles'] as num?)?.toInt() ?? 0,
+          'Family members': (row['total_family_members'] as num?)?.toInt() ?? 0,
+          'Medical records': (row['total_medical_records'] as num?)?.toInt() ?? 0,
+          'Appointments': (row['total_appointments'] as num?)?.toInt() ?? 0,
+          'Medications': (row['total_medications'] as num?)?.toInt() ?? 0,
+          'Vaccinations': (row['total_vaccinations'] as num?)?.toInt() ?? 0,
+          'Blood pressure entries': (row['total_blood_pressure_entries'] as num?)?.toInt() ?? 0,
+          'Documents': (row['total_medical_documents'] as num?)?.toInt() ?? 0,
+          'Insurance cards': (row['total_insurance_cards'] as num?)?.toInt() ?? 0,
+          'Usage events': (row['total_usage_events'] as num?)?.toInt() ?? 0,
+          'Audit events': (row['total_audit_events'] as num?)?.toInt() ?? 0,
+          'Support sessions': (row['total_support_sessions'] as num?)?.toInt() ?? 0,
+          'Compliance requests': (row['total_compliance_requests'] as num?)?.toInt() ?? 0,
         };
 
         final adapted = <String, dynamic>{
-          'total_registered_users': res['total_auth_users'],
+          'total_registered_users': row['total_auth_users'],
           'feature_usage': featureUsage,
           'generated_at': DateTime.now().toUtc().toIso8601String(),
         };
@@ -263,24 +311,185 @@ class SupabaseAdminQueries {
 
   Future<AiUsageSnapshot> getAIUsage({required AdminUser admin, required AiUsageQuery query}) async {
     _requireRole(admin, AdminRbac.analytics, capability: 'ai_usage');
+
     try {
-      final res = await _client.rpc('control_get_ai_usage_snapshot', params: _aiUsageQueryParams(query));
-      if (res is Map<String, dynamic>) return _parseAiUsageSnapshot(res, query);
+      final res = await _client.rpc('admin_get_ai_usage_summary');
+      final Map<String, dynamic>? row = switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+
+      // Empty result = no data collected yet.
+      if (row == null) {
+        return AiUsageSnapshot(
+          query: query,
+          aiRequestsThisMonth: 0,
+          inputTokensThisMonth: 0,
+          outputTokensThisMonth: 0,
+          estimatedCostThisMonthUsd: 0,
+          failedAiRequestsThisMonth: 0,
+          usersNearAiLimit: 0,
+          usersOverAiLimit: 0,
+          tokensByDay: const [],
+          tokensByFeature: const <AiFeatureArea, int>{},
+          tokensByPlan: const <String, int>{},
+          tokensByPlatform: const <String, int>{},
+          tokensByCountry: const <String, int>{},
+          dailyCost: const [],
+          estimatedDailyCostUsd: 0,
+          estimatedMonthlyCostUsd: 0,
+          costByPlan: const <String, double>{},
+          costByFeature: const <AiFeatureArea, double>{},
+          costPerActiveUserUsd: 0,
+          highCostUsers: const [],
+          limitMonitoring: const [],
+          aiErrors: const [],
+          usageByFeature: const [],
+          generatedAt: DateTime.now().toUtc(),
+        );
+      }
+
+      // New RPC (ai_usage_events-based) returns: total_request_count, tokens, cost,
+      // plus JSON aggregates. Older environments may still return legacy keys.
+      final totalRequests = (row['total_request_count'] as num?)?.toInt() ?? (row['ai_request_count'] as num?)?.toInt() ?? 0;
+      final inputTokens = (row['input_tokens'] as num?)?.toInt() ?? 0;
+      final outputTokens = (row['output_tokens'] as num?)?.toInt() ?? 0;
+      final estimatedCost = (row['estimated_cost'] as num?)?.toDouble() ?? 0;
+
+      int failedRequests = (row['failed_ai_requests'] as num?)?.toInt() ?? 0;
+      if (failedRequests == 0 && row['failures_by_error_code'] != null) {
+        try {
+          final failures = row['failures_by_error_code'];
+          if (failures is List) {
+            failedRequests = failures.fold<int>(0, (sum, e) => sum + ((e is Map ? (e['failure_count'] as num?)?.toInt() : null) ?? 0));
+          }
+        } catch (e) {
+          debugPrint('SupabaseAdminQueries.getAIUsage failed to parse failures_by_error_code: $e');
+        }
+      }
+
+      List<AiFeatureUsageRow> usageByFeature = const [];
+      if (row['usage_by_feature_area'] is List) {
+        try {
+          final list = (row['usage_by_feature_area'] as List).whereType<Map>().map((m) => m.cast<String, dynamic>()).toList();
+          usageByFeature = list
+              .map((m) {
+                final feature = _parseAiFeatureArea((m['feature_area'] as String?) ?? '') ?? AiFeatureArea.aiAssistant;
+                return AiFeatureUsageRow(
+                  featureArea: feature,
+                  requests: (m['request_count'] as num?)?.toInt() ?? 0,
+                  inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
+                  outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
+                  failedRequests: (m['failed_request_count'] as num?)?.toInt() ?? 0,
+                  estimatedCostUsd: (m['estimated_cost'] as num?)?.toDouble() ?? 0,
+                );
+              })
+              .toList();
+        } catch (e) {
+          debugPrint('SupabaseAdminQueries.getAIUsage failed to parse usage_by_feature_area: $e');
+        }
+      }
+
+      return AiUsageSnapshot(
+        query: query,
+        aiRequestsThisMonth: totalRequests,
+        inputTokensThisMonth: inputTokens,
+        outputTokensThisMonth: outputTokens,
+        estimatedCostThisMonthUsd: estimatedCost,
+        failedAiRequestsThisMonth: failedRequests,
+        // The new aggregate RPC intentionally does not expose per-user limit monitoring.
+        usersNearAiLimit: (row['users_near_ai_limit'] as num?)?.toInt() ?? 0,
+        usersOverAiLimit: (row['users_over_ai_limit'] as num?)?.toInt() ?? 0,
+        tokensByDay: const [],
+        tokensByFeature: const <AiFeatureArea, int>{},
+        tokensByPlan: const <String, int>{},
+        tokensByPlatform: const <String, int>{},
+        tokensByCountry: const <String, int>{},
+        dailyCost: const [],
+        estimatedDailyCostUsd: 0,
+        estimatedMonthlyCostUsd: 0,
+        costByPlan: const <String, double>{},
+        costByFeature: const <AiFeatureArea, double>{},
+        costPerActiveUserUsd: 0,
+        highCostUsers: const [],
+        limitMonitoring: const [],
+        aiErrors: const [],
+        usageByFeature: usageByFeature,
+        generatedAt: DateTime.now().toUtc(),
+      );
     } catch (e) {
-      debugPrint('SupabaseAdminQueries.getAIUsage rpc failed: $e');
+      debugPrint('SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary failed: $e');
+      rethrow;
     }
-    throw StateError('AI usage snapshot unavailable.');
   }
 
   Future<StorageSnapshot> getStorageUsage({required AdminUser admin, required StorageQuery query}) async {
     _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing}, capability: 'storage_usage');
+
     try {
-      final res = await _client.rpc('control_get_storage_snapshot', params: _storageQueryParams(query));
-      if (res is Map<String, dynamic>) return _parseStorageSnapshot(res, query);
+      dynamic res;
+      try {
+        // Prefer v2 (privacy-safe storage metadata table + better failure counting).
+        res = await _client.rpc('admin_get_storage_summary_v2');
+      } catch (e) {
+        debugPrint('SupabaseAdminQueries.getStorageUsage admin_get_storage_summary_v2 not available: $e');
+        res = await _client.rpc('admin_get_storage_summary');
+      }
+      final Map<String, dynamic>? row = switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+
+      if (row == null) {
+        return StorageSnapshot(
+          query: query,
+          totalStorageUsedBytes: 0,
+          totalDocumentCount: 0,
+          averageStoragePerUserBytes: 0,
+          usersOverStorageLimit: 0,
+          usersOver80PercentStorageLimit: 0,
+          uploadsThisMonth: 0,
+          failedUploadsThisMonth: 0,
+          estimatedStorageCostUsd: 0,
+          highUsageUsers: const [],
+          storageByPlan: const [],
+          storageByCountry: const [],
+          uploadErrors: const [],
+          generatedAt: DateTime.now().toUtc(),
+        );
+      }
+
+      final totalStorageMb = (row['total_storage_used_mb'] as num?)?.toInt() ?? 0;
+      final avgMb = (row['average_storage_per_user_mb'] as num?)?.toInt() ?? 0;
+
+      // v2 adds better upload failure counters; keep old field names supported.
+      final failedUploads24h = (row['failed_upload_events_24h'] as num?)?.toInt() ?? 0;
+      final failedUploadsTotal = (row['failed_upload_count'] as num?)?.toInt();
+
+      return StorageSnapshot(
+        query: query,
+        totalStorageUsedBytes: totalStorageMb * 1048576,
+        totalDocumentCount: (row['total_document_count'] as num?)?.toInt() ?? 0,
+        averageStoragePerUserBytes: avgMb * 1048576,
+        usersOverStorageLimit: (row['users_over_storage_limit'] as num?)?.toInt() ?? 0,
+        usersOver80PercentStorageLimit: (row['users_near_storage_limit'] as num?)?.toInt() ?? 0,
+        uploadsThisMonth: 0,
+        // We don't currently have a true month window in the RPC. Prefer v2 total
+        // if present; otherwise use the legacy 24h counter.
+        failedUploadsThisMonth: failedUploadsTotal ?? failedUploads24h,
+        estimatedStorageCostUsd: 0,
+        highUsageUsers: const [],
+        storageByPlan: const [],
+        storageByCountry: const [],
+        uploadErrors: const [],
+        generatedAt: DateTime.now().toUtc(),
+      );
     } catch (e) {
-      debugPrint('SupabaseAdminQueries.getStorageUsage rpc failed: $e');
+      debugPrint('SupabaseAdminQueries.getStorageUsage admin_get_storage_summary failed: $e');
+      rethrow;
     }
-    throw StateError('Storage snapshot unavailable.');
   }
 
   Future<BillingSnapshot> getBillingSummary({required AdminUser admin, required BillingQuery query}) async {
@@ -291,7 +500,30 @@ class SupabaseAdminQueries {
       final res = await _client.rpc('admin_get_billing_summary');
       if (res is List) {
         final rows = res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
-        if (rows.isEmpty) throw StateError('No usage data has been collected yet.');
+        // Empty list is not a failure: it simply means no billing-related rows
+        // have been collected yet.
+        if (rows.isEmpty) {
+          return BillingSnapshot(
+            query: query,
+            overview: const BillingOverviewMetrics(
+              activePaidUsers: 0,
+              freeUsers: 0,
+              trialUsers: 0,
+              cancelledUsers: 0,
+              failedPayments: 0,
+              monthlyRecurringRevenueUsd: 0,
+              annualRecurringRevenueUsd: 0,
+              averageRevenuePerUserUsd: 0,
+              trialConversionRate: 0,
+            ),
+            subscriptions: const [],
+            trials: const [],
+            failedPayments: const [],
+            revenueByPlan: const [],
+            revenueByCountry: const [],
+            generatedAt: DateTime.now().toUtc(),
+          );
+        }
 
         int sumUserCount(bool Function(Map<String, dynamic> r) pred) => rows.where(pred).fold<int>(0, (a, r) => a + ((r['user_count'] as num?)?.toInt() ?? 0));
 
@@ -352,32 +584,46 @@ class SupabaseAdminQueries {
     final res = await _client.rpc('admin_get_usage_events_summary');
     if (res is! List) throw StateError('Unexpected usage summary RPC response.');
     final rows = res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
-    if (rows.isEmpty) throw StateError('No usage data has been collected yet.');
 
-    final totalEvents = rows.fold<int>(0, (a, r) => a + ((r['count'] as num?)?.toInt() ?? 0));
+    // Empty list is not an error; it simply means no usage events collected yet.
+    if (rows.isEmpty) {
+      return UsageAnalyticsSnapshot(
+        query: query,
+        totalEvents: 0,
+        activeUsers: 0,
+        sessions: 0,
+        avgSessionDurationSeconds: 0,
+        featureUsageByCategory: const {},
+        conversions: const UsageOverviewConversions(signupToFirstProfile: 0, firstProfileToFirstUpload: 0, firstUploadToRecurring: 0, upgradePromptViews: 0, upgradeClicks: 0),
+        featureUsage: const [],
+        screenUsage: const [],
+        funnels: const [],
+        retention: const UsageRetentionSnapshot(day1: 0, day7: 0, day30: 0, weeklyRetention: 0),
+        countryUsage: const [],
+        platformUsage: const {},
+        generatedAt: DateTime.now().toUtc(),
+      );
+    }
+
+    final totalEvents = rows.fold<int>(0, (a, r) => a + ((r['event_count'] as num?)?.toInt() ?? 0));
 
     final featureUsage = <UsageFeatureUsageRow>[];
     for (final r in rows.take(50)) {
       final name = (r['event_name'] ?? 'unknown').toString();
       final featureArea = (r['feature_area'] ?? '').toString().trim();
       final label = featureArea.isEmpty ? name : '$featureArea • $name';
-      featureUsage.add(UsageFeatureUsageRow(feature: label, eventCount: (r['count'] as num?)?.toInt() ?? 0, uniqueUsers: 0));
+      featureUsage.add(UsageFeatureUsageRow(feature: label, eventCount: (r['event_count'] as num?)?.toInt() ?? 0, uniqueUsers: (r['unique_user_count'] as num?)?.toInt() ?? 0));
     }
 
     final platformUsage = <String, int>{};
-    final countryAgg = <String, int>{};
     for (final r in rows) {
-      final c = (r['count'] as num?)?.toInt() ?? 0;
+      final c = (r['event_count'] as num?)?.toInt() ?? 0;
       final platform = (r['platform'] ?? '').toString().trim();
-      final country = (r['country'] ?? '').toString().trim();
       if (platform.isNotEmpty) platformUsage[platform] = (platformUsage[platform] ?? 0) + c;
-      if (country.isNotEmpty) countryAgg[country] = (countryAgg[country] ?? 0) + c;
     }
 
-    final countryUsage = countryAgg.entries
-        .map((e) => CountryUsageRow(country: e.key, totalUsers: e.value, activeUsers: 0, storageUsedBytes: 0, aiTokensUsed: 0, paidUsers: 0))
-        .toList()
-      ..sort((a, b) => b.totalUsers.compareTo(a.totalUsers));
+    // Preferred: country usage summary RPC.
+    final countryUsage = await _getCountryUsageSummary(admin: admin);
 
     return UsageAnalyticsSnapshot(
       query: query,
@@ -397,15 +643,133 @@ class SupabaseAdminQueries {
     );
   }
 
+  Future<List<CountryUsageRow>> _getCountryUsageSummary({required AdminUser admin}) async {
+    _requireRole(admin, AdminRbac.analytics, capability: 'country_usage_summary');
+    try {
+      final res = await _client.rpc('admin_get_country_usage_summary');
+      if (res is! List) return const [];
+      final rows = res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
+      return rows
+          .map(
+            (r) => CountryUsageRow(
+              country: (r['country'] ?? '—').toString(),
+              totalUsers: (r['user_count'] as num?)?.toInt() ?? 0,
+              activeUsers: (r['active_user_count'] as num?)?.toInt() ?? 0,
+              storageUsedBytes: ((r['storage_used_mb'] as num?)?.toInt() ?? 0) * 1048576,
+              aiTokensUsed: (r['ai_tokens_used'] as num?)?.toInt() ?? 0,
+              paidUsers: 0,
+            ),
+          )
+          .toList()
+        ..sort((a, b) => b.totalUsers.compareTo(a.totalUsers));
+    } catch (e) {
+      debugPrint('SupabaseAdminQueries._getCountryUsageSummary admin_get_country_usage_summary failed: $e');
+      return const [];
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getPlanPermissionSummaryRows({required AdminUser admin}) async {
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing}, capability: 'plan_permission_summary');
+    final res = await _client.rpc('admin_get_plan_permission_summary');
+    if (res is! List) return const [];
+    return res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  }
+
+  Future<Map<String, dynamic>?> getSupportSummaryRow({required AdminUser admin}) async {
+    _requireRole(admin, AdminRbac.support, capability: 'support_summary');
+    final res = await _client.rpc('admin_get_support_summary');
+    return switch (res) {
+      final Map m => m.cast<String, dynamic>(),
+      final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+      _ => null,
+    };
+  }
+
+  Future<Map<String, dynamic>?> getAuditSummaryRow({required AdminUser admin}) async {
+    _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.compliance}, capability: 'audit_summary');
+    final res = await _client.rpc('admin_get_audit_summary');
+    return switch (res) {
+      final Map m => m.cast<String, dynamic>(),
+      final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+      _ => null,
+    };
+  }
+
+  Future<Map<String, dynamic>?> getSystemHealthSummaryRow({required AdminUser admin}) async {
+    _requireRole(admin, AdminRbac.analytics, capability: 'system_health_summary');
+    try {
+      final res = await _client.rpc('admin_get_system_health_summary');
+      return switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+    } catch (e) {
+      debugPrint('SupabaseAdminQueries.getSystemHealthSummaryRow admin_get_system_health_summary failed: $e');
+      // Try v2 if deployed.
+      final res = await _client.rpc('admin_get_system_health_summary_v2');
+      return switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+    }
+  }
+
   Future<ComplianceSnapshot> getComplianceRequests({required AdminUser admin, required ComplianceQuery query}) async {
     _requireRole(admin, AdminRbac.compliance, capability: 'compliance_requests');
+
     try {
-      final res = await _client.rpc('control_get_compliance_snapshot', params: _complianceQueryParams(query));
-      if (res is Map<String, dynamic>) return _parseComplianceSnapshot(res, query);
+      final res = await _client.rpc('admin_get_compliance_summary');
+      final Map<String, dynamic>? row = switch (res) {
+        final Map m => m.cast<String, dynamic>(),
+        final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
+        _ => null,
+      };
+
+      // If the compliance requests table isn't deployed, this RPC still returns a
+      // row of zeros (by design). Treat that as “no data collected yet”, not an error.
+      final total = (row?['total_requests'] as num?)?.toInt() ?? 0;
+      final open = (row?['open_requests'] as num?)?.toInt() ?? 0;
+      final inProgress = (row?['in_progress_requests'] as num?)?.toInt() ?? 0;
+      final completed = (row?['completed_requests'] as num?)?.toInt() ?? 0;
+      final failed = (row?['failed_requests'] as num?)?.toInt() ?? 0;
+      final deletion = (row?['deletion_requests'] as num?)?.toInt() ?? 0;
+      final export = (row?['export_requests'] as num?)?.toInt() ?? 0;
+
+      // The current Control Site UI has many “detail” tabs; those are intentionally
+      // left empty until dedicated admin-safe list RPCs are added.
+      return ComplianceSnapshot(
+        query: query,
+        overview: ComplianceOverviewMetrics(
+          openDeletionRequests: deletion,
+          completedDeletionRequests: 0,
+          failedDeletionRequests: 0,
+          openExportRequests: export,
+          completedExportRequests: 0,
+          activeSupportSessions: 0,
+          expiredSupportSessions: 0,
+          recentAdminActions: 0,
+          usersPendingDeletion: open,
+        ),
+        exportRequests: const [],
+        deletionRequests: const [],
+        consentRecords: const [],
+        supportAccessRecords: const [],
+        privacyTermsAcceptances: const [],
+        retention: const RetentionMonitoringMetrics(
+          usageLogsDueForDeletion: 0,
+          supportNotesDueForDeletion: 0,
+          expiredSupportSessions: 0,
+          oldDiagnosticLogs: 0,
+          oldRawEvents: 0,
+        ),
+        generatedAt: DateTime.now().toUtc(),
+      );
     } catch (e) {
-      debugPrint('SupabaseAdminQueries.getComplianceRequests rpc failed: $e');
+      debugPrint('SupabaseAdminQueries.getComplianceRequests admin_get_compliance_summary failed: $e');
+      rethrow;
     }
-    throw StateError('Compliance snapshot unavailable.');
   }
 
   Future<List<SupportSessionSummary>> getSupportSessions({required AdminUser admin, required SupportQueueQuery query, required int limit}) async {

@@ -1,5 +1,6 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
@@ -50,6 +51,8 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       title: 'Audit Logs',
       subtitle: 'Mandatory admin audit trail (metadata only, redacted as needed).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.auditLogs)),
+        const SizedBox(width: AppSpacing.sm),
         if (canExport)
           TextButton.icon(
             onPressed: logs.isEmpty
@@ -83,18 +86,38 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       ],
       child: Column(
         children: [
-          AdminCard(
-            header: Row(
-              children: [
-                Text('Filters', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-                const Spacer(),
-                Text(
-                  store.isAuditLogsLoading ? 'Loading…' : '${logs.length} loaded',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+          if (store.dataSource(AdminDataSourceKey.auditLogs).kind == AdminDataSourceKind.notInstrumented)
+            const Expanded(child: AdminNotInstrumentedPanel())
+          else ...[
+            if (store.auditSummary != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: AdminCard(
+                  header: Text('Audit summary', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  child: Wrap(
+                    spacing: AppSpacing.lg,
+                    runSpacing: AppSpacing.sm,
+                    children: [
+                      _Kpi(label: 'Total', value: formatCompactInt(store.auditSummary!.totalAuditEvents)),
+                      _Kpi(label: '24h', value: formatCompactInt(store.auditSummary!.auditEvents24h)),
+                      _Kpi(label: 'Failed 24h', value: formatCompactInt(store.auditSummary!.failedAdminActions24h)),
+                      _Kpi(label: 'Latest', value: formatDateTimeShort(store.auditSummary!.latestAuditEventAt)),
+                    ],
+                  ),
                 ),
-              ],
-            ),
-            child: Wrap(
+              ),
+            AdminCard(
+              header: Row(
+                children: [
+                  Text('Filters', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                  const Spacer(),
+                  Text(
+                    store.isAuditLogsLoading ? 'Loading…' : '${logs.length} loaded',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ],
+              ),
+              child: Wrap(
               spacing: AppSpacing.md,
               runSpacing: AppSpacing.md,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -191,6 +214,7 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
                     ),
             ),
           ),
+          ],
         ],
       ),
     );
@@ -198,6 +222,34 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
 
   static String _exportHintSuffix(BuildContext context) =>
       MediaQuery.of(context).size.width < 420 ? '' : (Theme.of(context).platform == TargetPlatform.iOS || Theme.of(context).platform == TargetPlatform.android) ? ' (copied to clipboard)' : '';
+}
+
+class _Kpi extends StatelessWidget {
+  const _Kpi({required this.label, required this.value});
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+        ],
+      ),
+    );
+  }
 }
 
 class _AuditLogTile extends StatelessWidget {
@@ -249,9 +301,10 @@ class _AuditLogTile extends StatelessWidget {
               Expanded(child: _JsonPanel(title: 'Previous (redacted)', value: AdminAuditRedactor.jsonStringOrNull(entry.previousValue))),
               const SizedBox(width: AppSpacing.md),
               Expanded(child: _JsonPanel(title: 'New (redacted)', value: AdminAuditRedactor.jsonStringOrNull(entry.newValue))),
-            ],
-          ),
-        ],
+              ],
+            ),
+            // (rest of the page widgets remain unchanged)
+          ],
       ],
     );
   }

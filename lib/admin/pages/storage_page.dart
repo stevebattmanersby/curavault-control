@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
@@ -22,6 +23,8 @@ class StoragePage extends StatelessWidget {
       title: 'Storage',
       subtitle: 'Usage, limits, cost, and upload reliability (privacy-safe; no file names/URLs/paths).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.storage)),
+        const SizedBox(width: AppSpacing.sm),
         _StorageFiltersBar(query: store.storageQuery, onChanged: store.setStorageQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshStorage(),
@@ -34,7 +37,9 @@ class StoragePage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : snap == null
+          : store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.notInstrumented
+              ? const AdminNotInstrumentedPanel()
+              : snap == null
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -43,7 +48,7 @@ class StoragePage extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                       Text('No storage data yet.', style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: AppSpacing.sm),
-                      Text('Connect Supabase summary views or refresh to load mock data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 )

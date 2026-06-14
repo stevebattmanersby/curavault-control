@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
@@ -23,6 +24,8 @@ class AiUsagePage extends StatelessWidget {
       title: 'AI Usage',
       subtitle: 'Tokens, cost, limits, and errors (privacy-safe; never prompts or outputs).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.aiUsage)),
+        const SizedBox(width: AppSpacing.sm),
         _AiUsageFiltersBar(query: store.aiUsageQuery, onChanged: store.setAiUsageQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshAiUsage(),
@@ -35,9 +38,11 @@ class AiUsagePage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : snap == null
-              ? _EmptyAiUsageState(query: store.aiUsageQuery)
-              : _AiUsageTabs(snapshot: snap),
+          : store.dataSource(AdminDataSourceKey.aiUsage).kind == AdminDataSourceKind.notInstrumented
+              ? const AdminNotInstrumentedPanel()
+              : snap == null
+                  ? _EmptyAiUsageState(query: store.aiUsageQuery)
+                  : _AiUsageTabs(snapshot: snap),
     );
   }
 }
@@ -57,7 +62,7 @@ class _EmptyAiUsageState extends StatelessWidget {
           Text('No AI usage data yet.', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Connect Supabase summary views or refresh to load mock aggregates (${query.range.label}).',
+            'No AI usage aggregates collected yet (${query.range.label}).',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
           ),
         ],

@@ -26,8 +26,14 @@ abstract interface class AdminRepository {
 
   Future<List<AuditLogEntry>> listAuditLogs({required AuditLogQuery query, required int limit});
 
+  /// Admin-safe audit summary aggregates (counts only).
+  Future<AuditSummarySnapshot> getAuditSummary();
+
   /// Support queue: privacy-safe support sessions (no health content).
   Future<List<SupportSessionSummary>> listSupportSessions({required SupportQueueQuery query, required int limit});
+
+  /// Admin-safe support summary aggregates (counts only).
+  Future<SupportSummarySnapshot> getSupportSummary();
 
   /// Support session detail: account diagnostics + technical events only.
   Future<SupportSessionDetail> getSupportSessionDetail({required String supportSessionId});

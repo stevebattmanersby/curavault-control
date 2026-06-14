@@ -102,7 +102,8 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     try {
       final res = await client.rpc(functionName);
       final rowCount = _safeRowCount(res);
-      return _RpcTestResult.ok(rowCount: rowCount, durationMs: DateTime.now().difference(startedAt).inMilliseconds);
+      final keys = _safePayloadKeys(res);
+      return _RpcTestResult.ok(rowCount: rowCount, payloadKeys: keys, durationMs: DateTime.now().difference(startedAt).inMilliseconds);
     } catch (e) {
       debugPrint('AdminDataTest: RPC $functionName failed: $e');
       return _RpcTestResult.err(safeMessage: _safeErrorMessage(e), durationMs: DateTime.now().difference(startedAt).inMilliseconds);
@@ -115,6 +116,22 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     if (result is List) return result.length;
     if (result is Map) return 1;
     return 1;
+  }
+
+  List<String> _safePayloadKeys(Object? result) {
+    // IMPORTANT: never return payload values. Keys only.
+    if (result is Map) {
+      return result.keys.map((k) => k.toString()).toList()..sort();
+    }
+    if (result is List) {
+      if (result.isEmpty) return const [];
+      final first = result.first;
+      if (first is Map) {
+        return first.keys.map((k) => k.toString()).toList()..sort();
+      }
+      return const [];
+    }
+    return const [];
   }
 
   String _safeErrorMessage(Object e) {
@@ -232,6 +249,57 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
               }).toList(),
             ),
           ),
+          if (kDebugMode) ...[
+            const SizedBox(height: AppSpacing.lg),
+            AdminCard(
+              header: Row(
+                children: [
+                  Expanded(child: Text('RPC payload keys (debug-only)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                  Text('Field names only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: _rpcNames.keys.map((label) {
+                  final r = _results[label];
+                  final keys = (r == null || !r.isOk) ? const <String>[] : r.payloadKeys;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 8),
+                        if (r == null)
+                          Text('not run', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                        else if (!r.isOk)
+                          Text('RPC failed (keys unavailable).', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                        else if (keys.isEmpty)
+                          Text('No rows returned (no keys).', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                        else
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (final k in keys)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+                                    borderRadius: BorderRadius.circular(999),
+                                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                                  ),
+                                  child: Text(k, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+                                ),
+                            ],
+                          ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
           const SizedBox(height: AppSpacing.lg),
           AdminCard(
             child: Text(
@@ -336,12 +404,16 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _RpcTestResult {
-  const _RpcTestResult._({required this.isOk, required this.rowCount, required this.safeMessage, required this.durationMs});
+  const _RpcTestResult._({required this.isOk, required this.rowCount, required this.payloadKeys, required this.safeMessage, required this.durationMs});
   final bool isOk;
   final int rowCount;
+  final List<String> payloadKeys;
   final String safeMessage;
   final int durationMs;
 
-  factory _RpcTestResult.ok({required int rowCount, required int durationMs}) => _RpcTestResult._(isOk: true, rowCount: rowCount, safeMessage: '', durationMs: durationMs);
-  factory _RpcTestResult.err({required String safeMessage, required int durationMs}) => _RpcTestResult._(isOk: false, rowCount: 0, safeMessage: safeMessage, durationMs: durationMs);
+  factory _RpcTestResult.ok({required int rowCount, required List<String> payloadKeys, required int durationMs}) =>
+      _RpcTestResult._(isOk: true, rowCount: rowCount, payloadKeys: payloadKeys, safeMessage: '', durationMs: durationMs);
+
+  factory _RpcTestResult.err({required String safeMessage, required int durationMs}) =>
+      _RpcTestResult._(isOk: false, rowCount: 0, payloadKeys: const [], safeMessage: safeMessage, durationMs: durationMs);
 }

@@ -25,15 +25,18 @@ import 'package:curavault_admin/admin/pages/set_password_page.dart';
 import 'package:curavault_admin/admin/pages/supabase_connectivity_test_page.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
+import 'package:curavault_admin/services/usage_event_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {
   static GoRouter createRouter(AdminAuthStore auth) {
+    final enableDevRoutes = kDebugMode;
     return GoRouter(
       initialLocation: AppRoutes.loading,
       refreshListenable: auth,
+      observers: [UsageNavigationObserver()],
       redirect: (context, state) {
         // IMPORTANT: Supabase recovery links often include query/fragment params.
         // We must decide auth-free routes based on the matched path, not the full
@@ -59,7 +62,7 @@ class AppRouter {
           return normalized == AppRoutes.login ||
               normalized == AppRoutes.resetPassword ||
               normalized == AppRoutes.setPassword ||
-              normalized == AppRoutes.supabaseConnectivityTest;
+              (enableDevRoutes && normalized == AppRoutes.supabaseConnectivityTest);
         }
 
         final isAuthFree = isAuthFreePath(path) || isAuthFreePath(matched);
@@ -77,7 +80,7 @@ class AppRouter {
         if (matched == AppRoutes.loading) {
           final target = !auth.isSignedIn
               ? AppRoutes.login
-              : (!auth.isAuthorized ? AppRoutes.unauthorized : AppRoutes.adminTest);
+              : (!auth.isAuthorized ? AppRoutes.unauthorized : AppRoutes.dashboard);
           trace('leaving /loading => $target');
           return target;
         }
@@ -103,13 +106,17 @@ class AppRouter {
 
         // Authorized admins should never land on login/loading/unauthorized.
         if (matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.unauthorized) {
-          // After login, show the admin test page (simple verification screen).
-          trace('authorized but on auth gate page => ${AppRoutes.adminTest}');
-          return AppRoutes.adminTest;
+          trace('authorized but on auth gate page => ${AppRoutes.dashboard}');
+          return AppRoutes.dashboard;
+        }
+
+        if (!enableDevRoutes && (matched == AppRoutes.supabaseConnectivityTest || matched == AppRoutes.adminTest || matched == AppRoutes.adminDataTest)) {
+          trace('dev route blocked in release => ${AppRoutes.unauthorized}');
+          return AppRoutes.unauthorized;
         }
 
         // Dev-only route: keep reachable regardless of RBAC.
-        if (matched == AppRoutes.supabaseConnectivityTest) {
+        if (enableDevRoutes && matched == AppRoutes.supabaseConnectivityTest) {
           trace('connectivity test => allow');
           return null;
         }
@@ -133,14 +140,26 @@ class AppRouter {
         GoRoute(path: AppRoutes.login, name: 'login', builder: (context, state) => const LoginPage()),
         GoRoute(path: AppRoutes.resetPassword, name: 'resetPassword', builder: (context, state) => const ResetPasswordPage()),
         GoRoute(path: AppRoutes.setPassword, name: 'setPassword', builder: (context, state) => const SetPasswordPage()),
-        GoRoute(path: AppRoutes.supabaseConnectivityTest, name: 'supabaseConnectivityTest', builder: (context, state) => const SupabaseConnectivityTestPage()),
+        GoRoute(
+          path: AppRoutes.supabaseConnectivityTest,
+          name: 'supabaseConnectivityTest',
+          builder: (context, state) => enableDevRoutes ? const SupabaseConnectivityTestPage() : const UnauthorizedPage(),
+        ),
         GoRoute(path: AppRoutes.unauthorized, name: 'unauthorized', builder: (context, state) => const UnauthorizedPage()),
         ShellRoute(
           builder: (context, state, child) => AdminShell(currentLocation: state.uri.toString(), child: child),
           routes: [
             GoRoute(path: AppRoutes.dashboard, name: 'dashboard', pageBuilder: (context, state) => const NoTransitionPage(child: DashboardPage())),
-            GoRoute(path: AppRoutes.adminTest, name: 'adminTest', pageBuilder: (context, state) => const NoTransitionPage(child: AdminTestPage())),
-            GoRoute(path: AppRoutes.adminDataTest, name: 'adminDataTest', pageBuilder: (context, state) => const NoTransitionPage(child: AdminDataTestPage())),
+            GoRoute(
+              path: AppRoutes.adminTest,
+              name: 'adminTest',
+              pageBuilder: (context, state) => NoTransitionPage(child: enableDevRoutes ? const AdminTestPage() : const UnauthorizedPage()),
+            ),
+            GoRoute(
+              path: AppRoutes.adminDataTest,
+              name: 'adminDataTest',
+              pageBuilder: (context, state) => NoTransitionPage(child: enableDevRoutes ? const AdminDataTestPage() : const UnauthorizedPage()),
+            ),
             GoRoute(
               path: AppRoutes.users,
               name: 'users',

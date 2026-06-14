@@ -1,6 +1,9 @@
 
 [functions.bootstrap_admin_auth_user]
-enabled = true
+# Production hardening: this bootstrap function must not be deployed for public production.
+# If you temporarily re-enable it, require a BOOTSTRAP_SECRET, enforce owner-only invocation,
+# and write a strong audit log server-side.
+enabled = false
 verify_jwt = true
 import_map = "./functions/bootstrap_admin_auth_user/deno.json"
 # Uncomment to specify a custom file path to the entrypoint.

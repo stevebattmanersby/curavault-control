@@ -1,9 +1,11 @@
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -21,6 +23,8 @@ class DashboardPage extends StatelessWidget {
       title: 'Dashboard',
       subtitle: 'Executive overview (privacy-safe summaries only).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.dashboard)),
+        const SizedBox(width: AppSpacing.sm),
         _DashboardFiltersBar(query: store.dashboardQuery, onChanged: store.setDashboardQuery),
         IconButton(
           onPressed: () {
@@ -41,6 +45,7 @@ class DashboardPage extends StatelessWidget {
                 children: [
                   _DataSourceStatusPanel(store: store),
                   const SizedBox(height: AppSpacing.lg),
+                  if (store.dataSource(AdminDataSourceKey.dashboard).kind == AdminDataSourceKind.notInstrumented) const AdminNotInstrumentedPanel(),
                   if (store.dashboardLoad.hasError)
                     AdminCard(
                       child: Row(
@@ -63,7 +68,7 @@ class DashboardPage extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (dash == null && !store.dashboardLoad.hasError)
+                  if (dash == null && !store.dashboardLoad.hasError && store.dataSource(AdminDataSourceKey.dashboard).kind != AdminDataSourceKind.notInstrumented)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 56),
@@ -180,6 +185,27 @@ class _DashboardBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _SectionTitle(title: 'Data totals', subtitle: 'Counts only. No names, values, or content.'),
+          const SizedBox(height: AppSpacing.md),
+          _MetricsGrid(
+            children: [
+              MetricTile(label: 'Total users', value: formatCompactInt(dash.totalRegisteredUsers), icon: Icons.people_alt_outlined),
+              MetricTile(label: 'User profiles', value: formatCompactInt(dash.featureUsage['User profiles'] ?? 0), icon: Icons.badge_outlined),
+              MetricTile(label: 'Family members', value: formatCompactInt(dash.featureUsage['Family members'] ?? 0), icon: Icons.group_outlined),
+              MetricTile(label: 'Medical records', value: formatCompactInt(dash.featureUsage['Medical records'] ?? 0), icon: Icons.folder_open_outlined),
+              MetricTile(label: 'Appointments', value: formatCompactInt(dash.featureUsage['Appointments'] ?? 0), icon: Icons.event_outlined),
+              MetricTile(label: 'Medications', value: formatCompactInt(dash.featureUsage['Medications'] ?? 0), icon: Icons.medication_outlined),
+              MetricTile(label: 'Vaccinations', value: formatCompactInt(dash.featureUsage['Vaccinations'] ?? 0), icon: Icons.vaccines_outlined),
+              MetricTile(label: 'Blood pressure entries', value: formatCompactInt(dash.featureUsage['Blood pressure entries'] ?? 0), icon: Icons.monitor_heart_outlined),
+              MetricTile(label: 'Documents', value: formatCompactInt(dash.featureUsage['Documents'] ?? 0), icon: Icons.description_outlined),
+              MetricTile(label: 'Insurance cards', value: formatCompactInt(dash.featureUsage['Insurance cards'] ?? 0), icon: Icons.credit_card_outlined),
+              MetricTile(label: 'Usage events', value: formatCompactInt(dash.featureUsage['Usage events'] ?? 0), icon: Icons.query_stats_outlined),
+              MetricTile(label: 'Audit events', value: formatCompactInt(dash.featureUsage['Audit events'] ?? 0), icon: Icons.policy_outlined),
+              MetricTile(label: 'Support sessions', value: formatCompactInt(dash.featureUsage['Support sessions'] ?? 0), icon: Icons.support_agent_outlined),
+              MetricTile(label: 'Compliance requests', value: formatCompactInt(dash.featureUsage['Compliance requests'] ?? 0), icon: Icons.gavel_outlined),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xl),
           _SectionTitle(title: 'User Growth', subtitle: 'Acquisition and engagement signals for the selected range.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
@@ -245,7 +271,10 @@ class _DashboardBody extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           _AlertsTable(rows: dash.alerts),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'System Status', subtitle: 'High-level service health (mock until live wiring).'),
+          _SectionTitle(
+            title: 'System Status',
+            subtitle: kReleaseMode ? 'High-level service health' : 'High-level service health (mock until live wiring).',
+          ),
           const SizedBox(height: AppSpacing.md),
           _SystemStatusGrid(items: dash.systemStatus),
           const SizedBox(height: AppSpacing.xl),

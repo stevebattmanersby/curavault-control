@@ -1,4 +1,5 @@
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
@@ -20,6 +21,8 @@ class SystemHealthPage extends StatelessWidget {
       title: 'System Health',
       subtitle: 'Reliability, sync/upload health, AI service health, and technical error logs (no user content).',
       actions: [
+        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.systemHealth)),
+        const SizedBox(width: AppSpacing.sm),
         _SystemHealthFiltersBar(query: store.systemHealthQuery, onChanged: store.setSystemHealthQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshSystemHealth(),
@@ -32,9 +35,11 @@ class SystemHealthPage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : snap == null
-              ? _EmptySystemHealthState(query: store.systemHealthQuery)
-              : _SystemHealthTabs(snapshot: snap),
+          : store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.notInstrumented
+              ? const AdminNotInstrumentedPanel()
+              : snap == null
+                  ? _EmptySystemHealthState(query: store.systemHealthQuery)
+                  : _SystemHealthTabs(snapshot: snap),
     );
   }
 }
@@ -54,7 +59,7 @@ class _EmptySystemHealthState extends StatelessWidget {
           Text('No system health data yet.', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Connect Supabase health summary views or refresh to load mock aggregates (${query.range.label}).',
+            'No system health aggregates collected yet (${query.range.label}).',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),

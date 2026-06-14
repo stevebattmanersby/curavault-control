@@ -1,151 +1,147 @@
-# CuraVault Control Site — Admin-Safe Reporting Layer
+# CuraVault Control Site — Admin-Safe Data Layer Plan
 
-This document describes the **admin-safe** (aggregate-only) reporting RPCs used by the CuraVault Control Site.
+This document tracks the **admin-only, aggregate-only** reporting layer used by the CuraVault Control Site.
 
-## Non-negotiable privacy rules
+## Hard privacy rule (non-negotiable)
 
-These RPCs must never expose raw health content.
+The control site must show **business/support/usage metadata only**.
 
-**Never return (directly or indirectly):**
-- medical record titles/content
-- appointment details
-- medication names
-- vaccination names
-- blood pressure values
-- family member names
-- document names / file paths
-- AI prompts / AI responses
-- search query text
+It must never expose:
+- Raw health content (medical record fields, appointment notes, medication instructions, readings, etc.)
+- Document names, file paths, file URLs, or document contents
+- AI prompts, AI responses, summaries, user-entered text, or search queries
+- Support notes free-text or compliance free-text notes (beyond redacted/metadata-only workflows)
 
-**Allowed:** counts, totals, statuses, timestamps, country/platform/plan aggregates, and other business/support metadata.
+Accordingly, all reporting endpoints are **SECURITY DEFINER RPCs** that:
+1) Check `public.is_active_admin()` (via `public._admin_safe_assert_active_admin()`).
+2) Return **aggregates only** (counts/totals/statuses/timestamps/limits).
+3) Are resilient to missing tables/columns (return 0/NULL instead of failing).
+4) Are executable by `authenticated` only (revoked from `anon`/`public`).
 
-## Migration that implements these RPCs
+## Live admin-safe RPCs (source of truth)
 
-**File:** `supabase/migrations/20260614_create_admin_safe_reporting_functions.sql`
+### Base dashboard / usage / billing
 
-### Security model
+Migration: `supabase/migrations/20260614_create_admin_safe_reporting_functions.sql`
 
-- All reporting RPCs are **`SECURITY DEFINER`**.
-- Each function calls `public.is_active_admin()` via an internal guard and **raises a safe access denied** error if false.
-- Each function sets a **safe `search_path`** (at minimum `public`; and `auth` only where needed).
-- Execution privileges are:
-  - **granted to** `authenticated`
-  - **revoked from** `anon` and `public`
-- No RLS policies are changed and **no health tables are modified**.
+- `public.admin_get_dashboard_metrics()`
+  - Returns one row of totals across key tables (counts only).
 
-### Schema-robust behavior (tables/columns may be missing)
+- `public.admin_get_user_usage_summary()`
+  - Returns one row per auth user: identifiers + timestamps + per-table counts.
 
-To avoid failures when tables/columns are absent:
+- `public.admin_get_usage_events_summary()`
+  - Returns grouped usage analytics based on a **controlled subset** of keys.
 
-- The migration defines helpers:
-  - `public._admin_safe_table_exists(qualified_table)`
-  - `public._admin_safe_column_exists(schema, table, column)`
-  - `public._admin_safe_count(qualified_table, where_sql)`
-  - `public._admin_safe_count_uuid(qualified_table, where_sql, user_id)`
-- RPCs use **dynamic SQL** and existence checks, so:
-  - dashboard metrics return **0** for missing tables
-  - other RPCs return **empty sets** or safe defaults when inputs are missing
+- `public.admin_get_billing_summary()`
+  - Aggregates `user_entitlements` into plan/status/provider counts.
 
-## RPCs created
+- `public.admin_get_country_usage_summary()`
+  - Aggregates usage by country; applies a k-anonymity threshold (small cohorts grouped into “Other”).
 
-### 1) `public.admin_get_dashboard_metrics()`
+- `public.admin_get_system_health_summary()`
+  - Basic operational counts over the last 24h.
 
-Returns **one row** containing safe total counts:
+### “Complete live data” layer (replacing remaining mock fallbacks)
 
-- `total_auth_users`
-- `total_admin_users`, `active_admin_users`
-- `total_user_profiles`
-- `total_family_members`
-- `total_medical_records`
-- `total_appointments`
-- `total_medications`
-- `total_vaccinations`
-- `total_blood_pressure_entries`
-- `total_medical_documents`
-- `total_insurance_cards`
-- `total_usage_events`
-- `total_subscription_events`
-- `total_user_entitlements`
-- `total_audit_events`
-- `total_support_sessions`, `open_support_sessions`
-- `total_compliance_requests`, `open_compliance_requests`
+Migration: `supabase/migrations/20260615_complete_control_site_live_data_rpcs.sql`
 
-**Missing table handling:** if any referenced public table doesn’t exist, the metric returns **0**.
+- `public.admin_get_storage_summary()`
+  - Aggregates storage *without* returning document/file details.
+  - Output:
+    - `total_document_count`
+    - `total_storage_used_mb` *(only if a file size column exists)*
+    - `average_storage_per_user_mb`
+    - `users_over_storage_limit` *(only if storage limits exist)*
+    - `users_near_storage_limit` *(only if storage limits exist)*
+    - `failed_upload_events_24h` *(only if usage event failure signals exist)*
 
-### 2) `public.admin_get_user_usage_summary()`
+- `public.admin_get_ai_usage_summary()`
+  - AI operational analytics derived from `usage_events` only.
+  - Output:
+    - `ai_request_count`
+    - `input_tokens`
+    - `output_tokens`
+    - `total_tokens`
+    - `estimated_cost` *(only if `usage_events.estimated_cost` exists)*
+    - `failed_ai_requests` *(only if failure signals exist)*
+    - `users_near_ai_limit` *(only if entitlement limits + per-user attribution exist)*
+    - `users_over_ai_limit` *(only if entitlement limits + per-user attribution exist)*
 
-Returns **one row per Auth user** (from `auth.users`) with:
+- `public.admin_get_compliance_summary()`
+  - Compliance workflow metadata (counts by status/type + latest timestamp).
+  - Output:
+    - `total_requests`, `open_requests`, `in_progress_requests`, `completed_requests`, `failed_requests`
+    - `deletion_requests`, `export_requests`
+    - `latest_request_at`
 
-- `user_id`
-- `email` (from `auth.users.email`, when present)
-- `created_at`, `last_sign_in_at`
-- per-user counts only (profiles/family members/records/etc.)
+- `public.admin_get_support_summary()`
+  - Support workflow metadata (counts by status + latest timestamp).
+  - Output:
+    - `total_sessions`, `open_sessions`, `active_sessions`, `closed_sessions`, `expired_sessions`
+    - `latest_session_at`
 
-**No raw health content is ever returned**—only counts.
+- `public.admin_get_plan_permission_summary()`
+  - Plan breakdown from `user_entitlements`.
+  - Output:
+    - `plan`, `user_count`, `active_count`
+    - `storage_limit_mb` *(if present)*
+    - `ai_token_limit` *(if present)*
+    - `profile_limit` *(if present)*
 
-**Missing table handling:** any missing counted table yields a **0** count for that field.
+- `public.admin_get_audit_summary()`
+  - Audit log operational metadata.
+  - Output:
+    - `total_audit_events`, `audit_events_24h`, `failed_admin_actions_24h`, `latest_audit_event_at`
+  - Explicitly **does not** return `prev`/`next` JSON.
 
-### 3) `public.admin_get_usage_events_summary()`
+- `public.admin_get_system_health_summary_v2()`
+  - Expanded operational health, still aggregate-only.
+  - Output:
+    - `recent_usage_events_24h`, `recent_errors_24h`, `failed_upload_events_24h`, `failed_sync_events_24h`
+    - `latest_usage_event_at`, `latest_audit_event_at`, `latest_support_session_at`, `latest_compliance_request_at`
 
-Aggregates `usage_events` into:
+## Known / likely missing instrumentation (best-effort fallbacks)
 
-- `event_name`
-- `feature_area`
-- `platform`
-- `app_version`
-- `country`
-- `event_count`
-- `unique_user_count`
-- `first_seen_at`, `last_seen_at`
+These RPCs are designed to be **schema-resilient**. If a dependency is missing, they return safe defaults (0/NULL). That means the UI will remain honest ("not instrumented") while still loading.
 
-**Missing column handling:**
-- If `event_name` doesn’t exist, falls back to `event_key`; otherwise `'unknown'`.
-- If `properties` doesn’t exist, platform/app_version/country default to `'unknown'`.
-- If `created_at` doesn’t exist, `first_seen_at/last_seen_at` are `NULL`.
+### Storage reporting
 
-### 4) `public.admin_get_billing_summary()`
+`admin_get_storage_summary()` is most accurate when:
+- `public.medical_documents` has **both**:
+  - `owner_user_id` (for per-user aggregation)
+  - one of: `file_size`, `file_size_bytes`, or `size_bytes` (for storage bytes)
 
-Aggregates `user_entitlements` (and optionally `subscription_events`) into:
+Storage limit enforcement requires:
+- `public.user_entitlements.user_id`
+- and one of:
+  - `storage_limit_mb` (preferred)
+  - `storage_limit_bytes`
 
-- `plan`
-- `billing_status`
-- `subscription_provider`
-- `user_count`
-- `active_count`
-- `cancelled_count`
-- `failed_payment_count` (best-effort, conservative signal)
+Upload failure reporting (24h) requires:
+- `public.usage_events.created_at`
+- and one of `event_key` / `event_name`
+- and either `success` or `failure_code`
 
-**Missing table/column handling:**
-- If `user_entitlements` is missing, returns **no rows**.
-- If expected columns are missing, returns `'unknown'` labels and **0** for derived counts.
+### AI usage reporting
 
-### 5) `public.admin_get_country_usage_summary()`
+`admin_get_ai_usage_summary()` is most accurate when `public.usage_events` includes:
+- `event_key` or `event_name` (to classify “AI” events)
+- `estimated_tokens_input` + `estimated_tokens_output` (for token totals)
+- `estimated_cost` (optional)
+- `success` and/or `failure_code` (for failure counts)
 
-Aggregates usage by country:
+AI-limit computations require:
+- `usage_events.user_id` (per-user attribution)
+- `user_entitlements.user_id`
+- and `user_entitlements.ai_token_limit` (or `ai_tokens_limit`)
 
-- `country`
-- `user_count`
-- `active_user_count`
-- `usage_event_count`
-- `storage_used_mb` (only if doc size columns exist)
-- `ai_tokens_used` (only if token columns exist)
+### Audit failure reporting
 
-**Privacy rule:** if a country has **fewer than 10 users**, it is grouped under **`Other`**.
+`admin_get_audit_summary()` uses `admin_audit_log.result` as the failure signal.
+If your operational tooling writes different values than `success|failure|denied`, update instrumentation to match.
 
-**Missing column handling:**
-- If token columns are missing, `ai_tokens_used = 0`.
-- If medical document size columns are missing, `storage_used_mb = 0`.
+## Next steps (when you’re ready)
 
-### 6) `public.admin_get_system_health_summary()`
-
-Returns one row with operational aggregates:
-
-- `recent_usage_events_24h`
-- `recent_errors_24h` (based on `success` and/or `failure_code` columns when present)
-- `failed_upload_events_24h` (best-effort)
-- `failed_sync_events_24h` (best-effort)
-- `latest_usage_event_at`
-- `latest_audit_event_at`
-- `latest_support_session_at`
-
-**No raw error payloads** are returned.
+1) Update Flutter query parsing + repository methods to call these new RPCs (and remove remaining mock fallbacks in release mode).
+2) Add a control-site “Instrumentation status” panel that surfaces which metrics are 0 because tables/columns are missing.

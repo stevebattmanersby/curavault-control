@@ -7,6 +7,7 @@ import 'package:curavault_admin/theme.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
+import 'package:curavault_admin/services/usage_event_service.dart';
 import 'package:curavault_admin/supabase/supabase_config.dart';
 
 /// Main entry point for the application
@@ -49,6 +50,15 @@ class _MyAppState extends State<MyApp> {
     _themeStore = AdminThemeStore();
     _themeStore.bootstrap(auth: _auth);
     _router = AppRouter.createRouter(_auth);
+
+    // Best-effort instrumentation: never block startup.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      UsageEventService.instance.trackFeatureEvent(
+        eventName: 'app_opened',
+        featureArea: 'auth',
+        result: 'success',
+      );
+    });
   }
 
   @override

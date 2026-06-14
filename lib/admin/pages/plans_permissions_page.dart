@@ -1,6 +1,7 @@
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
@@ -21,7 +22,10 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    // Production-safe: only the plan distribution summary is wired to live RPCs.
+    // Other admin actions (feature flags, overrides, per-user edits) require
+    // dedicated admin-safe RPCs and remain intentionally unimplemented.
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -34,13 +38,20 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
+    final store = context.watch<AdminStore>();
+    final status = store.dataSource(AdminDataSourceKey.plansPermissions);
 
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Plans & Permissions', style: Theme.of(context).textTheme.headlineMedium),
+          Row(
+            children: [
+              Expanded(child: Text('Plans & Permissions', style: Theme.of(context).textTheme.headlineMedium)),
+              AdminDataSourceBadge(status: status),
+            ],
+          ),
           const SizedBox(height: 6),
           Text(
             'Manage plan entitlements, feature access, and limit overrides. This console never shows health content.',
@@ -49,30 +60,26 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
           const SizedBox(height: 14),
           _PolicyBanner(role: role),
           const SizedBox(height: 14),
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
-            tabAlignment: TabAlignment.start,
-            tabs: const [
-              Tab(text: 'Plans overview'),
-              Tab(text: 'User plan editor'),
-              Tab(text: 'Feature flags'),
-              Tab(text: 'Limit overrides'),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Expanded(
-            child: TabBarView(
+          if (status.kind == AdminDataSourceKind.notInstrumented)
+            const Expanded(child: AdminNotInstrumentedPanel())
+          else ...[
+            TabBar(
               controller: _tabController,
-              children: const [
-                _PlansOverviewTab(),
-                _UserPlanEditorTab(),
-                _FeatureFlagsTab(),
-                _LimitOverridesTab(),
+              isScrollable: true,
+              dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
+              tabAlignment: TabAlignment.start,
+              tabs: const [
+                Tab(text: 'Plans overview'),
               ],
             ),
-          ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: const [_PlansOverviewTab()],
+              ),
+            ),
+          ],
         ],
       ),
     );
