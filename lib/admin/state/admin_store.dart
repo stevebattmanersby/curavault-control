@@ -433,8 +433,9 @@ class AdminStore extends ChangeNotifier {
       _userSummaryLoad = _userSummaryLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.users);
       notifyListeners();
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('AdminStore.refreshUsers failed: $e');
+      if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _users = const [];
         _setDataSource(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
@@ -525,8 +526,9 @@ class AdminStore extends ChangeNotifier {
       _dashboard = await _repository.getDashboardSnapshot(query: _dashboardQuery);
       _dashboardLoad = _dashboardLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.dashboard);
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('AdminStore.refreshDashboard failed: $e');
+      if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _dashboard = null;
         _setDataSource(AdminDataSourceKey.dashboard, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
@@ -556,8 +558,9 @@ class AdminStore extends ChangeNotifier {
       _usageAnalytics = await _repository.getUsageAnalyticsSnapshot(query: _usageAnalyticsQuery);
       _usageEventsLoad = _usageEventsLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.usageAnalytics);
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('AdminStore.refreshUsageAnalytics failed: $e');
+      if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _usageAnalytics = null;
         _setDataSource(AdminDataSourceKey.usageAnalytics, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
@@ -585,8 +588,9 @@ class AdminStore extends ChangeNotifier {
     try {
       _storage = await _repository.getStorageSnapshot(query: _storageQuery);
       _syncDataSourceFromRepository(AdminDataSourceKey.storage);
-    } catch (e) {
+    } catch (e, st) {
       debugPrint('AdminStore.refreshStorage failed: $e');
+      if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _storage = null;
         _setDataSource(AdminDataSourceKey.storage, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));

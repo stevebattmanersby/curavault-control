@@ -191,9 +191,14 @@ class SupabaseConfig {
       if (needsUrl && url != null && _looksLikeHttpsUrl(url) && _looksLikeSupabaseProjectUrl(url)) {
         _runtimeSupabaseUrl = url;
       }
-      // We intentionally require a JWT-like token to avoid accidentally accepting
-      // placeholders or other invalid values.
-      if (needsAnon && anon != null && anon.isNotEmpty && !anon.startsWith('<') && _looksLikeJwt(anon) && !_looksLikeServiceRoleJwt(anon)) {
+      // Accept public keys only:
+      // - legacy anon keys (JWT)
+      // - new Supabase publishable keys (sb_publishable_...)
+      // and reject:
+      // - placeholders
+      // - service role JWTs
+      // - secret keys (sb_secret_...)
+      if (needsAnon && anon != null && anon.isNotEmpty && !anon.startsWith('<') && _looksLikePublicSupabaseKey(anon) && !_looksLikeServiceRoleJwt(anon)) {
         _runtimeAnonKey = anon;
       }
       if (needsBase && base != null && _looksLikeHttpsUrl(base)) {
@@ -225,7 +230,7 @@ class SupabaseConfig {
       if (needsUrl && qpUrl != null && qpUrl.isNotEmpty && _looksLikeHttpsUrl(qpUrl) && _looksLikeSupabaseProjectUrl(qpUrl)) {
         _runtimeSupabaseUrl = qpUrl;
       }
-      if (needsAnon && qpAnon != null && qpAnon.isNotEmpty && _looksLikeJwt(qpAnon) && !_looksLikeServiceRoleJwt(qpAnon)) {
+      if (needsAnon && qpAnon != null && qpAnon.isNotEmpty && _looksLikePublicSupabaseKey(qpAnon) && !_looksLikeServiceRoleJwt(qpAnon)) {
         _runtimeAnonKey = qpAnon;
       }
       if (needsBase && qpBase != null && qpBase.isNotEmpty && _looksLikeHttpsUrl(qpBase)) {
@@ -234,6 +239,18 @@ class SupabaseConfig {
     } catch (e) {
       debugPrint('Failed to read runtime Supabase config from URL query params: $e');
     }
+  }
+
+  static bool _looksLikePublicSupabaseKey(String key) {
+    // Supabase supports multiple public key formats:
+    // - anon JWT (legacy): three base64url parts separated by dots
+    // - publishable key (new): sb_publishable_...
+    // This app must NEVER accept secret keys in a client build.
+    final trimmed = key.trim();
+    if (trimmed.isEmpty) return false;
+    if (trimmed.startsWith('sb_secret_')) return false;
+    if (trimmed.startsWith('sb_publishable_')) return true;
+    return _looksLikeJwt(trimmed);
   }
 
   static bool _looksLikeHttpsUrl(String url) {
