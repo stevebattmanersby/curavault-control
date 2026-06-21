@@ -4,6 +4,7 @@ import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -79,73 +80,85 @@ class _UsersPageState extends State<UsersPage> {
           ),
         ),
       ],
-      child: Builder(
-        builder: (context) {
-          final status = store.dataSource(AdminDataSourceKey.users);
-          if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
-          if (users.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 56),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.people_alt_outlined, size: 44, color: cs.onSurfaceVariant),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text('No user summary data yet.', style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
-                  ],
-                ),
-              ),
-            );
-          }
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.users, title: 'Users'),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: Builder(
+              builder: (context) {
+                final status = store.dataSource(AdminDataSourceKey.users);
+                if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
+                if (status.kind == AdminDataSourceKind.error) {
+                  return Center(child: Text(status.safeErrorMessage ?? 'Failed to load users.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+                }
+                if (users.isEmpty) {
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 56),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.people_alt_outlined, size: 44, color: cs.onSurfaceVariant),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('No user summary data yet.', style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('No data has been collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                  );
+                }
 
-          return AdminCard(
-            header: Row(
-              children: [
-                Text('User summaries', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                const Spacer(),
-                Text('${users.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
-              ],
-            ),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
-                dataTextStyle: Theme.of(context).textTheme.labelLarge,
-                columns: [
-                  const DataColumn(label: Text('User ID')),
-                  if (canEmail) const DataColumn(label: Text('Email')),
-                  const DataColumn(label: Text('Last active')),
-                  const DataColumn(label: Text('Profiles'), numeric: true),
-                  const DataColumn(label: Text('Records'), numeric: true),
-                  const DataColumn(label: Text('Docs'), numeric: true),
-                  const DataColumn(label: Text('Appts'), numeric: true),
-                  const DataColumn(label: Text('Meds'), numeric: true),
-                  const DataColumn(label: Text('Vax'), numeric: true),
-                ],
-                rows: [
-                  for (final u in users)
-                    DataRow(
-                      onSelectChanged: (_) => context.go('/users/${u.userId}'),
-                      cells: [
-                        DataCell(SelectableText(u.userId)),
-                        if (canEmail) DataCell(Text(u.email ?? '—')),
-                        DataCell(Text(formatDateTimeShort(u.lastActiveAt))),
-                        DataCell(Text(formatCompactInt(u.profileCount))),
-                        DataCell(Text(formatCompactInt(u.recordCount))),
-                        DataCell(Text(formatCompactInt(u.documentCount))),
-                        DataCell(Text(formatCompactInt(u.appointmentCount))),
-                        DataCell(Text(formatCompactInt(u.medicationCount))),
-                        DataCell(Text(formatCompactInt(u.vaccinationCount))),
+                return AdminCard(
+                  header: Row(
+                    children: [
+                      Text('User summaries', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      const Spacer(),
+                      Text('${users.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    ],
+                  ),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
+                      dataTextStyle: Theme.of(context).textTheme.labelLarge,
+                      columns: [
+                        const DataColumn(label: Text('User ID')),
+                        if (canEmail) const DataColumn(label: Text('Email')),
+                        const DataColumn(label: Text('Last active')),
+                        const DataColumn(label: Text('Profiles'), numeric: true),
+                        const DataColumn(label: Text('Records'), numeric: true),
+                        const DataColumn(label: Text('Docs'), numeric: true),
+                        const DataColumn(label: Text('Appts'), numeric: true),
+                        const DataColumn(label: Text('Meds'), numeric: true),
+                        const DataColumn(label: Text('Vax'), numeric: true),
+                      ],
+                      rows: [
+                        for (final u in users)
+                          DataRow(
+                            onSelectChanged: (_) => context.go('/users/${u.userId}'),
+                            cells: [
+                              DataCell(SelectableText(u.userId)),
+                              if (canEmail) DataCell(Text(u.email ?? '—')),
+                              DataCell(Text(formatDateTimeShort(u.lastActiveAt))),
+                              DataCell(Text(formatCompactInt(u.profileCount))),
+                              DataCell(Text(formatCompactInt(u.recordCount))),
+                              DataCell(Text(formatCompactInt(u.documentCount))),
+                              DataCell(Text(formatCompactInt(u.appointmentCount))),
+                              DataCell(Text(formatCompactInt(u.medicationCount))),
+                              DataCell(Text(formatCompactInt(u.vaccinationCount))),
+                            ],
+                          ),
                       ],
                     ),
-                ],
-              ),
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+        ],
       ),
     );
   }

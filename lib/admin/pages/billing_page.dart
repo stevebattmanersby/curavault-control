@@ -9,6 +9,7 @@ import 'package:curavault_admin/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 
 class BillingPage extends StatefulWidget {
   const BillingPage({super.key});
@@ -45,6 +46,8 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.billing, title: 'Billing'),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(child: Text('Billing', style: Theme.of(context).textTheme.headlineMedium)),
@@ -61,6 +64,9 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
           const SizedBox(height: 14),
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
+          else
+          if (status.kind == AdminDataSourceKind.error)
+            Expanded(child: Center(child: Text(status.safeErrorMessage ?? 'Failed to load billing data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))))
           else
           TabBar(
             controller: _tabController,

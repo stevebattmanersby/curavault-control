@@ -5,6 +5,7 @@ import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -37,22 +38,33 @@ class StoragePage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.notInstrumented
-              ? const AdminNotInstrumentedPanel()
-              : snap == null
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.cloud_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('No storage data yet.', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    ],
-                  ),
-                )
-              : _StorageTabs(snapshot: snap),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.storage, title: 'Storage'),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.notInstrumented
+                      ? const AdminNotInstrumentedPanel()
+                      : store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.error
+                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.storage).safeErrorMessage ?? 'Failed to load storage data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                          : snap == null
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.cloud_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Text('No storage data yet.', style: Theme.of(context).textTheme.titleMedium),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Text('No data has been collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                    ],
+                                  ),
+                                )
+                              : _StorageTabs(snapshot: snap),
+                ),
+              ],
+            ),
     );
   }
 }

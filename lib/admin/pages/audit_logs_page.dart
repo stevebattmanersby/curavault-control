@@ -8,6 +8,7 @@ import 'package:curavault_admin/admin/utils/csv_export.dart';
 import 'package:curavault_admin/admin/utils/file_saver.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -86,9 +87,18 @@ class _AuditLogsPageState extends State<AuditLogsPage> {
       ],
       child: Column(
         children: [
+          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.auditLogs, title: 'Audit Logs'),
+          const SizedBox(height: AppSpacing.md),
           if (store.dataSource(AdminDataSourceKey.auditLogs).kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
           else ...[
+            if (store.dataSource(AdminDataSourceKey.auditLogs).kind == AdminDataSourceKind.error)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: AdminCard(
+                  child: Text(store.dataSource(AdminDataSourceKey.auditLogs).safeErrorMessage ?? 'Failed to load audit logs.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                ),
+              ),
             if (store.auditSummary != null)
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),

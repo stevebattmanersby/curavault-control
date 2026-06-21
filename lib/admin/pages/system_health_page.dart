@@ -3,6 +3,7 @@ import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -35,11 +36,22 @@ class SystemHealthPage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.notInstrumented
-              ? const AdminNotInstrumentedPanel()
-              : snap == null
-                  ? _EmptySystemHealthState(query: store.systemHealthQuery)
-                  : _SystemHealthTabs(snapshot: snap),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.systemHealth, title: 'System Health'),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.notInstrumented
+                      ? const AdminNotInstrumentedPanel()
+                      : store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.error
+                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.systemHealth).safeErrorMessage ?? 'Failed to load system health.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                          : snap == null
+                              ? _EmptySystemHealthState(query: store.systemHealthQuery)
+                              : _SystemHealthTabs(snapshot: snap),
+                ),
+              ],
+            ),
     );
   }
 }

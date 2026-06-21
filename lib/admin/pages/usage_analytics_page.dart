@@ -3,6 +3,7 @@ import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -35,22 +36,33 @@ class UsageAnalyticsPage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : store.dataSource(AdminDataSourceKey.usageAnalytics).kind == AdminDataSourceKind.notInstrumented
-              ? const AdminNotInstrumentedPanel()
-              : (snap == null || snap.totalEvents == 0)
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.insights_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('No usage data has been collected yet.', style: Theme.of(context).textTheme.titleMedium),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Once events are collected, this page will show aggregate-only usage signals.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-                    ],
-                  ),
-                )
-              : _UsageAnalyticsTabs(snapshot: snap),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.usageAnalytics, title: 'Usage Analytics'),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: store.dataSource(AdminDataSourceKey.usageAnalytics).kind == AdminDataSourceKind.notInstrumented
+                      ? const AdminNotInstrumentedPanel()
+                      : store.dataSource(AdminDataSourceKey.usageAnalytics).kind == AdminDataSourceKind.error
+                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.usageAnalytics).safeErrorMessage ?? 'Failed to load usage analytics.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                          : (snap == null || snap.totalEvents == 0)
+                              ? Center(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.insights_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Text('No usage data has been collected yet.', style: Theme.of(context).textTheme.titleMedium),
+                                      const SizedBox(height: AppSpacing.sm),
+                                      Text('Once events are collected, this page will show aggregate-only usage signals.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                    ],
+                                  ),
+                                )
+                              : _UsageAnalyticsTabs(snapshot: snap),
+                ),
+              ],
+            ),
     );
   }
 }

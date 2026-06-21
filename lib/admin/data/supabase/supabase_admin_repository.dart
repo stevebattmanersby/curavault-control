@@ -5,6 +5,7 @@ import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_queries.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
 import 'package:curavault_admin/admin/utils/client_context.dart';
+import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,6 +32,43 @@ class SupabaseAdminRepository implements AdminRepository {
     _sources[key] = status;
   }
 
+  void _setLive(AdminDataSourceKey key, {required String queryName, int? rowCount}) {
+    _set(
+      key,
+      AdminDataSourceStatus(
+        kind: AdminDataSourceKind.live,
+        queryName: queryName,
+        rowCount: rowCount,
+        lastRefreshedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  void _setMock(AdminDataSourceKey key, {required String queryName, int? rowCount, String? message}) {
+    _set(
+      key,
+      AdminDataSourceStatus(
+        kind: AdminDataSourceKind.mock,
+        message: message ?? 'Using mock fallback (debug only).',
+        queryName: queryName,
+        rowCount: rowCount,
+        lastRefreshedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  void _setError(AdminDataSourceKey key, {required String queryName, required Object error}) {
+    _set(
+      key,
+      AdminDataSourceStatus(
+        kind: AdminDataSourceKind.error,
+        queryName: queryName,
+        lastRefreshedAt: DateTime.now().toUtc(),
+        safeErrorMessage: formatAdminSafeError(error),
+      ),
+    );
+  }
+
   AdminUser? _cachedAdmin;
 
   Future<AdminUser> _admin() async => _cachedAdmin ??= await _queries.getCurrentAdminUser();
@@ -49,8 +87,13 @@ class SupabaseAdminRepository implements AdminRepository {
     return msg.contains('relation') && msg.contains('does not exist') || msg.contains('404');
   }
 
-  Never _throwNotInstrumented(AdminDataSourceKey key) {
-    final status = const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.');
+  Never _throwNotInstrumented(AdminDataSourceKey key, {String? queryName}) {
+    final status = AdminDataSourceStatus(
+      kind: AdminDataSourceKind.notInstrumented,
+      message: 'This data source is not instrumented yet.',
+      queryName: queryName,
+      lastRefreshedAt: DateTime.now().toUtc(),
+    );
     _set(key, status);
     throw AdminNotInstrumentedException(status.message!);
   }
@@ -86,16 +129,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getUsersList(admin: admin, query: query, limit: limit);
-      _set(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.users, queryName: 'admin_get_user_usage_summary', rowCount: res.length);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listUsers failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users);
-        _set(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users, queryName: 'admin_get_user_usage_summary');
+        _setMock(AdminDataSourceKey.users, queryName: 'admin_get_user_usage_summary', message: 'Using mock fallback (debug only).');
         return _fallback.listUsers(query: query, limit: limit);
       }
-      _set(AdminDataSourceKey.users, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.users, queryName: 'admin_get_user_usage_summary', error: e);
       rethrow;
     }
   }
@@ -104,8 +147,8 @@ class SupabaseAdminRepository implements AdminRepository {
   Future<UserAccountDetail> getUserDetail({required String userId}) async {
     // Until a dedicated safe view exists, use mock fallback.
     // (The UI already treats this as privacy-safe; do NOT query raw tables here.)
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users);
-    _set(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'User detail is mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users, queryName: 'user_detail');
+    _setMock(AdminDataSourceKey.users, queryName: 'user_detail', message: 'User detail is mocked (debug only).');
     return _fallback.getUserDetail(userId: userId);
   }
 
@@ -115,8 +158,8 @@ class SupabaseAdminRepository implements AdminRepository {
     // enforced RBAC + mandatory audit logging.
     //
     // Until the RPC is deployed, keep mock behavior (still audited in UI layer).
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users);
-    _set(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'User admin actions are mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.users, queryName: 'user_admin_action');
+    _setMock(AdminDataSourceKey.users, queryName: 'user_admin_action', message: 'User admin actions are mocked (debug only).');
     return _fallback.performUserAdminAction(request: request);
   }
 
@@ -126,16 +169,16 @@ class SupabaseAdminRepository implements AdminRepository {
       final admin = await _admin();
       final res = await _queries.getAuditLogs(admin: admin, query: query, limit: limit);
       // Audit logs are always live when possible; treat missing as not instrumented in release.
-      _set(AdminDataSourceKey.auditLogs, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log', rowCount: res.length);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listAuditLogs failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.auditLogs);
-        _set(AdminDataSourceKey.auditLogs, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log');
+        _setMock(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log');
         return _fallback.listAuditLogs(query: query, limit: limit);
       }
-      _set(AdminDataSourceKey.auditLogs, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log', error: e);
       rethrow;
     }
   }
@@ -152,16 +195,16 @@ class SupabaseAdminRepository implements AdminRepository {
         latestAuditEventAt: DateTime.tryParse((row?['latest_audit_event_at'] ?? '').toString()),
         generatedAt: DateTime.now().toUtc(),
       );
-      _set(AdminDataSourceKey.auditLogs, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.auditLogs, queryName: 'admin_get_audit_summary', rowCount: row == null ? 0 : 1);
       return snap;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAuditSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.auditLogs);
-        _set(AdminDataSourceKey.auditLogs, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.auditLogs, queryName: 'admin_get_audit_summary');
+        _setMock(AdminDataSourceKey.auditLogs, queryName: 'admin_get_audit_summary');
         return _fallback.getAuditSummary();
       }
-      _set(AdminDataSourceKey.auditLogs, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.auditLogs, queryName: 'admin_get_audit_summary', error: e);
       rethrow;
     }
   }
@@ -171,16 +214,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getSupportSessions(admin: admin, query: query, limit: limit);
-      _set(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.support, queryName: 'admin_support_sessions', rowCount: res.length);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listSupportSessions failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support);
-        _set(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support, queryName: 'admin_support_sessions');
+        _setMock(AdminDataSourceKey.support, queryName: 'admin_support_sessions');
         return _fallback.listSupportSessions(query: query, limit: limit);
       }
-      _set(AdminDataSourceKey.support, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.support, queryName: 'admin_support_sessions', error: e);
       rethrow;
     }
   }
@@ -199,24 +242,24 @@ class SupabaseAdminRepository implements AdminRepository {
         latestSessionAt: DateTime.tryParse((row?['latest_session_at'] ?? '').toString()),
         generatedAt: DateTime.now().toUtc(),
       );
-      _set(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.support, queryName: 'admin_get_support_summary', rowCount: row == null ? 0 : 1);
       return snap;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSupportSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support);
-        _set(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support, queryName: 'admin_get_support_summary');
+        _setMock(AdminDataSourceKey.support, queryName: 'admin_get_support_summary');
         return _fallback.getSupportSummary();
       }
-      _set(AdminDataSourceKey.support, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.support, queryName: 'admin_get_support_summary', error: e);
       rethrow;
     }
   }
 
   @override
   Future<SupportSessionDetail> getSupportSessionDetail({required String supportSessionId}) async {
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support);
-    _set(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Support session detail is mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.support, queryName: 'support_session_detail');
+    _setMock(AdminDataSourceKey.support, queryName: 'support_session_detail', message: 'Support session detail is mocked (debug only).');
     return _fallback.getSupportSessionDetail(supportSessionId: supportSessionId);
   }
 
@@ -231,16 +274,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getDashboardMetrics(admin: admin, query: query);
-      _set(AdminDataSourceKey.dashboard, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.dashboard, queryName: 'admin_get_dashboard_metrics', rowCount: 1);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getDashboardSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.dashboard);
-        _set(AdminDataSourceKey.dashboard, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.dashboard, queryName: 'admin_get_dashboard_metrics');
+        _setMock(AdminDataSourceKey.dashboard, queryName: 'admin_get_dashboard_metrics');
         return _fallback.getDashboardSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.dashboard, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.dashboard, queryName: 'admin_get_dashboard_metrics', error: e);
       rethrow;
     }
   }
@@ -273,38 +316,38 @@ class SupabaseAdminRepository implements AdminRepository {
         );
       }
 
-      _set(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.plansPermissions, queryName: 'admin_get_plan_permission_summary', rowCount: out.length);
       return out;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listPlansOverview failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions);
-        _set(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions, queryName: 'admin_get_plan_permission_summary');
+        _setMock(AdminDataSourceKey.plansPermissions, queryName: 'admin_get_plan_permission_summary');
         return _fallback.listPlansOverview(limit: limit);
       }
-      _set(AdminDataSourceKey.plansPermissions, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.plansPermissions, queryName: 'admin_get_plan_permission_summary', error: e);
       rethrow;
     }
   }
 
   @override
   Future<UserEntitlements> getUserEntitlements({required String userId}) async {
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions);
-    _set(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'User entitlements are mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions, queryName: 'user_entitlements');
+    _setMock(AdminDataSourceKey.plansPermissions, queryName: 'user_entitlements', message: 'User entitlements are mocked (debug only).');
     return _fallback.getUserEntitlements(userId: userId);
   }
 
   @override
   Future<List<FeatureFlagDefinition>> listFeatureFlags({required int limit}) async {
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions);
-    _set(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Feature flags are mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions, queryName: 'feature_flags');
+    _setMock(AdminDataSourceKey.plansPermissions, queryName: 'feature_flags', message: 'Feature flags are mocked (debug only).');
     return _fallback.listFeatureFlags(limit: limit);
   }
 
   @override
   Future<List<LimitOverrideRow>> listLimitOverrides({required int limit}) async {
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions);
-    _set(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Limit overrides are mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.plansPermissions, queryName: 'limit_overrides');
+    _setMock(AdminDataSourceKey.plansPermissions, queryName: 'limit_overrides', message: 'Limit overrides are mocked (debug only).');
     return _fallback.listLimitOverrides(limit: limit);
   }
 
@@ -313,16 +356,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getUsageAnalyticsSummary(admin: admin, query: query);
-      _set(AdminDataSourceKey.usageAnalytics, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.usageAnalytics, queryName: SupabaseAdminQueries.rpcUsageEventsSummary, rowCount: res.featureUsage.length);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getUsageAnalyticsSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.usageAnalytics);
-        _set(AdminDataSourceKey.usageAnalytics, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.usageAnalytics, queryName: 'admin_get_usage_events_summary');
+        _setMock(AdminDataSourceKey.usageAnalytics, queryName: 'admin_get_usage_events_summary');
         return _fallback.getUsageAnalyticsSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.usageAnalytics, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.usageAnalytics, queryName: 'admin_get_usage_events_summary', error: e);
       rethrow;
     }
   }
@@ -332,16 +375,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getStorageUsage(admin: admin, query: query);
-      _set(AdminDataSourceKey.storage, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
-      return res;
+      _setLive(AdminDataSourceKey.storage, queryName: res.name, rowCount: 1);
+      return res.value;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getStorageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.storage);
-        _set(AdminDataSourceKey.storage, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.storage, queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
+        _setMock(AdminDataSourceKey.storage, queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
         return _fallback.getStorageSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.storage, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.storage, queryName: SupabaseAdminQueries.rpcStorageSummaryV2, error: e);
       rethrow;
     }
   }
@@ -351,16 +394,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getAIUsage(admin: admin, query: query);
-      _set(AdminDataSourceKey.aiUsage, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.aiUsage, queryName: 'admin_get_ai_usage_summary', rowCount: 1);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAiUsageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.aiUsage);
-        _set(AdminDataSourceKey.aiUsage, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.aiUsage, queryName: 'admin_get_ai_usage_summary');
+        _setMock(AdminDataSourceKey.aiUsage, queryName: 'admin_get_ai_usage_summary');
         return _fallback.getAiUsageSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.aiUsage, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.aiUsage, queryName: 'admin_get_ai_usage_summary', error: e);
       rethrow;
     }
   }
@@ -370,16 +413,16 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getBillingSummary(admin: admin, query: query);
-      _set(AdminDataSourceKey.billing, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.billing, queryName: 'admin_get_billing_summary', rowCount: res.overview != null ? 1 : 0);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getBillingSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.billing);
-        _set(AdminDataSourceKey.billing, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.billing, queryName: 'admin_get_billing_summary');
+        _setMock(AdminDataSourceKey.billing, queryName: 'admin_get_billing_summary');
         return _fallback.getBillingSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.billing, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.billing, queryName: 'admin_get_billing_summary', error: e);
       rethrow;
     }
   }
@@ -389,24 +432,24 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getComplianceRequests(admin: admin, query: query);
-      _set(AdminDataSourceKey.compliance, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.compliance, queryName: 'admin_get_compliance_summary', rowCount: res.exportRequests.length + res.deletionRequests.length);
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getComplianceSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.compliance);
-        _set(AdminDataSourceKey.compliance, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.compliance, queryName: 'admin_get_compliance_summary');
+        _setMock(AdminDataSourceKey.compliance, queryName: 'admin_get_compliance_summary');
         return _fallback.getComplianceSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.compliance, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.compliance, queryName: 'admin_get_compliance_summary', error: e);
       rethrow;
     }
   }
 
   @override
   Future<void> performComplianceAction({required ComplianceActionRequest request}) async {
-    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.compliance);
-    _set(AdminDataSourceKey.compliance, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Compliance actions are mocked (debug only).'));
+    if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.compliance, queryName: 'compliance_action');
+    _setMock(AdminDataSourceKey.compliance, queryName: 'compliance_action', message: 'Compliance actions are mocked (debug only).');
     return _fallback.performComplianceAction(request: request);
   }
 
@@ -414,7 +457,8 @@ class SupabaseAdminRepository implements AdminRepository {
   Future<SystemHealthSnapshot> getSystemHealthSnapshot({required SystemHealthQuery query}) async {
     try {
       final admin = await _admin();
-      final row = await _queries.getSystemHealthSummaryRow(admin: admin);
+      final rowRes = await _queries.getSystemHealthSummaryRow(admin: admin);
+      final row = rowRes.value;
 
       // Empty / missing: treat as no data yet (not an error).
       final recentUsage = (row?['recent_usage_events_24h'] ?? row?['usage_events_24h']) as num?;
@@ -457,16 +501,16 @@ class SupabaseAdminRepository implements AdminRepository {
         generatedAt: DateTime.now().toUtc(),
       );
 
-      _set(AdminDataSourceKey.systemHealth, const AdminDataSourceStatus(kind: AdminDataSourceKind.live));
+      _setLive(AdminDataSourceKey.systemHealth, queryName: rowRes.name, rowCount: row == null ? 0 : 1);
       return snap;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSystemHealthSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.systemHealth);
-        _set(AdminDataSourceKey.systemHealth, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock fallback (debug only).'));
+        if (kReleaseMode) _throwNotInstrumented(AdminDataSourceKey.systemHealth, queryName: SupabaseAdminQueries.rpcSystemHealthSummary);
+        _setMock(AdminDataSourceKey.systemHealth, queryName: SupabaseAdminQueries.rpcSystemHealthSummary);
         return _fallback.getSystemHealthSnapshot(query: query);
       }
-      _set(AdminDataSourceKey.systemHealth, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: e.toString()));
+      _setError(AdminDataSourceKey.systemHealth, queryName: SupabaseAdminQueries.rpcSystemHealthSummary, error: e);
       rethrow;
     }
   }

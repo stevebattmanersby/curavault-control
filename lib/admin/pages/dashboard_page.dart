@@ -8,6 +8,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -43,6 +44,8 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.dashboard, title: 'Dashboard'),
+                  const SizedBox(height: AppSpacing.md),
                   _DataSourceStatusPanel(store: store),
                   const SizedBox(height: AppSpacing.lg),
                   if (store.dataSource(AdminDataSourceKey.dashboard).kind == AdminDataSourceKind.notInstrumented) const AdminNotInstrumentedPanel(),

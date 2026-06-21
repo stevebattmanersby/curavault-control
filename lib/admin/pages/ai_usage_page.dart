@@ -6,6 +6,7 @@ import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -38,11 +39,22 @@ class AiUsagePage extends StatelessWidget {
       ],
       child: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : store.dataSource(AdminDataSourceKey.aiUsage).kind == AdminDataSourceKind.notInstrumented
-              ? const AdminNotInstrumentedPanel()
-              : snap == null
-                  ? _EmptyAiUsageState(query: store.aiUsageQuery)
-                  : _AiUsageTabs(snapshot: snap),
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.aiUsage, title: 'AI Usage'),
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: store.dataSource(AdminDataSourceKey.aiUsage).kind == AdminDataSourceKind.notInstrumented
+                      ? const AdminNotInstrumentedPanel()
+                      : store.dataSource(AdminDataSourceKey.aiUsage).kind == AdminDataSourceKind.error
+                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.aiUsage).safeErrorMessage ?? 'Failed to load AI usage.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                          : snap == null
+                              ? _EmptyAiUsageState(query: store.aiUsageQuery)
+                              : _AiUsageTabs(snapshot: snap),
+                ),
+              ],
+            ),
     );
   }
 }

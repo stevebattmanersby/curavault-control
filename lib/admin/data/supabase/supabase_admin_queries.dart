@@ -4,6 +4,14 @@ import 'package:curavault_admin/admin/data/supabase/supabase_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+/// Helper to return a value plus which RPC/view provided it.
+@immutable
+class AdminQueryResult<T> {
+  const AdminQueryResult({required this.name, required this.value});
+  final String name;
+  final T value;
+}
+
 /// Typed, privacy-safe Supabase queries for the CuraVault Control Site.
 ///
 /// IMPORTANT:
@@ -11,6 +19,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// - Prefer summary tables/views or RPCs that return aggregate-only data.
 /// - RBAC is enforced client-side (best-effort) AND must be enforced by RLS.
 class SupabaseAdminQueries {
+  static const String rpcDashboardMetrics = 'admin_get_dashboard_metrics';
+  static const String rpcUserUsageSummary = 'admin_get_user_usage_summary';
+  static const String rpcUsageEventsSummary = 'admin_get_usage_events_summary';
+  static const String rpcBillingSummary = 'admin_get_billing_summary';
+  static const String rpcCountryUsageSummary = 'admin_get_country_usage_summary';
+  static const String rpcStorageSummaryV2 = 'admin_get_storage_summary_v2';
+  static const String rpcStorageSummaryV1 = 'admin_get_storage_summary';
+  static const String rpcAiUsageSummary = 'admin_get_ai_usage_summary';
+  static const String rpcSupportSummary = 'admin_get_support_summary';
+  static const String rpcAuditSummary = 'admin_get_audit_summary';
+  static const String rpcSystemHealthSummary = 'admin_get_system_health_summary';
+  static const String rpcSystemHealthSummaryV2 = 'admin_get_system_health_summary_v2';
+  static const String rpcComplianceSummary = 'admin_get_compliance_summary';
+  static const String rpcPlanPermissionSummary = 'admin_get_plan_permission_summary';
+
   AiFeatureArea? _parseAiFeatureArea(String raw) {
     final v = raw.trim().toLowerCase();
     return switch (v) {
@@ -112,7 +135,7 @@ class SupabaseAdminQueries {
 
     // Preferred: admin-safe reporting RPC (aggregate-only).
     try {
-      final res = await _client.rpc('admin_get_dashboard_metrics');
+      final res = await _client.rpc(rpcDashboardMetrics);
       if (res is List && res.isEmpty) {
         final featureUsage = <String, int>{
           'User profiles': 0,
@@ -148,26 +171,38 @@ class SupabaseAdminQueries {
       };
 
       if (row != null) {
+        num? readNum(List<String> keys) {
+          for (final k in keys) {
+            final v = row[k];
+            if (v is num) return v;
+            if (v != null) {
+              final parsed = num.tryParse(v.toString());
+              if (parsed != null) return parsed;
+            }
+          }
+          return null;
+        }
+
         // Adapt RPC output into the existing DashboardSnapshot shape.
         // Field names MUST match the migration return names exactly.
         final featureUsage = <String, int>{
-          'User profiles': (row['total_user_profiles'] as num?)?.toInt() ?? 0,
-          'Family members': (row['total_family_members'] as num?)?.toInt() ?? 0,
-          'Medical records': (row['total_medical_records'] as num?)?.toInt() ?? 0,
-          'Appointments': (row['total_appointments'] as num?)?.toInt() ?? 0,
-          'Medications': (row['total_medications'] as num?)?.toInt() ?? 0,
-          'Vaccinations': (row['total_vaccinations'] as num?)?.toInt() ?? 0,
-          'Blood pressure entries': (row['total_blood_pressure_entries'] as num?)?.toInt() ?? 0,
-          'Documents': (row['total_medical_documents'] as num?)?.toInt() ?? 0,
-          'Insurance cards': (row['total_insurance_cards'] as num?)?.toInt() ?? 0,
-          'Usage events': (row['total_usage_events'] as num?)?.toInt() ?? 0,
-          'Audit events': (row['total_audit_events'] as num?)?.toInt() ?? 0,
-          'Support sessions': (row['total_support_sessions'] as num?)?.toInt() ?? 0,
-          'Compliance requests': (row['total_compliance_requests'] as num?)?.toInt() ?? 0,
+          'User profiles': (readNum(['total_user_profiles', 'total_profiles'])?.toInt()) ?? 0,
+          'Family members': (readNum(['total_family_members'])?.toInt()) ?? 0,
+          'Medical records': (readNum(['total_medical_records', 'total_medical_records_count'])?.toInt()) ?? 0,
+          'Appointments': (readNum(['total_appointments', 'total_appointments_count'])?.toInt()) ?? 0,
+          'Medications': (readNum(['total_medications', 'total_medications_count'])?.toInt()) ?? 0,
+          'Vaccinations': (readNum(['total_vaccinations', 'total_vaccinations_count'])?.toInt()) ?? 0,
+          'Blood pressure entries': (readNum(['total_blood_pressure_entries', 'total_blood_pressure_entries_count'])?.toInt()) ?? 0,
+          'Documents': (readNum(['total_medical_documents', 'total_medical_documents_count'])?.toInt()) ?? 0,
+          'Insurance cards': (readNum(['total_insurance_cards'])?.toInt()) ?? 0,
+          'Usage events': (readNum(['total_usage_events', 'total_usage_events_count'])?.toInt()) ?? 0,
+          'Audit events': (readNum(['total_audit_events', 'total_audit_events_count'])?.toInt()) ?? 0,
+          'Support sessions': (readNum(['total_support_sessions', 'total_support_sessions_count'])?.toInt()) ?? 0,
+          'Compliance requests': (readNum(['total_compliance_requests', 'total_compliance_requests_count'])?.toInt()) ?? 0,
         };
 
         final adapted = <String, dynamic>{
-          'total_registered_users': row['total_auth_users'],
+          'total_registered_users': readNum(['total_auth_users', 'total_registered_users']) ?? row['total_auth_users'],
           'feature_usage': featureUsage,
           'generated_at': DateTime.now().toUtc().toIso8601String(),
         };
@@ -194,7 +229,7 @@ class SupabaseAdminQueries {
     // Preferred: admin-safe reporting RPC.
     try {
       final canEmail = AdminRbac.canViewUserEmail(admin.role);
-      final res = await _client.rpc('admin_get_user_usage_summary');
+      final res = await _client.rpc(rpcUserUsageSummary);
       if (res is List) {
         final rows = res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
 
@@ -424,17 +459,19 @@ class SupabaseAdminQueries {
     }
   }
 
-  Future<StorageSnapshot> getStorageUsage({required AdminUser admin, required StorageQuery query}) async {
+  Future<AdminQueryResult<StorageSnapshot>> getStorageUsage({required AdminUser admin, required StorageQuery query}) async {
     _requireRole(admin, <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing}, capability: 'storage_usage');
 
     try {
       dynamic res;
+      String rpcName = rpcStorageSummaryV2;
       try {
         // Prefer v2 (privacy-safe storage metadata table + better failure counting).
-        res = await _client.rpc('admin_get_storage_summary_v2');
+        res = await _client.rpc(rpcStorageSummaryV2);
       } catch (e) {
         debugPrint('SupabaseAdminQueries.getStorageUsage admin_get_storage_summary_v2 not available: $e');
-        res = await _client.rpc('admin_get_storage_summary');
+        rpcName = rpcStorageSummaryV1;
+        res = await _client.rpc(rpcStorageSummaryV1);
       }
       final Map<String, dynamic>? row = switch (res) {
         final Map m => m.cast<String, dynamic>(),
@@ -443,7 +480,9 @@ class SupabaseAdminQueries {
       };
 
       if (row == null) {
-        return StorageSnapshot(
+        return AdminQueryResult(
+          name: rpcName,
+          value: StorageSnapshot(
           query: query,
           totalStorageUsedBytes: 0,
           totalDocumentCount: 0,
@@ -458,6 +497,7 @@ class SupabaseAdminQueries {
           storageByCountry: const [],
           uploadErrors: const [],
           generatedAt: DateTime.now().toUtc(),
+          ),
         );
       }
 
@@ -468,7 +508,9 @@ class SupabaseAdminQueries {
       final failedUploads24h = (row['failed_upload_events_24h'] as num?)?.toInt() ?? 0;
       final failedUploadsTotal = (row['failed_upload_count'] as num?)?.toInt();
 
-      return StorageSnapshot(
+      return AdminQueryResult(
+        name: rpcName,
+        value: StorageSnapshot(
         query: query,
         totalStorageUsedBytes: totalStorageMb * 1048576,
         totalDocumentCount: (row['total_document_count'] as num?)?.toInt() ?? 0,
@@ -485,6 +527,7 @@ class SupabaseAdminQueries {
         storageByCountry: const [],
         uploadErrors: const [],
         generatedAt: DateTime.now().toUtc(),
+        ),
       );
     } catch (e) {
       debugPrint('SupabaseAdminQueries.getStorageUsage admin_get_storage_summary failed: $e');
@@ -581,7 +624,7 @@ class SupabaseAdminQueries {
   Future<UsageAnalyticsSnapshot> getUsageAnalyticsSummary({required AdminUser admin, required UsageAnalyticsQuery query}) async {
     _requireRole(admin, AdminRbac.analytics, capability: 'usage_events_summary');
 
-    final res = await _client.rpc('admin_get_usage_events_summary');
+    final res = await _client.rpc(rpcUsageEventsSummary);
     if (res is! List) throw StateError('Unexpected usage summary RPC response.');
     final rows = res.cast<Map>().map((e) => e.cast<String, dynamic>()).toList();
 
@@ -605,19 +648,22 @@ class SupabaseAdminQueries {
       );
     }
 
-    final totalEvents = rows.fold<int>(0, (a, r) => a + ((r['event_count'] as num?)?.toInt() ?? 0));
+    int eventCountOf(Map<String, dynamic> r) => (r['event_count'] as num?)?.toInt() ?? (r['count'] as num?)?.toInt() ?? 0;
+    int uniqueUsersOf(Map<String, dynamic> r) => (r['unique_user_count'] as num?)?.toInt() ?? (r['unique_users'] as num?)?.toInt() ?? 0;
+
+    final totalEvents = rows.fold<int>(0, (a, r) => a + eventCountOf(r));
 
     final featureUsage = <UsageFeatureUsageRow>[];
     for (final r in rows.take(50)) {
       final name = (r['event_name'] ?? 'unknown').toString();
       final featureArea = (r['feature_area'] ?? '').toString().trim();
       final label = featureArea.isEmpty ? name : '$featureArea • $name';
-      featureUsage.add(UsageFeatureUsageRow(feature: label, eventCount: (r['event_count'] as num?)?.toInt() ?? 0, uniqueUsers: (r['unique_user_count'] as num?)?.toInt() ?? 0));
+      featureUsage.add(UsageFeatureUsageRow(feature: label, eventCount: eventCountOf(r), uniqueUsers: uniqueUsersOf(r)));
     }
 
     final platformUsage = <String, int>{};
     for (final r in rows) {
-      final c = (r['event_count'] as num?)?.toInt() ?? 0;
+      final c = eventCountOf(r);
       final platform = (r['platform'] ?? '').toString().trim();
       if (platform.isNotEmpty) platformUsage[platform] = (platformUsage[platform] ?? 0) + c;
     }
@@ -695,24 +741,26 @@ class SupabaseAdminQueries {
     };
   }
 
-  Future<Map<String, dynamic>?> getSystemHealthSummaryRow({required AdminUser admin}) async {
+  Future<AdminQueryResult<Map<String, dynamic>?>> getSystemHealthSummaryRow({required AdminUser admin}) async {
     _requireRole(admin, AdminRbac.analytics, capability: 'system_health_summary');
     try {
-      final res = await _client.rpc('admin_get_system_health_summary');
-      return switch (res) {
+      final res = await _client.rpc(rpcSystemHealthSummary);
+      final row = switch (res) {
         final Map m => m.cast<String, dynamic>(),
         final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
         _ => null,
       };
+      return AdminQueryResult(name: rpcSystemHealthSummary, value: row);
     } catch (e) {
       debugPrint('SupabaseAdminQueries.getSystemHealthSummaryRow admin_get_system_health_summary failed: $e');
       // Try v2 if deployed.
-      final res = await _client.rpc('admin_get_system_health_summary_v2');
-      return switch (res) {
+      final res = await _client.rpc(rpcSystemHealthSummaryV2);
+      final row = switch (res) {
         final Map m => m.cast<String, dynamic>(),
         final List l when l.isNotEmpty && l.first is Map => (l.first as Map).cast<String, dynamic>(),
         _ => null,
       };
+      return AdminQueryResult(name: rpcSystemHealthSummaryV2, value: row);
     }
   }
 

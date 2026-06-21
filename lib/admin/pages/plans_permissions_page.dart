@@ -8,6 +8,7 @@ import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 
 class PlansPermissionsPage extends StatefulWidget {
   const PlansPermissionsPage({super.key});
@@ -46,6 +47,8 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.plansPermissions, title: 'Plans & Permissions'),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(child: Text('Plans & Permissions', style: Theme.of(context).textTheme.headlineMedium)),
@@ -62,6 +65,8 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
           const SizedBox(height: 14),
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
+          else if (status.kind == AdminDataSourceKind.error)
+            Expanded(child: Center(child: Text(status.safeErrorMessage ?? 'Failed to load plans & permissions.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))))
           else ...[
             TabBar(
               controller: _tabController,

@@ -4,6 +4,7 @@ import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -77,10 +78,15 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
         builder: (context) {
           final status = context.watch<AdminStore>().dataSource(AdminDataSourceKey.support);
           if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
+          if (status.kind == AdminDataSourceKind.error) {
+            return Center(child: Text(status.safeErrorMessage ?? 'Failed to load support data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+          }
           final summary = context.watch<AdminStore>().supportSummary;
 
           return Column(
             children: [
+              AdminOwnerDataSourcePanel(store: context.watch<AdminStore>(), dataSourceKey: AdminDataSourceKey.support, title: 'Support'),
+              const SizedBox(height: AppSpacing.md),
               if (summary != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),

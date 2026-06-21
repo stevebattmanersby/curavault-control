@@ -326,10 +326,19 @@ class AdminAuthStore extends ChangeNotifier {
     if (_tryGetExistingSupabaseClient() == null) {
       _fatalConfigError =
           'Supabase failed to initialize in this build.\n\n'
-          'This preview build includes safe fallback values. If you are overriding config in production, compile with:\n'
+          'This usually means required public configuration is missing.\n\n'
+          'Recommended (Dreamflow Web Deployments):\n'
+          '- Edit assets/config/control_site_config.json and set:\n'
+          '  • SUPABASE_URL\n'
+          '  • SUPABASE_ANON_KEY (publishable/anon key only)\n'
+          '  • CONTROL_SITE_BASE_URL\n\n'
+          'Alternative (local builds / CI): provide build-time Dart defines:\n'
           '- --dart-define=SUPABASE_URL=...\n'
-          '- --dart-define=SUPABASE_ANON_KEY=...\n\n'
-          'Do not use the service role key in frontend code.';
+          '- --dart-define=SUPABASE_ANON_KEY=...\n'
+          '- --dart-define=CONTROL_SITE_BASE_URL=... (recommended for auth redirects)\n\n'
+          'Security notes:\n'
+          '- Never use the service role key in frontend code.\n'
+          '- Do not expose database passwords or service_role JWTs.';
       debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.bootstrap(fatalConfigError)');
       _isBootstrapping = false;
       notifyListeners();

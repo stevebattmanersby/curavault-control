@@ -22,12 +22,25 @@ enum AdminDataSourceKey {
 
 @immutable
 class AdminDataSourceStatus {
-  const AdminDataSourceStatus({required this.kind, this.message});
+  const AdminDataSourceStatus({required this.kind, this.message, this.queryName, this.rowCount, this.lastRefreshedAt, this.safeErrorMessage});
 
   final AdminDataSourceKind kind;
   final String? message;
 
-  AdminDataSourceStatus copyWith({AdminDataSourceKind? kind, String? message}) => AdminDataSourceStatus(kind: kind ?? this.kind, message: message ?? this.message);
+  /// The RPC/view/table powering the page (safe metadata).
+  final String? queryName;
+
+  /// Count of rows returned by the last successful fetch (safe aggregate).
+  final int? rowCount;
+
+  /// When the page last refreshed (UTC recommended).
+  final DateTime? lastRefreshedAt;
+
+  /// A privacy-safe error message intended for UI display.
+  final String? safeErrorMessage;
+
+  AdminDataSourceStatus copyWith({AdminDataSourceKind? kind, String? message, String? queryName, int? rowCount, DateTime? lastRefreshedAt, String? safeErrorMessage}) =>
+      AdminDataSourceStatus(kind: kind ?? this.kind, message: message ?? this.message, queryName: queryName ?? this.queryName, rowCount: rowCount ?? this.rowCount, lastRefreshedAt: lastRefreshedAt ?? this.lastRefreshedAt, safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage);
 }
 
 /// Thrown when a backend view/RPC required by the Control Site is not deployed.
@@ -83,7 +96,13 @@ class AdminDataSourceBadge extends StatelessWidget {
         break;
     }
 
-    final tooltip = status.message;
+    final tooltipLines = <String>[];
+    if ((status.message ?? '').trim().isNotEmpty) tooltipLines.add(status.message!.trim());
+    if ((status.queryName ?? '').trim().isNotEmpty) tooltipLines.add('Query: ${status.queryName}');
+    if (status.rowCount != null) tooltipLines.add('Rows: ${status.rowCount}');
+    if (status.lastRefreshedAt != null) tooltipLines.add('Refreshed: ${status.lastRefreshedAt!.toIso8601String()}');
+    if ((status.safeErrorMessage ?? '').trim().isNotEmpty) tooltipLines.add('Error: ${status.safeErrorMessage}');
+    final tooltip = tooltipLines.isEmpty ? null : tooltipLines.join('\n');
 
     final pill = AnimatedContainer(
       duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 180),

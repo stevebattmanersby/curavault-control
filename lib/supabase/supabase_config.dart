@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Supabase configuration for this project.
@@ -10,23 +13,28 @@ class SupabaseConfig {
   /// Base URL where the Control Site is hosted (e.g. https://admin.curavault.com).
   ///
   /// Provided at build time via `--dart-define=CONTROL_SITE_BASE_URL=...`.
+  ///
+  /// For local/preview Flutter Web builds, Dreamflow may not inject dart-defines.
+  /// In that case (debug-mode only), we allow providing the values via URL query
+  /// params to unblock preview:
+  /// - `?SUPABASE_URL=...&SUPABASE_ANON_KEY=...&CONTROL_SITE_BASE_URL=...`
   static const String controlSiteBaseUrl = String.fromEnvironment('CONTROL_SITE_BASE_URL', defaultValue: '');
 
   /// The Auth Site URL configured in Supabase.
   ///
   /// This is used for email links (password reset / magic link redirects).
-  static String get authSiteUrl => _stripTrailingSlash(controlSiteBaseUrl);
+  static String get authSiteUrl => _stripTrailingSlash(_resolveControlSiteBaseUrl());
 
   /// Redirect URL used for password recovery.
   ///
   /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
   /// that includes the SPA hash fragment (/#/...).
-  static String get setPasswordRedirectUrl => '${_stripTrailingSlash(controlSiteBaseUrl)}/#/set-password';
+  static String get setPasswordRedirectUrl => '${_stripTrailingSlash(_resolveControlSiteBaseUrl())}/#/set-password';
 
   /// Supabase project URL.
   ///
   /// Provided at build time via:
-  /// - `--dart-define==...`
+  /// - `--dart-define=SUPABASE_URL=...`
   ///
   /// For Flutter Web this must be passed at build time; it cannot be supplied at
   /// runtime via server environment variables.
@@ -38,7 +46,7 @@ class SupabaseConfig {
   /// Supabase anon key.
   ///
   /// Provided at build time via:
-  /// - `--dart-define==...`
+  /// - `--dart-define=SUPABASE_ANON_KEY=...`
   static const String anonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
     defaultValue: '',
@@ -54,6 +62,12 @@ class SupabaseConfig {
 
   static bool _initialized = false;
 
+  static String? _runtimeSupabaseUrl;
+  static String? _runtimeAnonKey;
+  static String? _runtimeControlSiteBaseUrl;
+
+  static bool _runtimeJsonLoaded = false;
+
   /// Whether `SupabaseConfig.initialize()` has successfully initialized the
   /// Supabase client in this process.
   static bool get isInitialized => _initialized;
@@ -61,8 +75,12 @@ class SupabaseConfig {
   /// Debug-only environment diagnostics (true/false only; never prints values).
   static void debugPrintEnvStatus({String source = 'SupabaseConfig'}) {
     if (!kDebugMode) return;
-    final hasUrl = supabaseUrl.isNotEmpty;
-    final hasAnon = anonKey.isNotEmpty;
+    final resolvedUrl = _resolveSupabaseUrl();
+    final resolvedAnon = _resolveAnonKey();
+    final resolvedBaseUrl = _resolveControlSiteBaseUrl();
+    final hasUrl = resolvedUrl.isNotEmpty;
+    final hasAnon = resolvedAnon.isNotEmpty;
+    final hasBaseUrl = resolvedBaseUrl.isNotEmpty;
     final serviceRoleDetected = serviceRoleKey.isNotEmpty;
     bool instanceClientAvailable;
     try {
@@ -76,8 +94,9 @@ class SupabaseConfig {
       '[$source] Supabase env status: '
       'clientAvailable=$instanceClientAvailable '
       'supabaseConfigInitialized=$_initialized '
-      'has=$hasUrl '
-      'has=$hasAnon '
+      'hasSUPABASE_URL=$hasUrl '
+      'hasSUPABASE_ANON_KEY=$hasAnon '
+      'hasCONTROL_SITE_BASE_URL=$hasBaseUrl '
       'serviceRoleDetected=$serviceRoleDetected',
     );
   }
@@ -87,13 +106,23 @@ class SupabaseConfig {
 
     debugPrintEnvStatus(source: 'SupabaseConfig.initialize(before)');
 
-    if (supabaseUrl.isEmpty || anonKey.isEmpty) {
+    // Resolve runtime config in the required precedence order:
+    // 1) dart-defines
+    // 2) runtime public JSON (allowed in release)
+    // 3) debug web query params only
+    await _primeRuntimeConfigFromAssetJsonIfNeeded();
+    _primeRuntimeConfigFromQueryParamsIfNeeded();
+
+    final resolvedUrl = _resolveSupabaseUrl();
+    final resolvedAnon = _resolveAnonKey();
+
+    if (resolvedUrl.isEmpty || resolvedAnon.isEmpty) {
       debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
       return;
     }
 
     // Sanity check: Supabase.initialize expects the project root URL, not /rest/v1.
-    if (kDebugMode && supabaseUrl.contains('/rest/v1')) {
+    if (kDebugMode && resolvedUrl.contains('/rest/v1')) {
       debugPrint('CONFIG WARNING:  contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
     }
 
@@ -104,7 +133,7 @@ class SupabaseConfig {
     }
 
     try {
-      await Supabase.initialize(url: supabaseUrl, anonKey: anonKey, debug: kDebugMode);
+      await Supabase.initialize(url: resolvedUrl, anonKey: resolvedAnon, debug: kDebugMode);
       _initialized = true;
       debugPrintEnvStatus(source: 'SupabaseConfig.initialize(after)');
     } catch (e) {
@@ -118,6 +147,130 @@ class SupabaseConfig {
   static String _stripTrailingSlash(String input) {
     if (input.isEmpty) return '';
     return input.endsWith('/') ? input.substring(0, input.length - 1) : input;
+  }
+
+  // Resolution order (highest → lowest):
+  // 1) Dart defines
+  // 2) Public runtime JSON asset
+  // 3) Debug-only web query params
+  // 4) Fail closed
+  static String _resolveSupabaseUrl() => supabaseUrl.trim().isNotEmpty ? supabaseUrl : (_runtimeSupabaseUrl ?? '');
+  static String _resolveAnonKey() => anonKey.trim().isNotEmpty ? anonKey : (_runtimeAnonKey ?? '');
+  static String _resolveControlSiteBaseUrl() =>
+      controlSiteBaseUrl.trim().isNotEmpty ? controlSiteBaseUrl : (_runtimeControlSiteBaseUrl ?? '');
+
+  static Future<void> _primeRuntimeConfigFromAssetJsonIfNeeded() async {
+    // Asset JSON is a release-safe way to supply public runtime configuration.
+    // We only use it if dart-defines are missing (dart-defines always win).
+    if (_runtimeJsonLoaded) return;
+    _runtimeJsonLoaded = true;
+
+    final needsUrl = supabaseUrl.trim().isEmpty;
+    final needsAnon = anonKey.trim().isEmpty;
+    final needsBase = controlSiteBaseUrl.trim().isEmpty;
+    if (!needsUrl && !needsAnon && !needsBase) return;
+
+    try {
+      final raw = await rootBundle.loadString('assets/config/control_site_config.json');
+      final decoded = jsonDecode(raw);
+      if (decoded is! Map) return;
+
+      final url = (decoded['SUPABASE_URL'] as String?)?.trim();
+      final anon = (decoded['SUPABASE_ANON_KEY'] as String?)?.trim();
+      final base = (decoded['CONTROL_SITE_BASE_URL'] as String?)?.trim();
+
+      if (kDebugMode) {
+        debugPrint(
+          '[SupabaseConfig] Runtime JSON loaded. '
+          'hasUrl=${url != null && url.isNotEmpty} '
+          'hasAnon=${anon != null && anon.isNotEmpty && !anon.startsWith('<')} '
+          'hasBase=${base != null && base.isNotEmpty}',
+        );
+      }
+
+      if (needsUrl && url != null && _looksLikeHttpsUrl(url) && _looksLikeSupabaseProjectUrl(url)) {
+        _runtimeSupabaseUrl = url;
+      }
+      // We intentionally require a JWT-like token to avoid accidentally accepting
+      // placeholders or other invalid values.
+      if (needsAnon && anon != null && anon.isNotEmpty && !anon.startsWith('<') && _looksLikeJwt(anon) && !_looksLikeServiceRoleJwt(anon)) {
+        _runtimeAnonKey = anon;
+      }
+      if (needsBase && base != null && _looksLikeHttpsUrl(base)) {
+        _runtimeControlSiteBaseUrl = base;
+      }
+    } catch (e) {
+      // Missing asset or invalid JSON should not crash the app.
+      debugPrint('Failed to load assets/config/control_site_config.json: $e');
+    }
+  }
+
+  static void _primeRuntimeConfigFromQueryParamsIfNeeded() {
+    // Debug-only web escape hatch. Lowest priority by design.
+    if (!kDebugMode) return;
+    if (!kIsWeb) return;
+
+    // Only use query params for any values still missing after dart-defines + asset JSON.
+    final needsUrl = _resolveSupabaseUrl().trim().isEmpty;
+    final needsAnon = _resolveAnonKey().trim().isEmpty;
+    final needsBase = _resolveControlSiteBaseUrl().trim().isEmpty;
+    if (!needsUrl && !needsAnon && !needsBase) return;
+
+    try {
+      final qp = Uri.base.queryParameters;
+      final qpUrl = qp['SUPABASE_URL']?.trim();
+      final qpAnon = qp['SUPABASE_ANON_KEY']?.trim();
+      final qpBase = qp['CONTROL_SITE_BASE_URL']?.trim();
+
+      if (needsUrl && qpUrl != null && qpUrl.isNotEmpty && _looksLikeHttpsUrl(qpUrl) && _looksLikeSupabaseProjectUrl(qpUrl)) {
+        _runtimeSupabaseUrl = qpUrl;
+      }
+      if (needsAnon && qpAnon != null && qpAnon.isNotEmpty && _looksLikeJwt(qpAnon) && !_looksLikeServiceRoleJwt(qpAnon)) {
+        _runtimeAnonKey = qpAnon;
+      }
+      if (needsBase && qpBase != null && qpBase.isNotEmpty && _looksLikeHttpsUrl(qpBase)) {
+        _runtimeControlSiteBaseUrl = qpBase;
+      }
+    } catch (e) {
+      debugPrint('Failed to read runtime Supabase config from URL query params: $e');
+    }
+  }
+
+  static bool _looksLikeHttpsUrl(String url) {
+    try {
+      final u = Uri.parse(url);
+      return u.hasScheme && u.scheme == 'https' && u.host.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  static bool _looksLikeSupabaseProjectUrl(String url) {
+    // Keep this intentionally permissive, but exclude obvious REST endpoints.
+    if (url.contains('/rest/v1')) return false;
+    return url.contains('.supabase.co');
+  }
+
+  static bool _looksLikeJwt(String token) {
+    final parts = token.split('.');
+    return parts.length == 3 && parts.every((p) => p.isNotEmpty);
+  }
+
+  static bool _looksLikeServiceRoleJwt(String token) {
+    // Best-effort guardrail: decode payload and detect role=service_role.
+    try {
+      final parts = token.split('.');
+      if (parts.length != 3) return false;
+      final payload = parts[1];
+      final normalized = base64Url.normalize(payload);
+      final bytes = base64Url.decode(normalized);
+      final json = jsonDecode(utf8.decode(bytes));
+      if (json is! Map) return false;
+      final role = json['role'];
+      return role == 'service_role';
+    } catch (_) {
+      return false;
+    }
   }
 }
 
