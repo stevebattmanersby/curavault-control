@@ -7,7 +7,6 @@ import 'package:curavault_admin/admin/data/supabase/supabase_admin_repository.da
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
-import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 
 class AdminStore extends ChangeNotifier {
@@ -17,17 +16,16 @@ class AdminStore extends ChangeNotifier {
     _auth.addListener(_onAuthChanged);
   }
 
-  static AdminRepository _buildRepository() {
-    // Production hardening: never return mock data sources in release builds.
-    // If Supabase isn't configured, the live repository will fail closed and the
-    // UI will show a clear "not instrumented" state.
-    if (kReleaseMode) return SupabaseAdminRepository();
+  static const bool _allowMockRepository = bool.fromEnvironment(
+    'CURAVAULT_ALLOW_MOCK_FALLBACK',
+    defaultValue: false,
+  );
 
-    // In debug/dev, allow mock repository only when Supabase config isn't present.
-    if (SupabaseConfig.supabaseUrl.isNotEmpty && SupabaseConfig.anonKey.isNotEmpty && AdminAuthStore.supabaseServiceRoleKey.isEmpty) {
-      return SupabaseAdminRepository();
-    }
-    return MockAdminRepository();
+  static AdminRepository _buildRepository() {
+    // Default to real Supabase data in every environment. Mock data is only for
+    // explicitly opted-in demo/test builds.
+    if (!kReleaseMode && _allowMockRepository) return MockAdminRepository();
+    return SupabaseAdminRepository();
   }
 
   final AdminAuthStore _auth;
