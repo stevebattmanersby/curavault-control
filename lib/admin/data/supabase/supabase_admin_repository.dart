@@ -13,8 +13,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 ///
 /// It queries only privacy-safe summary tables/views and enforces RBAC.
 ///
-/// If a required view/RPC isn't deployed yet, it falls back to mock data via
-/// [MockFallbackData] (clearly separated), while still keeping audit logging live.
+/// Supabase-connected builds fail closed when live admin-safe views/RPCs are
+/// missing. Mock fallback is only available when explicitly enabled for local
+/// test/demo builds with CURAVAULT_ALLOW_MOCK_FALLBACK=true.
 class SupabaseAdminRepository implements AdminRepository {
   SupabaseAdminRepository(
       {SupabaseAdminQueries? queries, AdminRepository? fallback})
@@ -23,6 +24,12 @@ class SupabaseAdminRepository implements AdminRepository {
 
   final SupabaseAdminQueries _queries;
   final AdminRepository _fallback;
+
+  static const bool _allowMockFallback = bool.fromEnvironment(
+    'CURAVAULT_ALLOW_MOCK_FALLBACK',
+    defaultValue: false,
+  );
+  static bool get _mustFailClosed => kReleaseMode || !_allowMockFallback;
 
   final Map<AdminDataSourceKey, AdminDataSourceStatus> _sources =
       <AdminDataSourceKey, AdminDataSourceStatus>{};
@@ -159,7 +166,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listUsers failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: 'admin_get_user_usage_summary');
         _setMock(AdminDataSourceKey.users,
@@ -185,7 +192,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getUserDetail failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: SupabaseAdminQueries.rpcUserAccountDetail);
         _setMock(AdminDataSourceKey.users,
@@ -210,7 +217,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performUserAdminAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: SupabaseAdminQueries.rpcPerformUserAction);
         _setMock(AdminDataSourceKey.users,
@@ -238,7 +245,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listAuditLogs failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.auditLogs,
               queryName: 'admin_audit_log');
         _setMock(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log');
@@ -270,7 +277,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAuditSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.auditLogs,
               queryName: 'admin_get_audit_summary');
         _setMock(AdminDataSourceKey.auditLogs,
@@ -296,7 +303,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listSupportSessions failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: 'admin_support_sessions');
         _setMock(AdminDataSourceKey.support,
@@ -331,7 +338,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSupportSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: 'admin_get_support_summary');
         _setMock(AdminDataSourceKey.support,
@@ -357,7 +364,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSupportSessionDetail failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcSupportSessionDetail);
         _setMock(AdminDataSourceKey.support,
@@ -385,7 +392,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.runDiagnostics failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcRunUserDiagnostics);
         _setMock(AdminDataSourceKey.support,
@@ -410,7 +417,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performSupportAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcPerformSupportAction);
         _setMock(AdminDataSourceKey.support,
@@ -437,7 +444,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getDashboardSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.dashboard,
               queryName: 'admin_get_dashboard_metrics');
         _setMock(AdminDataSourceKey.dashboard,
@@ -485,7 +492,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listPlansOverview failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: 'admin_get_plan_permission_summary');
         _setMock(AdminDataSourceKey.plansPermissions,
@@ -529,7 +536,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getUserEntitlements failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: SupabaseAdminQueries.rpcUserAccountDetail);
         _setMock(AdminDataSourceKey.plansPermissions,
@@ -555,7 +562,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listFeatureFlags failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: 'admin_feature_flags');
         _setMock(AdminDataSourceKey.plansPermissions,
@@ -572,7 +579,7 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<List<LimitOverrideRow>> listLimitOverrides(
       {required int limit}) async {
-    if (kReleaseMode)
+    if (_mustFailClosed)
       _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
           queryName: 'limit_overrides');
     _setMock(AdminDataSourceKey.plansPermissions,
@@ -596,7 +603,7 @@ class SupabaseAdminRepository implements AdminRepository {
       debugPrint(
           'SupabaseAdminRepository.getUsageAnalyticsSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.usageAnalytics,
               queryName: 'admin_get_usage_events_summary');
         _setMock(AdminDataSourceKey.usageAnalytics,
@@ -620,7 +627,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getStorageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.storage,
               queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
         _setMock(AdminDataSourceKey.storage,
@@ -645,7 +652,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAiUsageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.aiUsage,
               queryName: 'admin_get_ai_usage_summary');
         _setMock(AdminDataSourceKey.aiUsage,
@@ -670,7 +677,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getBillingSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.billing,
               queryName: 'admin_get_billing_summary');
         _setMock(AdminDataSourceKey.billing,
@@ -697,7 +704,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getComplianceSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.compliance,
               queryName: 'admin_get_compliance_summary');
         _setMock(AdminDataSourceKey.compliance,
@@ -722,7 +729,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performComplianceAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.compliance,
               queryName: SupabaseAdminQueries.rpcPerformComplianceAction);
         _setMock(AdminDataSourceKey.compliance,
@@ -813,7 +820,7 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSystemHealthSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (kReleaseMode)
+        if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.systemHealth,
               queryName: SupabaseAdminQueries.rpcSystemHealthSummary);
         _setMock(AdminDataSourceKey.systemHealth,
@@ -829,7 +836,7 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<SecurityChecklistSnapshot> getSecurityChecklistSnapshot() async {
     // Not part of the requested list, but never show mock silently in release.
-    if (kReleaseMode) throw AdminNotInstrumentedException();
+    if (_mustFailClosed) throw AdminNotInstrumentedException();
     return _fallback.getSecurityChecklistSnapshot();
   }
 }

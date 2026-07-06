@@ -444,7 +444,7 @@ class MockAdminRepository implements AdminRepository {
     final base = List.generate(
       max(30, limit),
       (i) {
-        final used = _rng.nextInt(12 * 1024 * 1024 * 1024);
+        final used = (_rng.nextDouble() * 12 * 1024 * 1024 * 1024).round();
         final limitBytes = 15 * 1024 * 1024 * 1024;
         final plan = (i % 4 == 0)
             ? 'Enterprise'
