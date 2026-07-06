@@ -824,7 +824,6 @@ class MockAdminRepository implements AdminRepository {
     );
 
     final countries = ['US', 'CA', 'GB', 'DE', 'AU', 'SG', 'FR', 'ES', 'BR', 'IN'];
-    final plans = ['free', 'premium', 'family', 'team', 'enterprise'];
     final providers = BillingSubscriptionProvider.values;
 
     // Subscriptions

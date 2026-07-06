@@ -535,8 +535,11 @@ class _MetricsGrid extends StatelessWidget {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         int columns = 1;
-        if (w >= 1240) columns = 3;
-        else if (w >= 860) columns = 2;
+        if (w >= 1240) {
+          columns = 3;
+        } else if (w >= 860) {
+          columns = 2;
+        }
         final tileW = (w - (AppSpacing.md * (columns - 1))) / columns;
 
         return Wrap(
@@ -894,8 +897,11 @@ class _SystemStatusGrid extends StatelessWidget {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         int columns = 1;
-        if (w >= 1240) columns = 3;
-        else if (w >= 860) columns = 2;
+        if (w >= 1240) {
+          columns = 3;
+        } else if (w >= 860) {
+          columns = 2;
+        }
         final tileW = (w - (AppSpacing.md * (columns - 1))) / columns;
 
         return Wrap(

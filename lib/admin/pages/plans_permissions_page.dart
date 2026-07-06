@@ -5,7 +5,6 @@ import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
@@ -17,7 +16,8 @@ class PlansPermissionsPage extends StatefulWidget {
   State<PlansPermissionsPage> createState() => _PlansPermissionsPageState();
 }
 
-class _PlansPermissionsPageState extends State<PlansPermissionsPage> with SingleTickerProviderStateMixin {
+class _PlansPermissionsPageState extends State<PlansPermissionsPage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -47,18 +47,26 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.plansPermissions, title: 'Plans & Permissions'),
+          AdminOwnerDataSourcePanel(
+              store: store,
+              dataSourceKey: AdminDataSourceKey.plansPermissions,
+              title: 'Plans & Permissions'),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: Text('Plans & Permissions', style: Theme.of(context).textTheme.headlineMedium)),
+              Expanded(
+                  child: Text('Plans & Permissions',
+                      style: Theme.of(context).textTheme.headlineMedium)),
               AdminDataSourceBadge(status: status),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             'Manage plan entitlements, feature access, and limit overrides. This console never shows health content.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           _PolicyBanner(role: role),
@@ -66,7 +74,15 @@ class _PlansPermissionsPageState extends State<PlansPermissionsPage> with Single
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
           else if (status.kind == AdminDataSourceKind.error)
-            Expanded(child: Center(child: Text(status.safeErrorMessage ?? 'Failed to load plans & permissions.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))))
+            Expanded(
+                child: Center(
+                    child: Text(
+                        status.safeErrorMessage ??
+                            'Failed to load plans & permissions.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant))))
           else ...[
             TabBar(
               controller: _tabController,
@@ -100,9 +116,13 @@ class _PolicyBanner extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
 
-    final canChangePlans = AdminRbac.canPerformUserAction(role, AdminUserAction.changePlan);
-    final canSuspend = AdminRbac.canPerformUserAction(role, AdminUserAction.suspendAccount);
-    final canAdjustLimits = AdminRbac.canPerformUserAction(role, AdminUserAction.adjustStorageLimit) || AdminRbac.canPerformUserAction(role, AdminUserAction.adjustAiLimit);
+    final canChangePlans =
+        AdminRbac.canPerformUserAction(role, AdminUserAction.changePlan);
+    final canSuspend =
+        AdminRbac.canPerformUserAction(role, AdminUserAction.suspendAccount);
+    final canAdjustLimits = AdminRbac.canPerformUserAction(
+            role, AdminUserAction.adjustStorageLimit) ||
+        AdminRbac.canPerformUserAction(role, AdminUserAction.adjustAiLimit);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -126,10 +146,25 @@ class _PolicyBanner extends StatelessWidget {
                   runSpacing: 8,
                   spacing: 8,
                   children: [
-                    _Badge(label: canChangePlans ? 'Can change plans' : 'Plan changes: request-only', tone: canChangePlans ? _BadgeTone.ok : _BadgeTone.warn),
-                    _Badge(label: canAdjustLimits ? 'Can adjust limits' : 'Limit edits: request-only', tone: canAdjustLimits ? _BadgeTone.ok : _BadgeTone.warn),
-                    _Badge(label: canSuspend ? 'Can suspend accounts' : 'Suspend: super admin only', tone: canSuspend ? _BadgeTone.ok : _BadgeTone.neutral),
-                    const _Badge(label: 'Health content: never shown', tone: _BadgeTone.neutral),
+                    _Badge(
+                        label: canChangePlans
+                            ? 'Can change plans'
+                            : 'Plan changes: request-only',
+                        tone: canChangePlans ? _BadgeTone.ok : _BadgeTone.warn),
+                    _Badge(
+                        label: canAdjustLimits
+                            ? 'Can adjust limits'
+                            : 'Limit edits: request-only',
+                        tone:
+                            canAdjustLimits ? _BadgeTone.ok : _BadgeTone.warn),
+                    _Badge(
+                        label: canSuspend
+                            ? 'Can suspend accounts'
+                            : 'Suspend: super admin only',
+                        tone: canSuspend ? _BadgeTone.ok : _BadgeTone.neutral),
+                    const _Badge(
+                        label: 'Health content: never shown',
+                        tone: _BadgeTone.neutral),
                   ],
                 ),
               ],
@@ -169,7 +204,8 @@ class _Badge extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
       ),
-      child: Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+      child: Text(label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
     );
   }
 }
@@ -196,10 +232,13 @@ class _PlansOverviewTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Expanded(child: Text('Plans overview', style: Theme.of(context).textTheme.titleMedium)),
+                Expanded(
+                    child: Text('Plans overview',
+                        style: Theme.of(context).textTheme.titleMedium)),
                 IconButton(
                   tooltip: 'Refresh',
-                  onPressed: () => context.read<AdminStore>().refreshPlansOverview(),
+                  onPressed: () =>
+                      context.read<AdminStore>().refreshPlansOverview(),
                   icon: Icon(Icons.refresh, color: cs.onSurface),
                 ),
               ],
@@ -235,17 +274,37 @@ class _PlansOverviewTab extends StatelessWidget {
                           DataRow(
                             cells: [
                               DataCell(Text(r.planName)),
-                              DataCell(Text(r.monthlyPriceUsd == 0 ? '—' : AdminFormatters.usd(r.monthlyPriceUsd))),
-                              DataCell(Text(AdminFormatters.bytes(r.storageLimitBytes))),
-                              DataCell(Text(AdminFormatters.compactInt(r.aiTokenLimitMonthly))),
+                              DataCell(Text(r.monthlyPriceUsd == 0
+                                  ? '—'
+                                  : AdminFormatters.usd(r.monthlyPriceUsd))),
+                              DataCell(Text(
+                                  AdminFormatters.bytes(r.storageLimitBytes))),
+                              DataCell(Text(AdminFormatters.compactInt(
+                                  r.aiTokenLimitMonthly))),
                               DataCell(Text('${r.profileLimit}')),
-                              DataCell(Text(r.uploadLimit == null ? '—' : '${r.uploadLimit}')),
-                              DataCell(Icon(r.exportAccess ? Icons.check_circle : Icons.block, color: r.exportAccess ? cs.primary : cs.onSurfaceVariant)),
-                              DataCell(Icon(r.aiAccess ? Icons.check_circle : Icons.block, color: r.aiAccess ? cs.primary : cs.onSurfaceVariant)),
-                              DataCell(Text(AdminFormatters.compactInt(r.activeUsers))),
-                              DataCell(Text(AdminFormatters.compactInt(r.trialUsers))),
-                              DataCell(Text(AdminFormatters.compactInt(r.paidUsers))),
-                              DataCell(Text(AdminFormatters.compactInt(r.cancelledUsers))),
+                              DataCell(Text(r.uploadLimit == null
+                                  ? '—'
+                                  : '${r.uploadLimit}')),
+                              DataCell(Icon(
+                                  r.exportAccess
+                                      ? Icons.check_circle
+                                      : Icons.block,
+                                  color: r.exportAccess
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant)),
+                              DataCell(Icon(
+                                  r.aiAccess ? Icons.check_circle : Icons.block,
+                                  color: r.aiAccess
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant)),
+                              DataCell(Text(
+                                  AdminFormatters.compactInt(r.activeUsers))),
+                              DataCell(Text(
+                                  AdminFormatters.compactInt(r.trialUsers))),
+                              DataCell(Text(
+                                  AdminFormatters.compactInt(r.paidUsers))),
+                              DataCell(Text(AdminFormatters.compactInt(
+                                  r.cancelledUsers))),
                             ],
                           ),
                       ],
@@ -315,12 +374,14 @@ class _UserPlanEditorTabState extends State<_UserPlanEditorTab> {
           decoration: BoxDecoration(
             color: cs.surface,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Lookup user', style: Theme.of(context).textTheme.titleMedium),
+              Text('Lookup user',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 10),
               Row(
                 children: [
@@ -339,7 +400,8 @@ class _UserPlanEditorTabState extends State<_UserPlanEditorTab> {
                   FilledButton.icon(
                     onPressed: _loading ? null : _load,
                     icon: Icon(Icons.search, color: cs.onPrimary),
-                    label: Text(_loading ? 'Loading…' : 'Load', style: TextStyle(color: cs.onPrimary)),
+                    label: Text(_loading ? 'Loading…' : 'Load',
+                        style: TextStyle(color: cs.onPrimary)),
                   ),
                 ],
               ),
@@ -352,7 +414,8 @@ class _UserPlanEditorTabState extends State<_UserPlanEditorTab> {
             entitlements: _entitlements!,
             actorAdminId: actorId,
             role: role,
-            onEntitlementsChanged: (next) => setState(() => _entitlements = next),
+            onEntitlementsChanged: (next) =>
+                setState(() => _entitlements = next),
           ),
       ],
     );
@@ -383,9 +446,12 @@ class _UserPlanEditorPanel extends StatelessWidget {
     required Map<String, dynamic> parameters,
     UserEntitlements Function(UserEntitlements current)? optimisticUpdate,
   }) async {
+    final store = context.read<AdminStore>();
+    final messenger = ScaffoldMessenger.of(context);
     final allowed = AdminRbac.canPerformUserAction(role, action);
     if (!allowed) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('You do not have permission to apply this change.')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('You do not have permission to apply this change.')));
       return;
     }
 
@@ -404,25 +470,27 @@ class _UserPlanEditorPanel extends StatelessWidget {
     }
 
     try {
-      await context.read<AdminStore>().performUserAdminAction(
-            AdminActionRequest(
-              actorAdminId: actorAdminId,
-              actorRole: role,
-              userId: entitlements.userId,
-              action: actionLabel,
-              reason: confirm.reason,
-              ticketReference: confirm.ticketReference,
-              parameters: {
-                'previous': previousValue,
-                'new': newValue,
-                ...parameters,
-              },
-            ),
-          );
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Change applied (audited).')));
+      await store.performUserAdminAction(
+        AdminActionRequest(
+          actorAdminId: actorAdminId,
+          actorRole: role,
+          userId: entitlements.userId,
+          action: actionLabel,
+          reason: confirm.reason,
+          ticketReference: confirm.ticketReference,
+          parameters: {
+            'previous': previousValue,
+            'new': newValue,
+            ...parameters,
+          },
+        ),
+      );
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Change applied (audited).')));
     } catch (e) {
       debugPrint('UserPlanEditorPanel action failed: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to apply change.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Failed to apply change.')));
     }
   }
 
@@ -430,7 +498,8 @@ class _UserPlanEditorPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final t = Theme.of(context).textTheme;
-    final canChangePlan = AdminRbac.canPerformUserAction(role, AdminUserAction.changePlan);
+    final canChangePlan =
+        AdminRbac.canPerformUserAction(role, AdminUserAction.changePlan);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -455,10 +524,20 @@ class _UserPlanEditorPanel extends StatelessWidget {
             children: [
               _InfoChip(label: 'User', value: entitlements.userId),
               _InfoChip(label: 'Current plan', value: entitlements.currentPlan),
-              _InfoChip(label: 'Billing status', value: entitlements.billingStatus),
-              _InfoChip(label: 'Provider', value: entitlements.subscriptionProvider),
-              _InfoChip(label: 'Trial start', value: entitlements.trialStart == null ? '—' : AdminFormatters.date(entitlements.trialStart!)),
-              _InfoChip(label: 'Trial end', value: entitlements.trialEnd == null ? '—' : AdminFormatters.date(entitlements.trialEnd!)),
+              _InfoChip(
+                  label: 'Billing status', value: entitlements.billingStatus),
+              _InfoChip(
+                  label: 'Provider', value: entitlements.subscriptionProvider),
+              _InfoChip(
+                  label: 'Trial start',
+                  value: entitlements.trialStart == null
+                      ? '—'
+                      : AdminFormatters.date(entitlements.trialStart!)),
+              _InfoChip(
+                  label: 'Trial end',
+                  value: entitlements.trialEnd == null
+                      ? '—'
+                      : AdminFormatters.date(entitlements.trialEnd!)),
             ],
           ),
           const SizedBox(height: 14),
@@ -466,13 +545,31 @@ class _UserPlanEditorPanel extends StatelessWidget {
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _LimitCard(label: 'Storage limit', value: AdminFormatters.bytes(entitlements.storageLimitBytes), icon: Icons.cloud_outlined)),
+              Expanded(
+                  child: _LimitCard(
+                      label: 'Storage limit',
+                      value:
+                          AdminFormatters.bytes(entitlements.storageLimitBytes),
+                      icon: Icons.cloud_outlined)),
               const SizedBox(width: 12),
-              Expanded(child: _LimitCard(label: 'AI token limit', value: AdminFormatters.compactInt(entitlements.aiTokenLimitMonthly), icon: Icons.auto_awesome_outlined)),
+              Expanded(
+                  child: _LimitCard(
+                      label: 'AI token limit',
+                      value: AdminFormatters.compactInt(
+                          entitlements.aiTokenLimitMonthly),
+                      icon: Icons.auto_awesome_outlined)),
               const SizedBox(width: 12),
-              Expanded(child: _LimitCard(label: 'Profile limit', value: '${entitlements.profileLimit}', icon: Icons.groups_outlined)),
+              Expanded(
+                  child: _LimitCard(
+                      label: 'Profile limit',
+                      value: '${entitlements.profileLimit}',
+                      icon: Icons.groups_outlined)),
               const SizedBox(width: 12),
-              Expanded(child: _LimitCard(label: 'Upload limit', value: entitlements.uploadLimit?.toString() ?? '—', icon: Icons.upload_file_outlined)),
+              Expanded(
+                  child: _LimitCard(
+                      label: 'Upload limit',
+                      value: entitlements.uploadLimit?.toString() ?? '—',
+                      icon: Icons.upload_file_outlined)),
             ],
           ),
           const SizedBox(height: 16),
@@ -487,30 +584,39 @@ class _UserPlanEditorPanel extends StatelessWidget {
                 icon: Icons.swap_horiz,
                 enabled: canChangePlan,
                 onPressed: () async {
-                  final next = await _PlanPickerSheet.show(context, current: entitlements.currentPlan);
+                  final next = await _PlanPickerSheet.show(context,
+                      current: entitlements.currentPlan);
                   if (next == null || next == entitlements.currentPlan) return;
+                  if (!context.mounted) return;
                   await _applyAction(
                     context,
                     action: AdminUserAction.changePlan,
                     title: 'Change plan',
-                    summary: 'Updates plan entitlements & default limits. No health content is accessed.',
+                    summary:
+                        'Updates plan entitlements & default limits. No health content is accessed.',
                     previousValue: entitlements.currentPlan,
                     newValue: next,
                     actionLabel: 'Plans: Change plan',
                     parameters: {'plan': next},
-                    optimisticUpdate: (cur) => cur.copyWith(currentPlan: next, updatedAt: DateTime.now()),
+                    optimisticUpdate: (cur) => cur.copyWith(
+                        currentPlan: next, updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Extend trial',
                 icon: Icons.timelapse,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.extendTrial),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.extendTrial),
                 onPressed: () async {
                   final days = await _ExtendTrialSheet.show(context);
                   if (days == null) return;
-                  final prev = entitlements.trialEnd == null ? '—' : AdminFormatters.date(entitlements.trialEnd!);
-                  final nextEnd = (entitlements.trialEnd ?? DateTime.now()).add(Duration(days: days));
+                  if (!context.mounted) return;
+                  final prev = entitlements.trialEnd == null
+                      ? '—'
+                      : AdminFormatters.date(entitlements.trialEnd!);
+                  final nextEnd = (entitlements.trialEnd ?? DateTime.now())
+                      .add(Duration(days: days));
                   await _applyAction(
                     context,
                     action: AdminUserAction.extendTrial,
@@ -520,76 +626,110 @@ class _UserPlanEditorPanel extends StatelessWidget {
                     newValue: AdminFormatters.date(nextEnd),
                     actionLabel: 'Plans: Extend trial',
                     parameters: {'extend_days': days},
-                    optimisticUpdate: (cur) => cur.copyWith(trialStart: cur.trialStart ?? DateTime.now(), trialEnd: nextEnd, updatedAt: DateTime.now()),
+                    optimisticUpdate: (cur) => cur.copyWith(
+                        trialStart: cur.trialStart ?? DateTime.now(),
+                        trialEnd: nextEnd,
+                        updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Adjust storage limit',
                 icon: Icons.cloud_upload_outlined,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustStorageLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustStorageLimit),
                 onPressed: () async {
-                  final nextBytes = await _LimitInputSheet.showBytes(context, title: 'Adjust storage limit', initialBytes: entitlements.storageLimitBytes);
-                  if (nextBytes == null || nextBytes == entitlements.storageLimitBytes) return;
+                  final nextBytes = await _LimitInputSheet.showBytes(context,
+                      title: 'Adjust storage limit',
+                      initialBytes: entitlements.storageLimitBytes);
+                  if (nextBytes == null ||
+                      nextBytes == entitlements.storageLimitBytes) return;
+                  if (!context.mounted) return;
                   await _applyAction(
                     context,
                     action: AdminUserAction.adjustStorageLimit,
                     title: 'Adjust storage limit',
-                    summary: 'Applies a per-user override. Consider adding an expiry.',
-                    previousValue: AdminFormatters.bytes(entitlements.storageLimitBytes),
+                    summary:
+                        'Applies a per-user override. Consider adding an expiry.',
+                    previousValue:
+                        AdminFormatters.bytes(entitlements.storageLimitBytes),
                     newValue: AdminFormatters.bytes(nextBytes),
                     actionLabel: 'Plans: Override storage limit',
                     parameters: {'storage_limit_bytes': nextBytes},
-                    optimisticUpdate: (cur) => cur.copyWith(storageLimitBytes: nextBytes, updatedAt: DateTime.now()),
+                    optimisticUpdate: (cur) => cur.copyWith(
+                        storageLimitBytes: nextBytes,
+                        updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Adjust AI token limit',
                 icon: Icons.auto_awesome,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustAiLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustAiLimit),
                 onPressed: () async {
-                  final nextTokens = await _LimitInputSheet.showInt(context, title: 'Adjust AI token limit (monthly)', initial: entitlements.aiTokenLimitMonthly);
-                  if (nextTokens == null || nextTokens == entitlements.aiTokenLimitMonthly) return;
+                  final nextTokens = await _LimitInputSheet.showInt(context,
+                      title: 'Adjust AI token limit (monthly)',
+                      initial: entitlements.aiTokenLimitMonthly);
+                  if (nextTokens == null ||
+                      nextTokens == entitlements.aiTokenLimitMonthly) return;
+                  if (!context.mounted) return;
                   await _applyAction(
                     context,
                     action: AdminUserAction.adjustAiLimit,
                     title: 'Adjust AI token limit',
-                    summary: 'Applies a per-user override. Ensure this aligns with billing policy.',
-                    previousValue: AdminFormatters.compactInt(entitlements.aiTokenLimitMonthly),
+                    summary:
+                        'Applies a per-user override. Ensure this aligns with billing policy.',
+                    previousValue: AdminFormatters.compactInt(
+                        entitlements.aiTokenLimitMonthly),
                     newValue: AdminFormatters.compactInt(nextTokens),
                     actionLabel: 'Plans: Override AI limit',
                     parameters: {'ai_token_limit_monthly': nextTokens},
-                    optimisticUpdate: (cur) => cur.copyWith(aiTokenLimitMonthly: nextTokens, updatedAt: DateTime.now()),
+                    optimisticUpdate: (cur) => cur.copyWith(
+                        aiTokenLimitMonthly: nextTokens,
+                        updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Enable beta feature',
                 icon: Icons.flare_outlined,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustAiLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustAiLimit),
                 onPressed: () async {
-                  final prev = entitlements.featureFlags[FeatureFlagKey.betaFeatures] == true;
+                  final prev =
+                      entitlements.featureFlags[FeatureFlagKey.betaFeatures] ==
+                          true;
                   if (prev) return;
                   await _applyAction(
                     context,
                     action: AdminUserAction.adjustAiLimit,
                     title: 'Enable beta features (per user)',
-                    summary: 'Turns on beta feature surfaces for this user only.',
+                    summary:
+                        'Turns on beta feature surfaces for this user only.',
                     previousValue: 'off',
                     newValue: 'on',
                     actionLabel: 'Plans: Set user feature flag',
-                    parameters: {'flag': FeatureFlagKey.betaFeatures.apiKey, 'enabled': true},
-                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {...cur.featureFlags, FeatureFlagKey.betaFeatures: true}, updatedAt: DateTime.now()),
+                    parameters: {
+                      'flag': FeatureFlagKey.betaFeatures.apiKey,
+                      'enabled': true
+                    },
+                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {
+                      ...cur.featureFlags,
+                      FeatureFlagKey.betaFeatures: true
+                    }, updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Disable AI access',
                 icon: Icons.block,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustAiLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustAiLimit),
                 onPressed: () async {
-                  final prev = entitlements.featureFlags[FeatureFlagKey.aiAssistant] == true;
+                  final prev =
+                      entitlements.featureFlags[FeatureFlagKey.aiAssistant] ==
+                          true;
                   if (!prev) return;
                   await _applyAction(
                     context,
@@ -599,41 +739,59 @@ class _UserPlanEditorPanel extends StatelessWidget {
                     previousValue: 'on',
                     newValue: 'off',
                     actionLabel: 'Plans: Set user feature flag',
-                    parameters: {'flag': FeatureFlagKey.aiAssistant.apiKey, 'enabled': false},
-                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {...cur.featureFlags, FeatureFlagKey.aiAssistant: false}, updatedAt: DateTime.now()),
+                    parameters: {
+                      'flag': FeatureFlagKey.aiAssistant.apiKey,
+                      'enabled': false
+                    },
+                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {
+                      ...cur.featureFlags,
+                      FeatureFlagKey.aiAssistant: false
+                    }, updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Disable uploads',
                 icon: Icons.upload_file,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustStorageLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustStorageLimit),
                 onPressed: () async {
-                  final prev = entitlements.featureFlags[FeatureFlagKey.documentUploads] == true;
+                  final prev = entitlements
+                          .featureFlags[FeatureFlagKey.documentUploads] ==
+                      true;
                   if (!prev) return;
                   await _applyAction(
                     context,
                     action: AdminUserAction.adjustStorageLimit,
                     title: 'Disable document uploads (per user)',
-                    summary: 'Turns off uploads for this user without touching content.',
+                    summary:
+                        'Turns off uploads for this user without touching content.',
                     previousValue: 'on',
                     newValue: 'off',
                     actionLabel: 'Plans: Set user feature flag',
-                    parameters: {'flag': FeatureFlagKey.documentUploads.apiKey, 'enabled': false},
-                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {...cur.featureFlags, FeatureFlagKey.documentUploads: false}, updatedAt: DateTime.now()),
+                    parameters: {
+                      'flag': FeatureFlagKey.documentUploads.apiKey,
+                      'enabled': false
+                    },
+                    optimisticUpdate: (cur) => cur.copyWith(featureFlags: {
+                      ...cur.featureFlags,
+                      FeatureFlagKey.documentUploads: false
+                    }, updatedAt: DateTime.now()),
                   );
                 },
               ),
               _ActionButton(
                 label: 'Restore default limits',
                 icon: Icons.restore,
-                enabled: AdminRbac.canPerformUserAction(role, AdminUserAction.adjustStorageLimit),
+                enabled: AdminRbac.canPerformUserAction(
+                    role, AdminUserAction.adjustStorageLimit),
                 onPressed: () async {
                   await _applyAction(
                     context,
                     action: AdminUserAction.adjustStorageLimit,
                     title: 'Restore default limits',
-                    summary: 'Clears per-user overrides and resets to plan defaults.',
+                    summary:
+                        'Clears per-user overrides and resets to plan defaults.',
                     previousValue: 'Overrides present (if any)',
                     newValue: 'Plan defaults',
                     actionLabel: 'Plans: Restore defaults',
@@ -687,7 +845,11 @@ class _RoleHint extends StatelessWidget {
         children: [
           Icon(Icons.badge_outlined, size: 16, color: cs.onSurfaceVariant),
           const SizedBox(width: 6),
-          Text(role.name, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text(role.name,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -714,7 +876,8 @@ class _InfoChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+          Text(label,
+              style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 4),
           Text(value, style: t.labelLarge),
         ],
@@ -724,7 +887,8 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _LimitCard extends StatelessWidget {
-  const _LimitCard({required this.label, required this.value, required this.icon});
+  const _LimitCard(
+      {required this.label, required this.value, required this.icon});
   final String label;
   final String value;
   final IconData icon;
@@ -756,7 +920,8 @@ class _LimitCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                Text(label,
+                    style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 3),
                 Text(value, style: t.titleSmall),
               ],
@@ -769,7 +934,11 @@ class _LimitCard extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  const _ActionButton({required this.label, required this.icon, required this.enabled, required this.onPressed});
+  const _ActionButton(
+      {required this.label,
+      required this.icon,
+      required this.enabled,
+      required this.onPressed});
   final String label;
   final IconData icon;
   final bool enabled;
@@ -783,7 +952,9 @@ class _ActionButton extends StatelessWidget {
       child: OutlinedButton.icon(
         onPressed: enabled ? onPressed : null,
         icon: Icon(icon, color: enabled ? cs.onSurface : cs.onSurfaceVariant),
-        label: Text(label, style: TextStyle(color: enabled ? cs.onSurface : cs.onSurfaceVariant)),
+        label: Text(label,
+            style:
+                TextStyle(color: enabled ? cs.onSurface : cs.onSurfaceVariant)),
       ),
     );
   }
@@ -800,40 +971,53 @@ class _FlagPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: enabled ? cs.primaryContainer.withValues(alpha: 0.85) : cs.surfaceContainerHighest,
+        color: enabled
+            ? cs.primaryContainer.withValues(alpha: 0.85)
+            : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(enabled ? Icons.toggle_on : Icons.toggle_off, size: 18, color: enabled ? cs.onPrimaryContainer : cs.onSurfaceVariant),
+          Icon(enabled ? Icons.toggle_on : Icons.toggle_off,
+              size: 18,
+              color: enabled ? cs.onPrimaryContainer : cs.onSurfaceVariant),
           const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: enabled ? cs.onPrimaryContainer : cs.onSurfaceVariant)),
+          Text(label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color:
+                      enabled ? cs.onPrimaryContainer : cs.onSurfaceVariant)),
         ],
       ),
     );
   }
 }
 
+// Parked until a production-safe global feature flag write flow is available.
+// ignore: unused_element
 class _FeatureFlagsTab extends StatelessWidget {
   const _FeatureFlagsTab();
 
-  Future<void> _toggle(BuildContext context, FeatureFlagDefinition flag, bool enabled) async {
+  Future<void> _toggle(
+      BuildContext context, FeatureFlagDefinition flag, bool enabled) async {
     final role = context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
     final store = context.read<AdminStore>();
+    final messenger = ScaffoldMessenger.of(context);
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
     // For now, only owner can toggle global flags.
     if (role != AdminRole.owner) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request-only: only owner can change global flags.')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Request-only: only owner can change global flags.')));
       return;
     }
 
     final confirm = await AdminChangeConfirmSheet.show(
       context,
       title: 'Change feature flag',
-      summary: 'This updates global feature availability. It never reads any user health content.',
+      summary:
+          'This updates global feature availability. It never reads any user health content.',
       previousValue: flag.enabled ? 'enabled' : 'disabled',
       newValue: enabled ? 'enabled' : 'disabled',
       confirmLabel: 'Apply',
@@ -858,10 +1042,12 @@ class _FeatureFlagsTab extends StatelessWidget {
         ),
       );
       await store.refreshFeatureFlags();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Flag updated (audited).')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Flag updated (audited).')));
     } catch (e) {
       debugPrint('FeatureFlagsTab toggle failed: $e');
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update flag.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Failed to update flag.')));
     }
   }
 
@@ -884,10 +1070,13 @@ class _FeatureFlagsTab extends StatelessWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Feature flags', style: Theme.of(context).textTheme.titleMedium)),
+              Expanded(
+                  child: Text('Feature flags',
+                      style: Theme.of(context).textTheme.titleMedium)),
               IconButton(
                 tooltip: 'Refresh',
-                onPressed: () => context.read<AdminStore>().refreshFeatureFlags(),
+                onPressed: () =>
+                    context.read<AdminStore>().refreshFeatureFlags(),
                 icon: Icon(Icons.refresh, color: cs.onSurface),
               ),
             ],
@@ -897,7 +1086,10 @@ class _FeatureFlagsTab extends StatelessWidget {
             role == AdminRole.owner
                 ? 'Toggling a flag affects all users. All changes are audited.'
                 : 'Read-only for your role. You can request changes via your support/billing workflow.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           Expanded(
@@ -923,7 +1115,8 @@ class _FeatureFlagsTab extends StatelessWidget {
 }
 
 class _FlagRow extends StatelessWidget {
-  const _FlagRow({required this.flag, required this.canEdit, required this.onToggle});
+  const _FlagRow(
+      {required this.flag, required this.canEdit, required this.onToggle});
   final FeatureFlagDefinition flag;
   final bool canEdit;
   final ValueChanged<bool> onToggle;
@@ -948,9 +1141,11 @@ class _FlagRow extends StatelessWidget {
               children: [
                 Text(flag.key.label, style: t.titleSmall),
                 const SizedBox(height: 4),
-                Text(flag.description, style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text(flag.description,
+                    style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 8),
-                Text('Updated ${AdminFormatters.relativeTime(flag.updatedAt)}', style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                Text('Updated ${AdminFormatters.relativeTime(flag.updatedAt)}',
+                    style: t.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -965,6 +1160,8 @@ class _FlagRow extends StatelessWidget {
   }
 }
 
+// Parked until a production-safe limit override RPC is available.
+// ignore: unused_element
 class _LimitOverridesTab extends StatelessWidget {
   const _LimitOverridesTab();
 
@@ -987,10 +1184,13 @@ class _LimitOverridesTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Expanded(child: Text('Limit overrides', style: Theme.of(context).textTheme.titleMedium)),
+                Expanded(
+                    child: Text('Limit overrides',
+                        style: Theme.of(context).textTheme.titleMedium)),
                 IconButton(
                   tooltip: 'Refresh',
-                  onPressed: () => context.read<AdminStore>().refreshLimitOverrides(),
+                  onPressed: () =>
+                      context.read<AdminStore>().refreshLimitOverrides(),
                   icon: Icon(Icons.refresh, color: cs.onSurface),
                 ),
               ],
@@ -1027,10 +1227,16 @@ class _LimitOverridesTab extends StatelessWidget {
                               DataCell(Text(r.limitKey)),
                               DataCell(Text(r.previousValue)),
                               DataCell(Text(r.newValue)),
-                              DataCell(Text(r.expiresAt == null ? '—' : AdminFormatters.date(r.expiresAt!))),
+                              DataCell(Text(r.expiresAt == null
+                                  ? '—'
+                                  : AdminFormatters.date(r.expiresAt!))),
                               DataCell(Text(r.ticketReference ?? '—')),
-                              DataCell(SizedBox(width: 260, child: Text(r.reason, overflow: TextOverflow.ellipsis))),
-                              DataCell(Text(AdminFormatters.dateTime(r.createdAt))),
+                              DataCell(SizedBox(
+                                  width: 260,
+                                  child: Text(r.reason,
+                                      overflow: TextOverflow.ellipsis))),
+                              DataCell(
+                                  Text(AdminFormatters.dateTime(r.createdAt))),
                             ],
                           ),
                       ],
@@ -1058,7 +1264,11 @@ class _EmptyState extends StatelessWidget {
           children: [
             Icon(Icons.inbox_outlined, size: 28, color: cs.onSurfaceVariant),
             const SizedBox(height: 10),
-            Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(label,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant)),
           ],
         ),
       ),
@@ -1070,7 +1280,9 @@ class _PlanPickerSheet extends StatefulWidget {
   const _PlanPickerSheet({required this.current});
   final String current;
 
-  static Future<String?> show(BuildContext context, {required String current}) => showModalBottomSheet<String>(
+  static Future<String?> show(BuildContext context,
+          {required String current}) =>
+      showModalBottomSheet<String>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
@@ -1086,11 +1298,22 @@ class _PlanPickerSheetState extends State<_PlanPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final plans = const ['free', 'launch_free_6_months', 'premium', 'family', 'admin_test', 'suspended'];
+    final plans = const [
+      'free',
+      'launch_free_6_months',
+      'premium',
+      'family',
+      'admin_test',
+      'suspended'
+    ];
     final cs = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 20, right: 20, top: 8),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+            left: 20,
+            right: 20,
+            top: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1100,8 +1323,10 @@ class _PlanPickerSheetState extends State<_PlanPickerSheet> {
             for (final p in plans)
               RadioListTile<String>(
                 value: p,
+                // ignore: deprecated_member_use
                 groupValue: _selected,
                 title: Text(p),
+                // ignore: deprecated_member_use
                 onChanged: (v) => setState(() => _selected = v ?? _selected),
               ),
             const SizedBox(height: 12),
@@ -1110,14 +1335,16 @@ class _PlanPickerSheetState extends State<_PlanPickerSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(_selected),
-                    child: Text('Use this plan', style: TextStyle(color: cs.onPrimary)),
+                    child: Text('Use this plan',
+                        style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],
@@ -1176,14 +1403,16 @@ class _ExtendTrialSheetState extends State<_ExtendTrialSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: () => Navigator.of(context).pop(_days),
-                    child: Text('Continue', style: TextStyle(color: cs.onPrimary)),
+                    child:
+                        Text('Continue', style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],
@@ -1196,23 +1425,36 @@ class _ExtendTrialSheetState extends State<_ExtendTrialSheet> {
 }
 
 class _LimitInputSheet extends StatefulWidget {
-  const _LimitInputSheet._({required this.title, required this.initialText, required this.keyboardType});
+  const _LimitInputSheet._(
+      {required this.title,
+      required this.initialText,
+      required this.keyboardType});
   final String title;
   final String initialText;
   final TextInputType keyboardType;
 
-  static Future<int?> showInt(BuildContext context, {required String title, required int initial}) => showModalBottomSheet<int>(
+  static Future<int?> showInt(BuildContext context,
+          {required String title, required int initial}) =>
+      showModalBottomSheet<int>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (context) => _LimitInputSheet._(title: title, initialText: initial.toString(), keyboardType: TextInputType.number),
+        builder: (context) => _LimitInputSheet._(
+            title: title,
+            initialText: initial.toString(),
+            keyboardType: TextInputType.number),
       );
 
-  static Future<int?> showBytes(BuildContext context, {required String title, required int initialBytes}) => showModalBottomSheet<int>(
+  static Future<int?> showBytes(BuildContext context,
+          {required String title, required int initialBytes}) =>
+      showModalBottomSheet<int>(
         context: context,
         isScrollControlled: true,
         showDragHandle: true,
-        builder: (context) => _LimitInputSheet._(title: title, initialText: initialBytes.toString(), keyboardType: TextInputType.number),
+        builder: (context) => _LimitInputSheet._(
+            title: title,
+            initialText: initialBytes.toString(),
+            keyboardType: TextInputType.number),
       );
 
   @override
@@ -1244,7 +1486,11 @@ class _LimitInputSheetState extends State<_LimitInputSheet> {
     final cs = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom, left: 20, right: 20, top: 8),
+        padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+            left: 20,
+            right: 20,
+            top: 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1267,14 +1513,16 @@ class _LimitInputSheetState extends State<_LimitInputSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: _submit,
-                    child: Text('Use value', style: TextStyle(color: cs.onPrimary)),
+                    child: Text('Use value',
+                        style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],

@@ -6,7 +6,6 @@ import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.d
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/theme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
@@ -130,13 +129,14 @@ class _ComplianceToolbar extends StatelessWidget {
           icon: Icons.date_range,
           label: q.range.label,
           onPressed: () async {
+            final store = context.read<AdminStore>();
             final picked = await showModalBottomSheet<AdminDateRangePreset>(
               context: context,
               showDragHandle: true,
               builder: (context) => const _RangeSheet(),
             );
             if (picked == null) return;
-            await context.read<AdminStore>().setComplianceQuery(q.copyWith(range: picked));
+            await store.setComplianceQuery(q.copyWith(range: picked));
           },
         ),
         _PillButton(
@@ -774,8 +774,10 @@ class _ExportActionsCell extends StatelessWidget {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_horiz),
       onSelected: (value) async {
+        final store = context.read<AdminStore>();
+        final messenger = ScaffoldMessenger.of(context);
         try {
-          final admin = context.read<AdminStore>().currentAdmin;
+          final admin = store.currentAdmin;
           if (admin == null) return;
           switch (value) {
             case 'in_progress':
@@ -788,7 +790,7 @@ class _ExportActionsCell extends StatelessWidget {
                 confirmLabel: 'Mark in progress',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -809,7 +811,7 @@ class _ExportActionsCell extends StatelessWidget {
                 confirmLabel: 'Mark complete',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -830,7 +832,7 @@ class _ExportActionsCell extends StatelessWidget {
                 confirmLabel: 'Record failure',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -844,6 +846,7 @@ class _ExportActionsCell extends StatelessWidget {
             case 'note':
               final note = await _TextEntrySheet.show(context, title: 'Add compliance note', label: 'Note', hint: 'Add a short compliance note (no health content)…');
               if (note == null) return;
+              if (!context.mounted) return;
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Confirm note',
@@ -853,7 +856,7 @@ class _ExportActionsCell extends StatelessWidget {
                 confirmLabel: 'Add note',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -868,9 +871,7 @@ class _ExportActionsCell extends StatelessWidget {
           }
         } catch (e) {
           debugPrint('Export action failed: $e');
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
-          }
+          messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
         }
       },
       itemBuilder: (context) => const [
@@ -897,8 +898,10 @@ class _DeletionActionsCell extends StatelessWidget {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_horiz),
       onSelected: (value) async {
+        final store = context.read<AdminStore>();
+        final messenger = ScaffoldMessenger.of(context);
         try {
-          final admin = context.read<AdminStore>().currentAdmin;
+          final admin = store.currentAdmin;
           if (admin == null) return;
           switch (value) {
             case 'in_progress':
@@ -911,7 +914,7 @@ class _DeletionActionsCell extends StatelessWidget {
                 confirmLabel: 'Mark in progress',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -932,7 +935,7 @@ class _DeletionActionsCell extends StatelessWidget {
                 confirmLabel: 'Mark complete',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -953,7 +956,7 @@ class _DeletionActionsCell extends StatelessWidget {
                 confirmLabel: 'Record failure',
               );
               if (conf == null) return;
-              await context.read<AdminStore>().performComplianceAction(
+              await store.performComplianceAction(
                     ComplianceActionRequest(
                       actorAdminId: admin.id,
                       actorRole: admin.role,
@@ -967,9 +970,7 @@ class _DeletionActionsCell extends StatelessWidget {
           }
         } catch (e) {
           debugPrint('Deletion action failed: $e');
-          if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
-          }
+          messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
         }
       },
       itemBuilder: (context) => const [
@@ -996,8 +997,10 @@ class _SupportAccessActionsCell extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: row.status.toLowerCase() == 'active'
           ? () async {
+              final store = context.read<AdminStore>();
+              final messenger = ScaffoldMessenger.of(context);
               try {
-                final admin = context.read<AdminStore>().currentAdmin;
+                final admin = store.currentAdmin;
                 if (admin == null) return;
                 final conf = await AdminChangeConfirmSheet.show(
                   context,
@@ -1008,7 +1011,7 @@ class _SupportAccessActionsCell extends StatelessWidget {
                   confirmLabel: 'Close access',
                 );
                 if (conf == null) return;
-                await context.read<AdminStore>().performComplianceAction(
+                await store.performComplianceAction(
                       ComplianceActionRequest(
                         actorAdminId: admin.id,
                         actorRole: admin.role,
@@ -1021,9 +1024,7 @@ class _SupportAccessActionsCell extends StatelessWidget {
                     );
               } catch (e) {
                 debugPrint('Close support access failed: $e');
-                if (context.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
-                }
+                messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
               }
             }
           : null,

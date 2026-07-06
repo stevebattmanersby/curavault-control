@@ -6,7 +6,6 @@ import 'package:curavault_admin/admin/pages/widgets/admin_change_confirm_sheet.d
 import 'package:curavault_admin/admin/state/admin_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:curavault_admin/theme.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:curavault_admin/admin/pages/widgets/admin_owner_data_source_panel.dart';
@@ -129,19 +128,21 @@ class _BillingToolbar extends StatelessWidget {
         _RangePill(
           label: q.range.label,
           onPressed: () async {
+            final store = context.read<AdminStore>();
             final preset = await showModalBottomSheet<AdminDateRangePreset>(
               context: context,
               showDragHandle: true,
               builder: (context) => const _RangeSheet(),
             );
             if (preset == null) return;
-            await context.read<AdminStore>().setBillingQuery(q.copyWith(range: preset));
+            await store.setBillingQuery(q.copyWith(range: preset));
           },
         ),
         _FilterPill(
           label: q.country == null && q.plan == null && q.provider == null ? 'Filters' : 'Filters • active',
           icon: Icons.tune,
           onPressed: () async {
+            final store = context.read<AdminStore>();
             final next = await showModalBottomSheet<BillingQuery>(
               context: context,
               isScrollControlled: true,
@@ -152,7 +153,7 @@ class _BillingToolbar extends StatelessWidget {
               ),
             );
             if (next == null) return;
-            await context.read<AdminStore>().setBillingQuery(next);
+            await store.setBillingQuery(next);
           },
         ),
         IconButton(
@@ -291,7 +292,7 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
             Text('These filters only scope billing summaries and never reveal health content.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              value: _country,
+              initialValue: _country,
               decoration: const InputDecoration(labelText: 'Country'),
               items: const <DropdownMenuItem<String?>>[
                 DropdownMenuItem<String?>(value: null, child: Text('All')),
@@ -305,7 +306,7 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              value: _plan,
+              initialValue: _plan,
               decoration: const InputDecoration(labelText: 'Plan'),
               items: const <DropdownMenuItem<String?>>[
                 DropdownMenuItem<String?>(value: null, child: Text('All')),
@@ -319,7 +320,7 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<BillingSubscriptionProvider?>(
-              value: _provider,
+              initialValue: _provider,
               decoration: const InputDecoration(labelText: 'Provider'),
               items: [
                 const DropdownMenuItem<BillingSubscriptionProvider?>(value: null, child: Text('All')),
@@ -804,6 +805,7 @@ class _BillingActionsMenu extends StatelessWidget {
 
   Future<void> _handleChangePlan(BuildContext context) async {
     final store = context.read<AdminStore>();
+    final messenger = ScaffoldMessenger.of(context);
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
     final plan = await showDialog<String>(
@@ -811,6 +813,7 @@ class _BillingActionsMenu extends StatelessWidget {
       builder: (context) => _PlanPickerDialog(currentPlan: currentPlan),
     );
     if (plan == null || plan == currentPlan) return;
+    if (!context.mounted) return;
 
     final confirm = await AdminChangeConfirmSheet.show(
       context,
@@ -835,15 +838,16 @@ class _BillingActionsMenu extends StatelessWidget {
         ),
       );
       await store.refreshBilling();
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Plan change recorded (audited).')));
+      messenger.showSnackBar(const SnackBar(content: Text('Plan change recorded (audited).')));
     } catch (e) {
       debugPrint('Billing change plan failed: $e');
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to change plan.')));
+      messenger.showSnackBar(const SnackBar(content: Text('Failed to change plan.')));
     }
   }
 
   Future<void> _handleManualComp(BuildContext context, {required bool grant}) async {
     final store = context.read<AdminStore>();
+    final messenger = ScaffoldMessenger.of(context);
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
     final confirm = await AdminChangeConfirmSheet.show(
@@ -869,15 +873,16 @@ class _BillingActionsMenu extends StatelessWidget {
         ),
       );
       await store.refreshBilling();
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Manual comp access updated (audited).')));
+      messenger.showSnackBar(const SnackBar(content: Text('Manual comp access updated (audited).')));
     } catch (e) {
       debugPrint('Billing manual comp failed: $e');
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to update manual comp access.')));
+      messenger.showSnackBar(const SnackBar(content: Text('Failed to update manual comp access.')));
     }
   }
 
   Future<void> _handleAddNote(BuildContext context) async {
     final store = context.read<AdminStore>();
+    final messenger = ScaffoldMessenger.of(context);
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
     final note = await showModalBottomSheet<String>(
@@ -890,6 +895,7 @@ class _BillingActionsMenu extends StatelessWidget {
       ),
     );
     if (note == null || note.trim().isEmpty) return;
+    if (!context.mounted) return;
 
     final confirm = await AdminChangeConfirmSheet.show(
       context,
@@ -913,10 +919,10 @@ class _BillingActionsMenu extends StatelessWidget {
           parameters: {'note': note.trim()},
         ),
       );
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Billing note recorded (audited).')));
+      messenger.showSnackBar(const SnackBar(content: Text('Billing note recorded (audited).')));
     } catch (e) {
       debugPrint('Billing add note failed: $e');
-      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to add billing note.')));
+      messenger.showSnackBar(const SnackBar(content: Text('Failed to add billing note.')));
     }
   }
 }
@@ -940,9 +946,11 @@ class _ExtendTrialButton extends StatelessWidget {
                 builder: (context) => const _ExtendTrialDialog(),
               );
               if (extraDays == null) return;
+              if (!context.mounted) return;
 
               final newEnd = currentEnd.add(Duration(days: extraDays));
               final store = context.read<AdminStore>();
+              final messenger = ScaffoldMessenger.of(context);
               final role = context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
               final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
@@ -973,10 +981,10 @@ class _ExtendTrialButton extends StatelessWidget {
                   ),
                 );
                 await store.refreshBilling();
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Trial extended (audited).')));
+                messenger.showSnackBar(const SnackBar(content: Text('Trial extended (audited).')));
               } catch (e) {
                 debugPrint('Extend trial failed: $e');
-                if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to extend trial.')));
+                messenger.showSnackBar(const SnackBar(content: Text('Failed to extend trial.')));
               }
             }
           : null,
@@ -1020,7 +1028,9 @@ class _PlanPickerDialog extends StatelessWidget {
             for (final p in plans)
               RadioListTile<String>(
                 value: p,
+                // ignore: deprecated_member_use
                 groupValue: currentPlan,
+                // ignore: deprecated_member_use
                 onChanged: (v) => Navigator.of(context).pop(v),
                 title: Text(p),
               ),

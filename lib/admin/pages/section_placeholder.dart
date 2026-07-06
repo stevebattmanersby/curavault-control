@@ -8,7 +8,7 @@ class SectionPlaceholderPage extends StatelessWidget {
   final String title;
   final String subtitle;
   final IconData icon;
-  final List<_PlaceholderSection> sections;
+  final List<PlaceholderSection> sections;
 
   @override
   Widget build(BuildContext context) {
@@ -48,12 +48,12 @@ class SectionPlaceholderPage extends StatelessWidget {
   }
 }
 
-class _PlaceholderSection {
-  const _PlaceholderSection({required this.title, required this.child});
+class PlaceholderSection {
+  const PlaceholderSection({required this.title, required this.child});
+
+  static PlaceholderSection of({required String title, required Widget child}) =>
+      PlaceholderSection(title: title, child: child);
+
   final String title;
   final Widget child;
-}
-
-class PlaceholderSection {
-  static _PlaceholderSection of({required String title, required Widget child}) => _PlaceholderSection(title: title, child: child);
 }

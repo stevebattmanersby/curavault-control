@@ -133,7 +133,7 @@ class SupabaseConfig {
     }
 
     try {
-      await Supabase.initialize(url: resolvedUrl, anonKey: resolvedAnon, debug: kDebugMode);
+      await Supabase.initialize(url: resolvedUrl, publishableKey: resolvedAnon, debug: kDebugMode);
       _initialized = true;
       debugPrintEnvStatus(source: 'SupabaseConfig.initialize(after)');
     } catch (e) {

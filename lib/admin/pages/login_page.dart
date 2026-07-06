@@ -119,11 +119,12 @@ class _LoginPageState extends State<LoginPage> {
         setState(() => _devSupabaseError = e.toString());
       }
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _error = null;
-        _info = 'If this email has access, a reset link has been sent.';
-      });
+      if (mounted) {
+        setState(() {
+          _error = null;
+          _info = 'If this email has access, a reset link has been sent.';
+        });
+      }
     }
   }
 

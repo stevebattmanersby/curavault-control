@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:curavault_admin/supabase/supabase_config.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Privacy-safe usage instrumentation.
 ///
@@ -147,7 +146,8 @@ class UsageEventService {
 
       final safeProps = sanitizeProperties(properties ?? const {});
       if (!validateSafeProperties(safeProps)) {
-        debugPrint('[usage_events] blocked unsafe properties for event=$eventName');
+        debugPrint(
+            '[usage_events] blocked unsafe properties for event=$eventName');
         return;
       }
 
@@ -157,9 +157,11 @@ class UsageEventService {
         'feature_area': featureArea,
         'platform': _platformLabel,
         'app_version': _appVersionLabel,
-        if (country != null && country.trim().isNotEmpty) 'country': country.trim(),
+        if (country != null && country.trim().isNotEmpty)
+          'country': country.trim(),
         'result': result,
-        if (errorCode != null && errorCode.trim().isNotEmpty) 'error_code': errorCode.trim(),
+        if (errorCode != null && errorCode.trim().isNotEmpty)
+          'error_code': errorCode.trim(),
         if (durationMs != null) 'duration_ms': durationMs,
         'properties': safeProps,
         // created_at should be generated server-side, but we allow the column to
@@ -209,7 +211,9 @@ class UsageEventService {
       if (value is String || value is num || value is bool) {
         out[key] = value;
       } else if (value is List) {
-        final safe = value.where((e) => e == null || e is String || e is num || e is bool).toList(growable: false);
+        final safe = value
+            .where((e) => e == null || e is String || e is num || e is bool)
+            .toList(growable: false);
         out[key] = safe;
       } else if (value is Map) {
         // Allow one-level map of primitives only.
@@ -229,7 +233,20 @@ class UsageEventService {
 
   @visibleForTesting
   static bool validateSafeProperties(Map<String, Object?> properties) {
-    for (final key in properties.keys) {
+    if (_containsUnsafeKey(properties)) {
+      return false;
+    }
+
+    if (_containsOversizedString(properties)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  static bool _containsUnsafeKey(Map<String, Object?> properties) {
+    for (final entry in properties.entries) {
+      final key = entry.key;
       final k = key.toLowerCase();
       for (final token in _unsafeKeyTokens) {
         if (k == token || k.contains(token)) {
@@ -239,13 +256,21 @@ class UsageEventService {
               'Do not send PHI / user health content in usage events.',
             );
           }());
-          return false;
+          return true;
         }
       }
+      final value = entry.value;
+      if (value is Map) {
+        final nested = value.map((k, v) => MapEntry(k.toString(), v));
+        if (_containsUnsafeKey(nested)) return true;
+      }
     }
+    return false;
+  }
 
-    // Basic value-based guard for common leakage patterns: if someone tries to put
-    // huge text blobs in a "safe" key.
+  // Basic value-based guard for common leakage patterns: if someone tries to put
+  // huge text blobs in a "safe" key.
+  static bool _containsOversizedString(Map<String, Object?> properties) {
     for (final entry in properties.entries) {
       final v = entry.value;
       if (v is String && v.length > 500) {
@@ -255,10 +280,14 @@ class UsageEventService {
             'Do not include free-form user text.',
           );
         }());
-        return false;
+        return true;
+      }
+      if (v is Map) {
+        final nested = v.map((k, value) => MapEntry(k.toString(), value));
+        if (_containsOversizedString(nested)) return true;
       }
     }
-    return true;
+    return false;
   }
 }
 
@@ -266,7 +295,8 @@ class UsageEventService {
 ///
 /// Designed for go_router: pass this in `GoRouter(observers: [...])`.
 class UsageNavigationObserver extends NavigatorObserver {
-  UsageNavigationObserver({UsageEventService? service}) : _service = service ?? UsageEventService.instance;
+  UsageNavigationObserver({UsageEventService? service})
+      : _service = service ?? UsageEventService.instance;
 
   final UsageEventService _service;
 

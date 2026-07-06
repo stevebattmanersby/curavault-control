@@ -92,8 +92,9 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
         _activeAdminError ??= e;
       });
     } finally {
-      if (!mounted) return;
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

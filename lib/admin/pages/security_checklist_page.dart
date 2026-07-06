@@ -112,7 +112,7 @@ class _SecurityChecklistBody extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
 
     final rlsSignal = snapshot.rlsEnabled;
-    final rlsOk = rlsSignal == null ? null : rlsSignal;
+    final rlsOk = rlsSignal;
 
     final items = <_ChecklistItem>[
       _ChecklistItem(
@@ -178,7 +178,7 @@ class _SecurityChecklistBody extends StatelessWidget {
               ),
               if (kDebugMode) ...[
                 const SizedBox(height: AppSpacing.md),
-                 Text('Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(SupabaseConfig.anonKey) ?? 'n/a'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                Text('Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(SupabaseConfig.anonKey) ?? 'n/a'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ],
           ),

@@ -27,7 +27,6 @@ import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/services/usage_event_service.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 class AppRouter {

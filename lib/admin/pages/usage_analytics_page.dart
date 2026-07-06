@@ -649,7 +649,7 @@ class _CategoryDonutChart extends StatelessWidget {
     }
 
     final total = entries.fold<int>(0, (a, e) => a + e.value);
-    final palette = <Color>[cs.primary, cs.secondary, cs.tertiary ?? cs.primary, cs.primaryContainer, cs.secondaryContainer, cs.tertiaryContainer ?? cs.secondaryContainer];
+    final palette = <Color>[cs.primary, cs.secondary, cs.tertiary, cs.primaryContainer, cs.secondaryContainer, cs.tertiaryContainer];
 
     return Row(
       children: [
@@ -818,7 +818,7 @@ class _PlatformPieChart extends StatelessWidget {
     final total = entries.fold<int>(0, (a, e) => a + e.value);
     if (total == 0) return const SizedBox.shrink();
 
-    final colors = <Color>[cs.primary, cs.secondary, cs.tertiary ?? cs.primaryContainer];
+    final colors = <Color>[cs.primary, cs.secondary, cs.tertiary];
     return Row(
       children: [
         Expanded(

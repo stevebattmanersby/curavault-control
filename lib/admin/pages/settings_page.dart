@@ -83,7 +83,6 @@ class ThemePreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tokens = context.tokens;
     final t = Theme.of(context).textTheme;
     final cs = Theme.of(context).colorScheme;
 
