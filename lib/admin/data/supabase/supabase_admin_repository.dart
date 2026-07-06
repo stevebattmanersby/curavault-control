@@ -89,11 +89,19 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   bool _isMissingRelationError(Object e) {
-    // PostgrestException message differs by environment; be permissive.
+    // PostgREST/Supabase messages differ by environment; be deliberately
+    // permissive so missing optional instrumentation degrades cleanly.
     final msg = e.toString().toLowerCase();
-    return msg.contains('relation') && msg.contains('does not exist') ||
+    return msg.contains('pgrst106') ||
+        msg.contains('pgrst202') ||
+        msg.contains('pgrst205') ||
+        msg.contains('invalid schema') ||
+        msg.contains('schema cache') ||
         msg.contains('could not find the function') ||
-        msg.contains('function') && msg.contains('does not exist') ||
+        msg.contains('could not find the table') ||
+        (msg.contains('relation') && msg.contains('does not exist')) ||
+        (msg.contains('function') && msg.contains('does not exist')) ||
+        (msg.contains('table') && msg.contains('does not exist')) ||
         msg.contains('404');
   }
 
