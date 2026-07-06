@@ -17,7 +17,8 @@ class BillingPage extends StatefulWidget {
   State<BillingPage> createState() => _BillingPageState();
 }
 
-class _BillingPageState extends State<BillingPage> with SingleTickerProviderStateMixin {
+class _BillingPageState extends State<BillingPage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -45,42 +46,57 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.billing, title: 'Billing'),
+          AdminOwnerDataSourcePanel(
+              store: store,
+              dataSourceKey: AdminDataSourceKey.billing,
+              title: 'Billing'),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: Text('Billing', style: Theme.of(context).textTheme.headlineMedium)),
+              Expanded(
+                  child: Text('Billing',
+                      style: Theme.of(context).textTheme.headlineMedium)),
               AdminDataSourceBadge(status: status),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             'Track plans, trials, paid users, payment failures, and revenue. No health data is shown.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           _BillingToolbar(role: role),
           const SizedBox(height: 14),
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
+          else if (status.kind == AdminDataSourceKind.error)
+            Expanded(
+                child: Center(
+                    child: Text(
+                        status.safeErrorMessage ??
+                            'Failed to load billing data.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant))))
           else
-          if (status.kind == AdminDataSourceKind.error)
-            Expanded(child: Center(child: Text(status.safeErrorMessage ?? 'Failed to load billing data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))))
-          else
-          TabBar(
-            controller: _tabController,
-            isScrollable: true,
-            dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
-            tabAlignment: TabAlignment.start,
-            tabs: const [
-              Tab(text: 'Overview'),
-              Tab(text: 'Subscriptions'),
-              Tab(text: 'Trials'),
-              Tab(text: 'Failed payments'),
-              Tab(text: 'Revenue by plan'),
-              Tab(text: 'Revenue by country'),
-            ],
-          ),
+            TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
+              tabAlignment: TabAlignment.start,
+              tabs: const [
+                Tab(text: 'Overview'),
+                Tab(text: 'Subscriptions'),
+                Tab(text: 'Trials'),
+                Tab(text: 'Failed payments'),
+                Tab(text: 'Revenue by plan'),
+                Tab(text: 'Revenue by country'),
+              ],
+            ),
           if (status.kind != AdminDataSourceKind.notInstrumented) ...[
             const SizedBox(height: 14),
             Expanded(
@@ -88,17 +104,34 @@ class _BillingPageState extends State<BillingPage> with SingleTickerProviderStat
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(AppRadius.xl),
-                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.35)),
                 ),
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _BillingOverviewTab(overview: billing?.overview, isLoading: store.isBillingLoading, generatedAt: billing?.generatedAt),
-                    _SubscriptionsTab(rows: billing?.subscriptions ?? const [], isLoading: store.isBillingLoading, role: role),
-                    _TrialsTab(rows: billing?.trials ?? const [], isLoading: store.isBillingLoading, role: role),
-                    _FailedPaymentsTab(rows: billing?.failedPayments ?? const [], isLoading: store.isBillingLoading, role: role),
-                    _RevenueByPlanTab(rows: billing?.revenueByPlan ?? const [], isLoading: store.isBillingLoading),
-                    _RevenueByCountryTab(rows: billing?.revenueByCountry ?? const [], isLoading: store.isBillingLoading),
+                    _BillingOverviewTab(
+                        overview: billing?.overview,
+                        isLoading: store.isBillingLoading,
+                        generatedAt: billing?.generatedAt),
+                    _SubscriptionsTab(
+                        rows: billing?.subscriptions ?? const [],
+                        isLoading: store.isBillingLoading,
+                        role: role),
+                    _TrialsTab(
+                        rows: billing?.trials ?? const [],
+                        isLoading: store.isBillingLoading,
+                        role: role),
+                    _FailedPaymentsTab(
+                        rows: billing?.failedPayments ?? const [],
+                        isLoading: store.isBillingLoading,
+                        role: role),
+                    _RevenueByPlanTab(
+                        rows: billing?.revenueByPlan ?? const [],
+                        isLoading: store.isBillingLoading),
+                    _RevenueByCountryTab(
+                        rows: billing?.revenueByCountry ?? const [],
+                        isLoading: store.isBillingLoading),
                   ],
                 ),
               ),
@@ -139,7 +172,9 @@ class _BillingToolbar extends StatelessWidget {
           },
         ),
         _FilterPill(
-          label: q.country == null && q.plan == null && q.provider == null ? 'Filters' : 'Filters • active',
+          label: q.country == null && q.plan == null && q.provider == null
+              ? 'Filters'
+              : 'Filters • active',
           icon: Icons.tune,
           onPressed: () async {
             final store = context.read<AdminStore>();
@@ -148,7 +183,8 @@ class _BillingToolbar extends StatelessWidget {
               isScrollControlled: true,
               showDragHandle: true,
               builder: (context) => Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewInsetsOf(context).bottom),
                 child: _BillingFiltersSheet(initial: q),
               ),
             );
@@ -161,10 +197,12 @@ class _BillingToolbar extends StatelessWidget {
           onPressed: () => context.read<AdminStore>().refreshBilling(),
           icon: Icon(Icons.refresh, color: cs.onSurface),
         ),
-        if (!AdminRbac.canPerformBillingAction(role, BillingAdminAction.addBillingNote))
+        if (!AdminRbac.canPerformBillingAction(
+            role, BillingAdminAction.addBillingNote))
           _HintBadge(label: 'Read-only for your role', icon: Icons.lock_outline)
         else
-          const _HintBadge(label: 'Actions are audited', icon: Icons.verified_user_outlined),
+          const _HintBadge(
+              label: 'Actions are audited', icon: Icons.verified_user_outlined),
       ],
     );
   }
@@ -190,7 +228,11 @@ class _HintBadge extends StatelessWidget {
         children: [
           Icon(icon, size: 16, color: cs.onSurfaceVariant),
           const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -214,7 +256,8 @@ class _RangePill extends StatelessWidget {
 }
 
 class _FilterPill extends StatelessWidget {
-  const _FilterPill({required this.label, required this.icon, required this.onPressed});
+  const _FilterPill(
+      {required this.label, required this.icon, required this.onPressed});
   final String label;
   final IconData icon;
   final VoidCallback onPressed;
@@ -272,7 +315,8 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
   }
 
   void _apply() {
-    Navigator.of(context).pop(widget.initial.copyWith(country: _country, plan: _plan, provider: _provider));
+    Navigator.of(context).pop(widget.initial
+        .copyWith(country: _country, plan: _plan, provider: _provider));
   }
 
   @override
@@ -289,10 +333,13 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
           children: [
             Text('Billing filters', style: t.titleLarge),
             const SizedBox(height: 8),
-            Text('These filters only scope billing summaries and never reveal health content.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+                'These filters only scope billing summaries and never reveal health content.',
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
             DropdownButtonFormField<String?>(
-              initialValue: _country,
+              // ignore: deprecated_member_use
+              value: _country,
               decoration: const InputDecoration(labelText: 'Country'),
               items: const <DropdownMenuItem<String?>>[
                 DropdownMenuItem<String?>(value: null, child: Text('All')),
@@ -306,7 +353,8 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(
-              initialValue: _plan,
+              // ignore: deprecated_member_use
+              value: _plan,
               decoration: const InputDecoration(labelText: 'Plan'),
               items: const <DropdownMenuItem<String?>>[
                 DropdownMenuItem<String?>(value: null, child: Text('All')),
@@ -314,17 +362,22 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
                 DropdownMenuItem(value: 'premium', child: Text('premium')),
                 DropdownMenuItem(value: 'family', child: Text('family')),
                 DropdownMenuItem(value: 'team', child: Text('team')),
-                DropdownMenuItem(value: 'enterprise', child: Text('enterprise')),
+                DropdownMenuItem(
+                    value: 'enterprise', child: Text('enterprise')),
               ],
               onChanged: (v) => setState(() => _plan = v),
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<BillingSubscriptionProvider?>(
-              initialValue: _provider,
+              // ignore: deprecated_member_use
+              value: _provider,
               decoration: const InputDecoration(labelText: 'Provider'),
               items: [
-                const DropdownMenuItem<BillingSubscriptionProvider?>(value: null, child: Text('All')),
-                for (final p in BillingSubscriptionProvider.values) DropdownMenuItem<BillingSubscriptionProvider?>(value: p, child: Text(p.label)),
+                const DropdownMenuItem<BillingSubscriptionProvider?>(
+                    value: null, child: Text('All')),
+                for (final p in BillingSubscriptionProvider.values)
+                  DropdownMenuItem<BillingSubscriptionProvider?>(
+                      value: p, child: Text(p.label)),
               ],
               onChanged: (v) => setState(() => _provider = v),
             ),
@@ -333,7 +386,11 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
               children: [
                 Expanded(
                   child: OutlinedButton(
-                    onPressed: () => Navigator.of(context).pop(widget.initial.copyWith(clearCountry: true, clearPlan: true, clearProvider: true)),
+                    onPressed: () => Navigator.of(context).pop(widget.initial
+                        .copyWith(
+                            clearCountry: true,
+                            clearPlan: true,
+                            clearProvider: true)),
                     child: Text('Clear', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
@@ -354,7 +411,10 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
 }
 
 class _BillingOverviewTab extends StatelessWidget {
-  const _BillingOverviewTab({required this.overview, required this.isLoading, required this.generatedAt});
+  const _BillingOverviewTab(
+      {required this.overview,
+      required this.isLoading,
+      required this.generatedAt});
   final BillingOverviewMetrics? overview;
   final bool isLoading;
   final DateTime? generatedAt;
@@ -364,7 +424,8 @@ class _BillingOverviewTab extends StatelessWidget {
     if (isLoading && overview == null) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
     final o = overview;
-    if (o == null) return const _EmptyState(label: 'No usage data has been collected yet.');
+    if (o == null)
+      return const _EmptyState(label: 'No usage data has been collected yet.');
 
     return ListView(
       padding: const EdgeInsets.all(14),
@@ -373,15 +434,42 @@ class _BillingOverviewTab extends StatelessWidget {
           spacing: 12,
           runSpacing: 12,
           children: [
-            _MetricCard(title: 'Active paid users', value: AdminFormatters.compactInt(o.activePaidUsers), icon: Icons.verified_outlined),
-            _MetricCard(title: 'Free users', value: AdminFormatters.compactInt(o.freeUsers), icon: Icons.group_outlined),
-            _MetricCard(title: 'Trial users', value: AdminFormatters.compactInt(o.trialUsers), icon: Icons.hourglass_top_outlined),
-            _MetricCard(title: 'Cancelled users', value: AdminFormatters.compactInt(o.cancelledUsers), icon: Icons.cancel_outlined),
-            _MetricCard(title: 'Failed payments', value: AdminFormatters.compactInt(o.failedPayments), icon: Icons.warning_amber_outlined),
-            _MetricCard(title: 'MRR', value: AdminFormatters.usd(o.monthlyRecurringRevenueUsd), icon: Icons.trending_up_outlined),
-            _MetricCard(title: 'ARR', value: AdminFormatters.usd(o.annualRecurringRevenueUsd), icon: Icons.insights_outlined),
-            _MetricCard(title: 'ARPU', value: AdminFormatters.usd(o.averageRevenuePerUserUsd), icon: Icons.payments_outlined),
-            _MetricCard(title: 'Trial conversion', value: _formatPct(o.trialConversionRate), icon: Icons.compare_arrows_outlined),
+            _MetricCard(
+                title: 'Active paid users',
+                value: AdminFormatters.compactInt(o.activePaidUsers),
+                icon: Icons.verified_outlined),
+            _MetricCard(
+                title: 'Free users',
+                value: AdminFormatters.compactInt(o.freeUsers),
+                icon: Icons.group_outlined),
+            _MetricCard(
+                title: 'Trial users',
+                value: AdminFormatters.compactInt(o.trialUsers),
+                icon: Icons.hourglass_top_outlined),
+            _MetricCard(
+                title: 'Cancelled users',
+                value: AdminFormatters.compactInt(o.cancelledUsers),
+                icon: Icons.cancel_outlined),
+            _MetricCard(
+                title: 'Failed payments',
+                value: AdminFormatters.compactInt(o.failedPayments),
+                icon: Icons.warning_amber_outlined),
+            _MetricCard(
+                title: 'MRR',
+                value: AdminFormatters.usd(o.monthlyRecurringRevenueUsd),
+                icon: Icons.trending_up_outlined),
+            _MetricCard(
+                title: 'ARR',
+                value: AdminFormatters.usd(o.annualRecurringRevenueUsd),
+                icon: Icons.insights_outlined),
+            _MetricCard(
+                title: 'ARPU',
+                value: AdminFormatters.usd(o.averageRevenuePerUserUsd),
+                icon: Icons.payments_outlined),
+            _MetricCard(
+                title: 'Trial conversion',
+                value: _formatPct(o.trialConversionRate),
+                icon: Icons.compare_arrows_outlined),
           ],
         ),
         const SizedBox(height: 14),
@@ -390,7 +478,8 @@ class _BillingOverviewTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Row(
             children: [
@@ -399,13 +488,19 @@ class _BillingOverviewTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   'This section surfaces billing metadata only. No invoices, payment methods, addresses, or health content are visible.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
               if (generatedAt != null)
                 Text(
                   'Updated ${AdminFormatters.relativeTime(generatedAt!)}',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
             ],
           ),
@@ -416,7 +511,8 @@ class _BillingOverviewTab extends StatelessWidget {
 }
 
 class _SubscriptionsTab extends StatelessWidget {
-  const _SubscriptionsTab({required this.rows, required this.isLoading, required this.role});
+  const _SubscriptionsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<SubscriptionRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -433,12 +529,14 @@ class _SubscriptionsTab extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Text('Subscriptions', style: Theme.of(context).textTheme.titleMedium),
+          child: Text('Subscriptions',
+              style: Theme.of(context).textTheme.titleMedium),
         ),
         const Divider(height: 1),
         Expanded(
           child: rows.isEmpty
-              ? const _EmptyState(label: 'No subscriptions found for the current filters.')
+              ? const _EmptyState(
+                  label: 'No subscriptions found for the current filters.')
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(12),
                   scrollDirection: Axis.horizontal,
@@ -469,15 +567,29 @@ class _SubscriptionsTab extends StatelessWidget {
                             DataCell(Text(r.plan)),
                             DataCell(_StatusPill(text: r.billingStatus)),
                             DataCell(Text(r.provider.label)),
-                            DataCell(Text(AdminFormatters.dateTime(r.subscriptionStart))),
-                            DataCell(Text(AdminFormatters.dateTime(r.renewalDate))),
-                            DataCell(Text(AdminFormatters.dateTime(r.cancelledDate))),
+                            DataCell(Text(
+                                AdminFormatters.dateTime(r.subscriptionStart))),
+                            DataCell(
+                                Text(AdminFormatters.dateTime(r.renewalDate))),
+                            DataCell(Text(
+                                AdminFormatters.dateTime(r.cancelledDate))),
                             DataCell(Text('${r.paymentFailureCount}')),
                             DataCell(Text(r.country)),
                             DataCell(
-                              Icon(r.manualCompAccess ? Icons.check_circle : Icons.do_not_disturb_on_outlined, color: r.manualCompAccess ? cs.primary : cs.onSurfaceVariant, size: 18),
+                              Icon(
+                                  r.manualCompAccess
+                                      ? Icons.check_circle
+                                      : Icons.do_not_disturb_on_outlined,
+                                  color: r.manualCompAccess
+                                      ? cs.primary
+                                      : cs.onSurfaceVariant,
+                                  size: 18),
                             ),
-                            DataCell(_BillingActionsMenu(userId: r.userId, role: role, hasManualComp: r.manualCompAccess, currentPlan: r.plan)),
+                            DataCell(_BillingActionsMenu(
+                                userId: r.userId,
+                                role: role,
+                                hasManualComp: r.manualCompAccess,
+                                currentPlan: r.plan)),
                           ],
                         ),
                     ],
@@ -490,7 +602,8 @@ class _SubscriptionsTab extends StatelessWidget {
 }
 
 class _TrialsTab extends StatelessWidget {
-  const _TrialsTab({required this.rows, required this.isLoading, required this.role});
+  const _TrialsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<TrialRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -499,7 +612,8 @@ class _TrialsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     if (isLoading && rows.isEmpty) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
-    final canExtend = AdminRbac.canPerformBillingAction(role, BillingAdminAction.extendTrial);
+    final canExtend =
+        AdminRbac.canPerformBillingAction(role, BillingAdminAction.extendTrial);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,16 +622,23 @@ class _TrialsTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
           child: Row(
             children: [
-              Expanded(child: Text('Trials', style: Theme.of(context).textTheme.titleMedium)),
+              Expanded(
+                  child: Text('Trials',
+                      style: Theme.of(context).textTheme.titleMedium)),
               if (!canExtend)
-                Text('Read-only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text('Read-only',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
             ],
           ),
         ),
         const Divider(height: 1),
         Expanded(
           child: rows.isEmpty
-              ? const _EmptyState(label: 'No trials found for the current filters.')
+              ? const _EmptyState(
+                  label: 'No trials found for the current filters.')
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(12),
                   scrollDirection: Axis.horizontal,
@@ -542,13 +663,30 @@ class _TrialsTab extends StatelessWidget {
                           cells: [
                             DataCell(Text(r.userId)),
                             DataCell(Text(r.plan)),
-                            DataCell(Text(AdminFormatters.dateTime(r.trialStart))),
-                            DataCell(Text(AdminFormatters.dateTime(r.trialEnd))),
+                            DataCell(
+                                Text(AdminFormatters.dateTime(r.trialStart))),
+                            DataCell(
+                                Text(AdminFormatters.dateTime(r.trialEnd))),
                             DataCell(Text('${r.daysRemaining}')),
                             DataCell(Text(r.usageLevel)),
-                            DataCell(Icon(r.upgradePromptClicked ? Icons.check_circle : Icons.close, size: 18, color: r.upgradePromptClicked ? cs.primary : cs.onSurfaceVariant)),
-                            DataCell(Icon(r.converted ? Icons.check_circle : Icons.close, size: 18, color: r.converted ? cs.primary : cs.onSurfaceVariant)),
-                            DataCell(_ExtendTrialButton(enabled: canExtend, userId: r.userId, currentEnd: r.trialEnd)),
+                            DataCell(Icon(
+                                r.upgradePromptClicked
+                                    ? Icons.check_circle
+                                    : Icons.close,
+                                size: 18,
+                                color: r.upgradePromptClicked
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant)),
+                            DataCell(Icon(
+                                r.converted ? Icons.check_circle : Icons.close,
+                                size: 18,
+                                color: r.converted
+                                    ? cs.primary
+                                    : cs.onSurfaceVariant)),
+                            DataCell(_ExtendTrialButton(
+                                enabled: canExtend,
+                                userId: r.userId,
+                                currentEnd: r.trialEnd)),
                           ],
                         ),
                     ],
@@ -561,7 +699,8 @@ class _TrialsTab extends StatelessWidget {
 }
 
 class _FailedPaymentsTab extends StatelessWidget {
-  const _FailedPaymentsTab({required this.rows, required this.isLoading, required this.role});
+  const _FailedPaymentsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<FailedPaymentRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -576,12 +715,14 @@ class _FailedPaymentsTab extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Text('Failed payments', style: Theme.of(context).textTheme.titleMedium),
+          child: Text('Failed payments',
+              style: Theme.of(context).textTheme.titleMedium),
         ),
         const Divider(height: 1),
         Expanded(
           child: rows.isEmpty
-              ? const _EmptyState(label: 'No failed payments found for the current filters.')
+              ? const _EmptyState(
+                  label: 'No failed payments found for the current filters.')
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(12),
                   scrollDirection: Axis.horizontal,
@@ -608,11 +749,17 @@ class _FailedPaymentsTab extends StatelessWidget {
                             if (canSeeEmail) DataCell(Text(r.email ?? '—')),
                             DataCell(Text(r.plan)),
                             DataCell(Text(r.provider.label)),
-                            DataCell(Text(AdminFormatters.dateTime(r.failureDate))),
+                            DataCell(
+                                Text(AdminFormatters.dateTime(r.failureDate))),
                             DataCell(Text('${r.failureCount}')),
                             DataCell(_StatusPill(text: r.billingStatus)),
-                            DataCell(_StatusPill(text: r.accountRestrictionStatus)),
-                            DataCell(_BillingActionsMenu(userId: r.userId, role: role, hasManualComp: false, currentPlan: r.plan)),
+                            DataCell(
+                                _StatusPill(text: r.accountRestrictionStatus)),
+                            DataCell(_BillingActionsMenu(
+                                userId: r.userId,
+                                role: role,
+                                hasManualComp: false,
+                                currentPlan: r.plan)),
                           ],
                         ),
                     ],
@@ -623,7 +770,10 @@ class _FailedPaymentsTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
           child: Text(
             'Note: This table is metadata-only. No payment method details are displayed.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
       ],
@@ -646,7 +796,8 @@ class _RevenueByPlanTab extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Text('Revenue by plan', style: Theme.of(context).textTheme.titleMedium),
+          child: Text('Revenue by plan',
+              style: Theme.of(context).textTheme.titleMedium),
         ),
         const Divider(height: 1),
         Expanded(
@@ -687,11 +838,15 @@ class _RevenueByPlanTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Text(
             'Revenue figures are aggregated and intended for internal monitoring, not financial reporting.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
       ],
@@ -714,7 +869,8 @@ class _RevenueByCountryTab extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-          child: Text('Revenue by country', style: Theme.of(context).textTheme.titleMedium),
+          child: Text('Revenue by country',
+              style: Theme.of(context).textTheme.titleMedium),
         ),
         const Divider(height: 1),
         Expanded(
@@ -751,7 +907,10 @@ class _RevenueByCountryTab extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
           child: Text(
             'Privacy rule: Countries with fewer than 10 users are grouped into “Other”.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
       ],
@@ -760,7 +919,11 @@ class _RevenueByCountryTab extends StatelessWidget {
 }
 
 class _BillingActionsMenu extends StatelessWidget {
-  const _BillingActionsMenu({required this.userId, required this.role, required this.hasManualComp, required this.currentPlan});
+  const _BillingActionsMenu(
+      {required this.userId,
+      required this.role,
+      required this.hasManualComp,
+      required this.currentPlan});
   final String userId;
   final AdminRole role;
   final bool hasManualComp;
@@ -769,15 +932,19 @@ class _BillingActionsMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final canChangePlan = AdminRbac.canPerformBillingAction(role, BillingAdminAction.changePlan);
-    final canComp = AdminRbac.canPerformBillingAction(role, BillingAdminAction.grantManualCompAccess);
-    final canNote = AdminRbac.canPerformBillingAction(role, BillingAdminAction.addBillingNote);
+    final canChangePlan =
+        AdminRbac.canPerformBillingAction(role, BillingAdminAction.changePlan);
+    final canComp = AdminRbac.canPerformBillingAction(
+        role, BillingAdminAction.grantManualCompAccess);
+    final canNote = AdminRbac.canPerformBillingAction(
+        role, BillingAdminAction.addBillingNote);
 
     final enabled = canChangePlan || canComp || canNote;
 
     return PopupMenuButton<_BillingAction>(
       enabled: enabled,
-      icon: Icon(Icons.more_horiz, color: enabled ? cs.onSurface : cs.onSurfaceVariant),
+      icon: Icon(Icons.more_horiz,
+          color: enabled ? cs.onSurface : cs.onSurfaceVariant),
       onSelected: (a) async {
         switch (a) {
           case _BillingAction.changePlan:
@@ -795,10 +962,22 @@ class _BillingActionsMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        PopupMenuItem(value: _BillingAction.changePlan, enabled: canChangePlan, child: const Text('Change plan')),
-        PopupMenuItem(value: _BillingAction.grantManualComp, enabled: canComp && !hasManualComp, child: const Text('Mark manual comp access')),
-        PopupMenuItem(value: _BillingAction.revokeManualComp, enabled: canComp && hasManualComp, child: const Text('Remove manual comp access')),
-        PopupMenuItem(value: _BillingAction.addBillingNote, enabled: canNote, child: const Text('Add billing note')),
+        PopupMenuItem(
+            value: _BillingAction.changePlan,
+            enabled: canChangePlan,
+            child: const Text('Change plan')),
+        PopupMenuItem(
+            value: _BillingAction.grantManualComp,
+            enabled: canComp && !hasManualComp,
+            child: const Text('Mark manual comp access')),
+        PopupMenuItem(
+            value: _BillingAction.revokeManualComp,
+            enabled: canComp && hasManualComp,
+            child: const Text('Remove manual comp access')),
+        PopupMenuItem(
+            value: _BillingAction.addBillingNote,
+            enabled: canNote,
+            child: const Text('Add billing note')),
       ],
     );
   }
@@ -838,14 +1017,17 @@ class _BillingActionsMenu extends StatelessWidget {
         ),
       );
       await store.refreshBilling();
-      messenger.showSnackBar(const SnackBar(content: Text('Plan change recorded (audited).')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Plan change recorded (audited).')));
     } catch (e) {
       debugPrint('Billing change plan failed: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('Failed to change plan.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Failed to change plan.')));
     }
   }
 
-  Future<void> _handleManualComp(BuildContext context, {required bool grant}) async {
+  Future<void> _handleManualComp(BuildContext context,
+      {required bool grant}) async {
     final store = context.read<AdminStore>();
     final messenger = ScaffoldMessenger.of(context);
     final actorId = store.currentAdmin?.id ?? 'unknown_admin';
@@ -853,7 +1035,8 @@ class _BillingActionsMenu extends StatelessWidget {
     final confirm = await AdminChangeConfirmSheet.show(
       context,
       title: grant ? 'Grant manual comp access' : 'Revoke manual comp access',
-      summary: 'Manual comp access is a billing override. This action is audited.',
+      summary:
+          'Manual comp access is a billing override. This action is audited.',
       previousValue: hasManualComp ? 'enabled' : 'disabled',
       newValue: grant ? 'enabled' : 'disabled',
       confirmLabel: grant ? 'Grant' : 'Revoke',
@@ -866,17 +1049,21 @@ class _BillingActionsMenu extends StatelessWidget {
           actorAdminId: actorId,
           actorRole: role,
           userId: userId,
-          action: grant ? 'Billing: Manual comp grant' : 'Billing: Manual comp revoke',
+          action: grant
+              ? 'Billing: Manual comp grant'
+              : 'Billing: Manual comp revoke',
           reason: confirm.reason,
           ticketReference: confirm.ticketReference,
           parameters: {'manual_comp': grant, 'previous': hasManualComp},
         ),
       );
       await store.refreshBilling();
-      messenger.showSnackBar(const SnackBar(content: Text('Manual comp access updated (audited).')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Manual comp access updated (audited).')));
     } catch (e) {
       debugPrint('Billing manual comp failed: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('Failed to update manual comp access.')));
+      messenger.showSnackBar(const SnackBar(
+          content: Text('Failed to update manual comp access.')));
     }
   }
 
@@ -890,7 +1077,8 @@ class _BillingActionsMenu extends StatelessWidget {
       isScrollControlled: true,
       showDragHandle: true,
       builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+        padding:
+            EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
         child: const _BillingNoteSheet(),
       ),
     );
@@ -900,7 +1088,8 @@ class _BillingActionsMenu extends StatelessWidget {
     final confirm = await AdminChangeConfirmSheet.show(
       context,
       title: 'Add billing note',
-      summary: 'Notes should never contain health data. This action is audited.',
+      summary:
+          'Notes should never contain health data. This action is audited.',
       previousValue: '—',
       newValue: note.trim(),
       confirmLabel: 'Add note',
@@ -919,18 +1108,26 @@ class _BillingActionsMenu extends StatelessWidget {
           parameters: {'note': note.trim()},
         ),
       );
-      messenger.showSnackBar(const SnackBar(content: Text('Billing note recorded (audited).')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Billing note recorded (audited).')));
     } catch (e) {
       debugPrint('Billing add note failed: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('Failed to add billing note.')));
+      messenger.showSnackBar(
+          const SnackBar(content: Text('Failed to add billing note.')));
     }
   }
 }
 
-enum _BillingAction { changePlan, grantManualComp, revokeManualComp, addBillingNote }
+enum _BillingAction {
+  changePlan,
+  grantManualComp,
+  revokeManualComp,
+  addBillingNote
+}
 
 class _ExtendTrialButton extends StatelessWidget {
-  const _ExtendTrialButton({required this.enabled, required this.userId, required this.currentEnd});
+  const _ExtendTrialButton(
+      {required this.enabled, required this.userId, required this.currentEnd});
   final bool enabled;
   final String userId;
   final DateTime currentEnd;
@@ -951,7 +1148,8 @@ class _ExtendTrialButton extends StatelessWidget {
               final newEnd = currentEnd.add(Duration(days: extraDays));
               final store = context.read<AdminStore>();
               final messenger = ScaffoldMessenger.of(context);
-              final role = context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
+              final role =
+                  context.read<AdminAuthStore>().role ?? AdminRole.readOnly;
               final actorId = store.currentAdmin?.id ?? 'unknown_admin';
 
               final confirm = await AdminChangeConfirmSheet.show(
@@ -981,15 +1179,19 @@ class _ExtendTrialButton extends StatelessWidget {
                   ),
                 );
                 await store.refreshBilling();
-                messenger.showSnackBar(const SnackBar(content: Text('Trial extended (audited).')));
+                messenger.showSnackBar(
+                    const SnackBar(content: Text('Trial extended (audited).')));
               } catch (e) {
                 debugPrint('Extend trial failed: $e');
-                messenger.showSnackBar(const SnackBar(content: Text('Failed to extend trial.')));
+                messenger.showSnackBar(
+                    const SnackBar(content: Text('Failed to extend trial.')));
               }
             }
           : null,
-      icon: Icon(Icons.add, size: 16, color: enabled ? cs.primary : cs.onSurfaceVariant),
-      label: Text('Extend', style: TextStyle(color: enabled ? cs.primary : cs.onSurfaceVariant)),
+      icon: Icon(Icons.add,
+          size: 16, color: enabled ? cs.primary : cs.onSurfaceVariant),
+      label: Text('Extend',
+          style: TextStyle(color: enabled ? cs.primary : cs.onSurfaceVariant)),
     );
   }
 }
@@ -1003,9 +1205,15 @@ class _ExtendTrialDialog extends StatelessWidget {
       title: const Text('Extend trial'),
       content: const Text('Choose how many days to extend the trial by.'),
       actions: [
-        TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.of(context).pop(7), child: const Text('+7 days')),
-        TextButton(onPressed: () => Navigator.of(context).pop(14), child: const Text('+14 days')),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel')),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(7),
+            child: const Text('+7 days')),
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(14),
+            child: const Text('+14 days')),
       ],
     );
   }
@@ -1037,7 +1245,11 @@ class _PlanPickerDialog extends StatelessWidget {
           ],
         ),
       ),
-      actions: [TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel'))],
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Cancel'))
+      ],
     );
   }
 }
@@ -1085,12 +1297,17 @@ class _BillingNoteSheetState extends State<_BillingNoteSheet> {
           children: [
             Text('Billing note', style: t.titleLarge),
             const SizedBox(height: 8),
-            Text('Do not include health data or sensitive personal information.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+                'Do not include health data or sensitive personal information.',
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 14),
             TextField(
               controller: _controller,
               maxLines: 4,
-              decoration: InputDecoration(labelText: 'Note', hintText: 'e.g. Customer requested invoice resend…', errorText: _error),
+              decoration: InputDecoration(
+                  labelText: 'Note',
+                  hintText: 'e.g. Customer requested invoice resend…',
+                  errorText: _error),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);
               },
@@ -1101,14 +1318,16 @@ class _BillingNoteSheetState extends State<_BillingNoteSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: _submit,
-                    child: Text('Continue', style: TextStyle(color: cs.onPrimary)),
+                    child:
+                        Text('Continue', style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],
@@ -1121,7 +1340,8 @@ class _BillingNoteSheetState extends State<_BillingNoteSheet> {
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.title, required this.value, required this.icon});
+  const _MetricCard(
+      {required this.title, required this.value, required this.icon});
   final String title;
   final String value;
   final IconData icon;
@@ -1158,9 +1378,17 @@ class _MetricCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Text(title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                   const SizedBox(height: 6),
-                  Text(value, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  Text(value,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w800)),
                 ],
               ),
             ),
@@ -1181,7 +1409,10 @@ class _StatusPill extends StatelessWidget {
     final v = text.trim().toLowerCase();
     final tone = switch (v) {
       'active' || 'normal' => cs.primaryContainer.withValues(alpha: 0.75),
-      'past_due' || 'retrying' || 'restricted' => cs.tertiaryContainer.withValues(alpha: 0.75),
+      'past_due' ||
+      'retrying' ||
+      'restricted' =>
+        cs.tertiaryContainer.withValues(alpha: 0.75),
       'cancelled' => cs.surfaceContainerHighest,
       _ => cs.surfaceContainerHighest,
     };
@@ -1199,7 +1430,8 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
       ),
-      child: Text(text, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+      child: Text(text,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
     );
   }
 }
@@ -1209,7 +1441,9 @@ class _LoadingState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(child: SizedBox(width: 32, height: 32, child: CircularProgressIndicator()));
+    return const Center(
+        child: SizedBox(
+            width: 32, height: 32, child: CircularProgressIndicator()));
   }
 }
 
@@ -1223,7 +1457,11 @@ class _EmptyState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
-        child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        child: Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant)),
       ),
     );
   }
