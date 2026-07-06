@@ -1050,20 +1050,14 @@ class SupabaseAdminQueries {
       required SupportQueueQuery query,
       required int limit}) async {
     _requireRole(admin, AdminRbac.support, capability: 'support_sessions');
-    final canEmail = AdminRbac.canViewUserEmail(admin.role);
-    final select = canEmail
-        ? 'support_session_id, user_id, email, ticket_reference, consent_status, status, assigned_admin, created_at, access_expires_at, updated_at'
-        : 'support_session_id, user_id, ticket_reference, consent_status, status, assigned_admin, created_at, access_expires_at, updated_at';
     try {
-      final builder = _client
-          .schema('control')
-          .from('support_session_summaries')
-          .select(select);
+      final builder = _client.from('admin_support_sessions').select(
+          'id, target_user_id, status, opened_by_admin_user_id, closed_at, ticket_id, created_at, updated_at');
       final rows =
           await builder.order('created_at', ascending: false).limit(limit);
       return (rows as List)
           .cast<Map<String, dynamic>>()
-          .map(_supportSessionSummaryFromJson)
+          .map(_supportSessionSummaryFromAdminSessionJson)
           .toList();
     } catch (e) {
       debugPrint('SupabaseAdminQueries.getSupportSessions failed: $e');
@@ -1434,24 +1428,29 @@ BillingSnapshot _parseBillingSnapshot(
       generatedAt: DateTime.now().toUtc(),
     );
 
-SupportSessionSummary _supportSessionSummaryFromJson(
-        Map<String, dynamic> json) =>
-    SupportSessionSummary(
-      supportSessionId: (json['support_session_id'] ?? '').toString(),
-      userId: (json['user_id'] ?? '').toString(),
-      email: (json['email'] as String?),
-      ticketReference: (json['ticket_reference'] as String?),
-      consentStatus: (json['consent_status'] ?? '').toString(),
-      status: parseSupportSessionStatus((json['status'] ?? '').toString()) ??
-          SupportSessionStatus.pending,
-      assignedAdmin: (json['assigned_admin'] as String?),
-      createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
-          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-      accessExpiresAt:
-          DateTime.tryParse((json['access_expires_at'] ?? '').toString()),
-      updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
-          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-    );
+SupportSessionSummary _supportSessionSummaryFromAdminSessionJson(
+    Map<String, dynamic> json) {
+  final rawStatus = (json['status'] ?? '').toString();
+  final status = switch (rawStatus) {
+    'open' => SupportSessionStatus.active,
+    'closed' => SupportSessionStatus.closed,
+    _ => parseSupportSessionStatus(rawStatus) ?? SupportSessionStatus.pending,
+  };
+  return SupportSessionSummary(
+    supportSessionId: (json['id'] ?? '').toString(),
+    userId: (json['target_user_id'] ?? '').toString(),
+    ticketReference: json['ticket_id']?.toString(),
+    consentStatus:
+        status == SupportSessionStatus.active ? 'on_file' : 'missing',
+    status: status,
+    assignedAdmin: json['opened_by_admin_user_id']?.toString(),
+    createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+    accessExpiresAt: DateTime.tryParse((json['closed_at'] ?? '').toString()),
+    updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
+        DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+  );
+}
 
 UserAccountDetail _userAccountDetailFromJson(Map<String, dynamic> json) =>
     UserAccountDetail(
