@@ -99,7 +99,7 @@ class SupabaseAdminQueries {
         // Only admin metadata (no health data).
         // IMPORTANT: column is named `role` (type `admin_role`).
         .select(
-            'admin_user_id, email, display_name, role, is_active, require_step_up, created_at, updated_at, theme_preference, theme_mode')
+            'admin_user_id, email, display_name, role, is_active, require_step_up, created_at, updated_at')
         .eq('admin_user_id', authUser.id)
         // Enforce allow-list rule at the query level.
         .eq('is_active', true)
@@ -115,6 +115,23 @@ class SupabaseAdminQueries {
     final role = parseAdminRole((row['role'] as String?) ?? '');
     if (role == null) throw StateError('Unknown admin role.');
 
+    String? themePreference;
+    for (final column in const ['theme_preference', 'theme_mode']) {
+      try {
+        final themeRow = await _client
+            .from('admin_users')
+            .select(column)
+            .eq('admin_user_id', authUser.id)
+            .maybeSingle();
+        themePreference = themeRow?[column]?.toString();
+        if (themePreference != null && themePreference.trim().isNotEmpty) {
+          break;
+        }
+      } catch (e) {
+        debugPrint('getCurrentAdminUser($column) skipped: $e');
+      }
+    }
+
     // Normalize to AdminUser model.
     return AdminUser(
       id: (row['admin_user_id'] ?? authUser.id).toString(),
@@ -129,8 +146,7 @@ class SupabaseAdminQueries {
           DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
       updatedAt: DateTime.tryParse((row['updated_at'] ?? '').toString()) ??
           DateTime.now().toUtc(),
-      themePreference:
-          (row['theme_preference'] ?? row['theme_mode'])?.toString(),
+      themePreference: themePreference,
     );
   }
 
