@@ -16,6 +16,21 @@ class DashboardPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final store = context.watch<AdminStore>();
+    if (!store.isLoading &&
+        !store.isDashboardLoading &&
+        !store.dashboardLoad.attempted &&
+        store.dashboard == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        final currentStore = context.read<AdminStore>();
+        if (!currentStore.isLoading &&
+            !currentStore.isDashboardLoading &&
+            !currentStore.dashboardLoad.attempted &&
+            currentStore.dashboard == null) {
+          currentStore.bootstrap();
+        }
+      });
+    }
     final isLoading = store.isLoading || store.isDashboardLoading;
     final dash = store.dashboard;
     final cs = Theme.of(context).colorScheme;

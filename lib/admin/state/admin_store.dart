@@ -14,6 +14,9 @@ class AdminStore extends ChangeNotifier {
       : _auth = auth,
         _repository = repository ?? _buildRepository() {
     _auth.addListener(_onAuthChanged);
+    if (_auth.isAuthorized) {
+      scheduleMicrotask(_startBootstrapIfReady);
+    }
   }
 
   static const bool _allowMockRepository = bool.fromEnvironment(
@@ -75,9 +78,7 @@ class AdminStore extends ChangeNotifier {
 
   void _onAuthChanged() {
     // When an admin becomes authorized, load data.
-    if (_auth.isAuthorized && !_isLoading && _currentAdmin == null) {
-      unawaited(bootstrap());
-    }
+    _startBootstrapIfReady();
 
     // On sign out, clear sensitive state.
     if (!_auth.isSignedIn) {
@@ -104,6 +105,12 @@ class AdminStore extends ChangeNotifier {
         _dataSources[k] = const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
       }
       notifyListeners();
+    }
+  }
+
+  void _startBootstrapIfReady() {
+    if (_auth.isAuthorized && !_isLoading && _currentAdmin == null) {
+      unawaited(bootstrap());
     }
   }
 
@@ -252,7 +259,36 @@ class AdminStore extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
-      _currentAdmin = await _repository.getCurrentAdmin();
+      try {
+        _currentAdmin = await _repository.getCurrentAdmin();
+      } catch (e) {
+        final message = formatAdminSafeError(e);
+        _dashboardLoad = _dashboardLoad.markFailure(
+          queryName: 'admin bootstrap',
+          error: message,
+        );
+        _userSummaryLoad = _userSummaryLoad.markFailure(
+          queryName: 'admin bootstrap',
+          error: message,
+        );
+        _usageEventsLoad = _usageEventsLoad.markFailure(
+          queryName: 'admin bootstrap',
+          error: message,
+        );
+        _billingLoad = _billingLoad.markFailure(
+          queryName: 'admin bootstrap',
+          error: message,
+        );
+        _setDataSource(
+          AdminDataSourceKey.dashboard,
+          AdminDataSourceStatus(
+            kind: AdminDataSourceKind.error,
+            message: message,
+          ),
+        );
+        debugPrint('AdminStore.bootstrap getCurrentAdmin failed: $e');
+        return;
+      }
       await Future.wait([
         refreshUsers(),
         refreshSupportQueue(),
