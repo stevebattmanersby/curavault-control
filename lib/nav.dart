@@ -14,6 +14,7 @@ import 'package:curavault_admin/admin/pages/support_queue_page.dart';
 import 'package:curavault_admin/admin/pages/support_session_detail_page.dart';
 import 'package:curavault_admin/admin/pages/diagnostics_checker_page.dart';
 import 'package:curavault_admin/admin/pages/system_health_page.dart';
+import 'package:curavault_admin/admin/pages/website_cms_status_page.dart';
 import 'package:curavault_admin/admin/pages/unauthorized_page.dart';
 import 'package:curavault_admin/admin/pages/usage_analytics_page.dart';
 import 'package:curavault_admin/admin/pages/users_page.dart';
@@ -198,6 +199,7 @@ class AppRouter {
             GoRoute(path: AppRoutes.billing, name: 'billing', pageBuilder: (context, state) => const NoTransitionPage(child: BillingPage())),
             GoRoute(path: AppRoutes.compliance, name: 'compliance', pageBuilder: (context, state) => const NoTransitionPage(child: CompliancePage())),
             GoRoute(path: AppRoutes.systemHealth, name: 'systemHealth', pageBuilder: (context, state) => const NoTransitionPage(child: SystemHealthPage())),
+            GoRoute(path: AppRoutes.websiteStatus, name: 'websiteStatus', pageBuilder: (context, state) => const NoTransitionPage(child: WebsiteCmsStatusPage())),
             GoRoute(path: AppRoutes.auditLogs, name: 'auditLogs', pageBuilder: (context, state) => const NoTransitionPage(child: AuditLogsPage())),
             GoRoute(path: AppRoutes.securityChecklist, name: 'securityChecklist', pageBuilder: (context, state) => const NoTransitionPage(child: SecurityChecklistPage())),
             GoRoute(path: AppRoutes.settings, name: 'settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage())),
@@ -228,6 +230,7 @@ class AppRoutes {
   static const String billing = '/billing';
   static const String compliance = '/compliance';
   static const String systemHealth = '/system-health';
+  static const String websiteStatus = '/website/status';
   static const String auditLogs = '/audit-logs';
   static const String securityChecklist = '/security-checklist';
   static const String settings = '/settings';

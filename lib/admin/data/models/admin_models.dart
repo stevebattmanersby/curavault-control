@@ -796,13 +796,109 @@ class AiFeatureUsageRow {
 }
 
 @immutable
+class AiProviderServiceUsageRow {
+  const AiProviderServiceUsageRow({
+    required this.provider,
+    required this.service,
+    required this.requestCount,
+    required this.estimatedCostUsd,
+    required this.inputTokens,
+    required this.outputTokens,
+    required this.totalTokens,
+    required this.pagesProcessed,
+    required this.filesProcessed,
+    required this.imagesProcessed,
+    required this.failedRequestCount,
+  });
+
+  final String provider;
+  final String service;
+  final int requestCount;
+  final double estimatedCostUsd;
+  final int inputTokens;
+  final int outputTokens;
+  final int totalTokens;
+  final int pagesProcessed;
+  final int filesProcessed;
+  final int imagesProcessed;
+  final int failedRequestCount;
+}
+
+@immutable
+class AiModelUsageRowV2 {
+  const AiModelUsageRowV2({
+    required this.provider,
+    required this.service,
+    required this.model,
+    required this.requestCount,
+    required this.inputTokens,
+    required this.outputTokens,
+    required this.totalTokens,
+    required this.estimatedCostUsd,
+    required this.failedRequestCount,
+  });
+
+  final String provider;
+  final String service;
+  final String model;
+  final int requestCount;
+  final int inputTokens;
+  final int outputTokens;
+  final int totalTokens;
+  final double estimatedCostUsd;
+  final int failedRequestCount;
+}
+
+@immutable
+class AiFailureBreakdownRow {
+  const AiFailureBreakdownRow({
+    required this.provider,
+    required this.service,
+    required this.errorCode,
+    required this.failureCount,
+  });
+
+  final String provider;
+  final String service;
+  final String errorCode;
+  final int failureCount;
+}
+
+@immutable
+class AiDailyUsageRow {
+  const AiDailyUsageRow({
+    required this.day,
+    required this.requestCount,
+    required this.estimatedCostUsd,
+    required this.totalTokens,
+    required this.pagesProcessed,
+    required this.filesProcessed,
+    required this.imagesProcessed,
+    required this.failures,
+  });
+
+  final DateTime day;
+  final int requestCount;
+  final double estimatedCostUsd;
+  final int totalTokens;
+  final int pagesProcessed;
+  final int filesProcessed;
+  final int imagesProcessed;
+  final int failures;
+}
+
+@immutable
 class AiUsageSnapshot {
   const AiUsageSnapshot({
     required this.query,
+    required this.source,
+    required this.sourceNote,
     required this.aiRequestsThisMonth,
     required this.inputTokensThisMonth,
     required this.outputTokensThisMonth,
     required this.estimatedCostThisMonthUsd,
+    required this.pagesProcessedThisMonth,
+    required this.filesProcessedThisMonth,
     required this.failedAiRequestsThisMonth,
     required this.usersNearAiLimit,
     required this.usersOverAiLimit,
@@ -821,10 +917,27 @@ class AiUsageSnapshot {
     required this.limitMonitoring,
     required this.aiErrors,
     required this.usageByFeature,
+    required this.usageByProvider,
+    required this.usageByService,
+    required this.usageByProviderService,
+    required this.usageByModelV2,
+    required this.failuresByProvider,
+    required this.failuresByErrorCode,
+    required this.dailyUsage,
     required this.generatedAt,
   });
 
   final AiUsageQuery query;
+
+  /// Which aggregate RPC powered this snapshot.
+  ///
+  /// Values:
+  /// - admin_get_ai_usage_summary_v2
+  /// - admin_get_ai_usage_summary (legacy)
+  final String source;
+
+  /// Optional extra context (e.g., "Partial: legacy token-only summary").
+  final String? sourceNote;
 
   // Overview cards
   final int aiRequestsThisMonth;
@@ -832,6 +945,8 @@ class AiUsageSnapshot {
   final int outputTokensThisMonth;
   int get totalTokensThisMonth => inputTokensThisMonth + outputTokensThisMonth;
   final double estimatedCostThisMonthUsd;
+  final int pagesProcessedThisMonth;
+  final int filesProcessedThisMonth;
   double get avgTokensPerRequest => aiRequestsThisMonth <= 0 ? 0 : (totalTokensThisMonth / aiRequestsThisMonth);
   final int failedAiRequestsThisMonth;
   final int usersNearAiLimit;
@@ -862,7 +977,18 @@ class AiUsageSnapshot {
   // Usage by feature
   final List<AiFeatureUsageRow> usageByFeature;
 
+  // Provider/service aggregates (v2)
+  final List<AiProviderServiceUsageRow> usageByProvider;
+  final List<AiProviderServiceUsageRow> usageByService;
+  final List<AiProviderServiceUsageRow> usageByProviderService;
+  final List<AiModelUsageRowV2> usageByModelV2;
+  final List<AiProviderServiceUsageRow> failuresByProvider;
+  final List<AiFailureBreakdownRow> failuresByErrorCode;
+  final List<AiDailyUsageRow> dailyUsage;
+
   final DateTime generatedAt;
+
+  bool get isLegacy => source == 'admin_get_ai_usage_summary';
 }
 
 // ------------------------------
@@ -2099,6 +2225,59 @@ class SecurityChecklistSnapshot {
 
   final int activeSupportSessions;
   final int expiredSupportSessions;
+}
+
+// ------------------------------
+// Website / CMS status models
+// ------------------------------
+
+enum WebsiteCmsTableOverallStatus { live, empty, missingUi, missingTable, error }
+
+extension WebsiteCmsTableOverallStatusX on WebsiteCmsTableOverallStatus {
+  String get label => switch (this) {
+    WebsiteCmsTableOverallStatus.live => 'Live',
+    WebsiteCmsTableOverallStatus.empty => 'Empty',
+    WebsiteCmsTableOverallStatus.missingUi => 'Missing UI',
+    WebsiteCmsTableOverallStatus.missingTable => 'Missing table',
+    WebsiteCmsTableOverallStatus.error => 'Error',
+  };
+}
+
+@immutable
+class WebsiteCmsTableStatusRow {
+  const WebsiteCmsTableStatusRow({
+    required this.tableName,
+    required this.exists,
+    required this.uiConnected,
+    this.rowCount,
+    this.latestUpdatedAt,
+    this.rlsEnabled,
+    required this.status,
+    this.safeErrorMessage,
+  });
+
+  final String tableName;
+  final bool exists;
+  final int? rowCount;
+  final DateTime? latestUpdatedAt;
+
+  /// Best-effort signal. If the client cannot verify, this may be `null`.
+  final bool? rlsEnabled;
+
+  /// Whether the Flutter repo has a module/page wired for this table.
+  final bool uiConnected;
+
+  final WebsiteCmsTableOverallStatus status;
+
+  /// Privacy-safe error message intended for UI display.
+  final String? safeErrorMessage;
+}
+
+@immutable
+class WebsiteCmsStatusSnapshot {
+  const WebsiteCmsStatusSnapshot({required this.rows, required this.generatedAt});
+  final List<WebsiteCmsTableStatusRow> rows;
+  final DateTime generatedAt;
 }
 
 // ------------------------------

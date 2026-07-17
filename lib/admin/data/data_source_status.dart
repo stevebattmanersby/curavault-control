@@ -17,6 +17,7 @@ enum AdminDataSourceKey {
   billing,
   compliance,
   systemHealth,
+  websiteCms,
 }
 
 @immutable

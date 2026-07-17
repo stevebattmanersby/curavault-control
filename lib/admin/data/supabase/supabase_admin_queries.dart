@@ -27,7 +27,8 @@ class SupabaseAdminQueries {
       'admin_get_country_usage_summary';
   static const String rpcStorageSummaryV2 = 'admin_get_storage_summary_v2';
   static const String rpcStorageSummaryV1 = 'admin_get_storage_summary';
-  static const String rpcAiUsageSummary = 'admin_get_ai_usage_summary';
+  static const String rpcAiUsageSummaryV1 = 'admin_get_ai_usage_summary';
+  static const String rpcAiUsageSummaryV2 = 'admin_get_ai_usage_summary_v2';
   static const String rpcSupportSummary = 'admin_get_support_summary';
   static const String rpcAuditSummary = 'admin_get_audit_summary';
   static const String rpcSystemHealthSummary =
@@ -528,17 +529,33 @@ class SupabaseAdminQueries {
     _requireRole(admin, AdminRbac.analytics, capability: 'ai_usage');
 
     try {
-      final res = await _client.rpc('admin_get_ai_usage_summary');
+      dynamic res;
+      String rpcName = rpcAiUsageSummaryV2;
+      try {
+        res = await _client.rpc(rpcAiUsageSummaryV2);
+      } catch (e) {
+        debugPrint(
+            'SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary_v2 not available: $e');
+        rpcName = rpcAiUsageSummaryV1;
+        res = await _client.rpc(rpcAiUsageSummaryV1);
+      }
+
       final row = _firstRpcRow(res);
 
       // Empty result = no data collected yet.
       if (row == null) {
         return AiUsageSnapshot(
           query: query,
+          source: rpcName,
+          sourceNote: rpcName == rpcAiUsageSummaryV1
+              ? 'Partial: legacy token-only AI usage summary; provider/service split not available.'
+              : null,
           aiRequestsThisMonth: 0,
           inputTokensThisMonth: 0,
           outputTokensThisMonth: 0,
           estimatedCostThisMonthUsd: 0,
+          pagesProcessedThisMonth: 0,
+          filesProcessedThisMonth: 0,
           failedAiRequestsThisMonth: 0,
           usersNearAiLimit: 0,
           usersOverAiLimit: 0,
@@ -557,97 +574,283 @@ class SupabaseAdminQueries {
           limitMonitoring: const [],
           aiErrors: const [],
           usageByFeature: const [],
+          usageByProvider: const [],
+          usageByService: const [],
+          usageByProviderService: const [],
+          usageByModelV2: const [],
+          failuresByProvider: const [],
+          failuresByErrorCode: const [],
+          dailyUsage: const [],
           generatedAt: DateTime.now().toUtc(),
         );
       }
 
-      // New RPC (ai_usage_events-based) returns: total_request_count, tokens, cost,
-      // plus JSON aggregates. Older environments may still return legacy keys.
-      final totalRequests = (row['total_request_count'] as num?)?.toInt() ??
-          (row['ai_request_count'] as num?)?.toInt() ??
-          0;
-      final inputTokens = (row['input_tokens'] as num?)?.toInt() ?? 0;
-      final outputTokens = (row['output_tokens'] as num?)?.toInt() ?? 0;
-      final estimatedCost = (row['estimated_cost'] as num?)?.toDouble() ?? 0;
-
-      int failedRequests = (row['failed_ai_requests'] as num?)?.toInt() ?? 0;
-      if (failedRequests == 0 && row['failures_by_error_code'] != null) {
-        try {
-          final failures = row['failures_by_error_code'];
-          if (failures is List) {
-            failedRequests = failures.fold<int>(
-                0,
-                (sum, e) =>
-                    sum +
-                    ((e is Map
-                            ? (e['failure_count'] as num?)?.toInt()
-                            : null) ??
-                        0));
-          }
-        } catch (e) {
-          debugPrint(
-              'SupabaseAdminQueries.getAIUsage failed to parse failures_by_error_code: $e');
-        }
-      }
-
-      List<AiFeatureUsageRow> usageByFeature = const [];
-      if (row['usage_by_feature_area'] is List) {
-        try {
-          final list = (row['usage_by_feature_area'] as List)
-              .whereType<Map>()
-              .map((m) => m.cast<String, dynamic>())
-              .toList();
-          usageByFeature = list.map((m) {
-            final feature =
-                _parseAiFeatureArea((m['feature_area'] as String?) ?? '') ??
-                    AiFeatureArea.aiAssistant;
-            return AiFeatureUsageRow(
-              featureArea: feature,
-              requests: (m['request_count'] as num?)?.toInt() ?? 0,
-              inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
-              outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
-              failedRequests: (m['failed_request_count'] as num?)?.toInt() ?? 0,
-              estimatedCostUsd: (m['estimated_cost'] as num?)?.toDouble() ?? 0,
-            );
-          }).toList();
-        } catch (e) {
-          debugPrint(
-              'SupabaseAdminQueries.getAIUsage failed to parse usage_by_feature_area: $e');
-        }
-      }
-
-      return AiUsageSnapshot(
-        query: query,
-        aiRequestsThisMonth: totalRequests,
-        inputTokensThisMonth: inputTokens,
-        outputTokensThisMonth: outputTokens,
-        estimatedCostThisMonthUsd: estimatedCost,
-        failedAiRequestsThisMonth: failedRequests,
-        // The new aggregate RPC intentionally does not expose per-user limit monitoring.
-        usersNearAiLimit: (row['users_near_ai_limit'] as num?)?.toInt() ?? 0,
-        usersOverAiLimit: (row['users_over_ai_limit'] as num?)?.toInt() ?? 0,
-        tokensByDay: const [],
-        tokensByFeature: const <AiFeatureArea, int>{},
-        tokensByPlan: const <String, int>{},
-        tokensByPlatform: const <String, int>{},
-        tokensByCountry: const <String, int>{},
-        dailyCost: const [],
-        estimatedDailyCostUsd: 0,
-        estimatedMonthlyCostUsd: 0,
-        costByPlan: const <String, double>{},
-        costByFeature: const <AiFeatureArea, double>{},
-        costPerActiveUserUsd: 0,
-        highCostUsers: const [],
-        limitMonitoring: const [],
-        aiErrors: const [],
-        usageByFeature: usageByFeature,
-        generatedAt: DateTime.now().toUtc(),
-      );
+      return (rpcName == rpcAiUsageSummaryV2)
+          ? _parseAiUsageV2(query: query, row: row, rpcName: rpcName)
+          : _parseAiUsageLegacy(query: query, row: row, rpcName: rpcName);
     } catch (e) {
       debugPrint(
-          'SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary failed: $e');
+          'SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary(_v2) failed: $e');
       rethrow;
     }
+  }
+
+  AiUsageSnapshot _parseAiUsageLegacy(
+      {required AiUsageQuery query,
+      required Map<String, dynamic> row,
+      required String rpcName}) {
+    final totalRequests = (row['total_request_count'] as num?)?.toInt() ??
+        (row['ai_request_count'] as num?)?.toInt() ??
+        0;
+    final inputTokens = (row['input_tokens'] as num?)?.toInt() ?? 0;
+    final outputTokens = (row['output_tokens'] as num?)?.toInt() ?? 0;
+    final estimatedCost = (row['estimated_cost'] as num?)?.toDouble() ?? 0;
+
+    int failedRequests = (row['failed_ai_requests'] as num?)?.toInt() ?? 0;
+    if (failedRequests == 0 && row['failures_by_error_code'] != null) {
+      try {
+        final failures = row['failures_by_error_code'];
+        if (failures is List) {
+          failedRequests = failures.fold<int>(
+              0,
+              (sum, e) =>
+                  sum +
+                  ((e is Map
+                          ? (e['failure_count'] as num?)?.toInt()
+                          : null) ??
+                      0));
+        }
+      } catch (e) {
+        debugPrint(
+            'SupabaseAdminQueries._parseAiUsageLegacy failed to parse failures_by_error_code: $e');
+      }
+    }
+
+    List<AiFeatureUsageRow> usageByFeature = const [];
+    if (row['usage_by_feature_area'] is List) {
+      try {
+        final list = (row['usage_by_feature_area'] as List)
+            .whereType<Map>()
+            .map((m) => m.cast<String, dynamic>())
+            .toList();
+        usageByFeature = list.map((m) {
+          final feature =
+              _parseAiFeatureArea((m['feature_area'] as String?) ?? '') ??
+                  AiFeatureArea.aiAssistant;
+          return AiFeatureUsageRow(
+            featureArea: feature,
+            requests: (m['request_count'] as num?)?.toInt() ?? 0,
+            inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
+            outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
+            failedRequests: (m['failed_request_count'] as num?)?.toInt() ?? 0,
+            estimatedCostUsd: (m['estimated_cost'] as num?)?.toDouble() ?? 0,
+          );
+        }).toList();
+      } catch (e) {
+        debugPrint(
+            'SupabaseAdminQueries._parseAiUsageLegacy failed to parse usage_by_feature_area: $e');
+      }
+    }
+
+    return AiUsageSnapshot(
+      query: query,
+      source: rpcName,
+      sourceNote:
+          'Partial: legacy token-only AI usage summary; provider/service split not available.',
+      aiRequestsThisMonth: totalRequests,
+      inputTokensThisMonth: inputTokens,
+      outputTokensThisMonth: outputTokens,
+      estimatedCostThisMonthUsd: estimatedCost,
+      pagesProcessedThisMonth: 0,
+      filesProcessedThisMonth: 0,
+      failedAiRequestsThisMonth: failedRequests,
+      usersNearAiLimit: (row['users_near_ai_limit'] as num?)?.toInt() ?? 0,
+      usersOverAiLimit: (row['users_over_ai_limit'] as num?)?.toInt() ?? 0,
+      tokensByDay: const [],
+      tokensByFeature: const <AiFeatureArea, int>{},
+      tokensByPlan: const <String, int>{},
+      tokensByPlatform: const <String, int>{},
+      tokensByCountry: const <String, int>{},
+      dailyCost: const [],
+      estimatedDailyCostUsd: 0,
+      estimatedMonthlyCostUsd: 0,
+      costByPlan: const <String, double>{},
+      costByFeature: const <AiFeatureArea, double>{},
+      costPerActiveUserUsd: 0,
+      highCostUsers: const [],
+      limitMonitoring: const [],
+      aiErrors: const [],
+      usageByFeature: usageByFeature,
+      usageByProvider: const [],
+      usageByService: const [],
+      usageByProviderService: const [],
+      usageByModelV2: const [],
+      failuresByProvider: const [],
+      failuresByErrorCode: const [],
+      dailyUsage: const [],
+      generatedAt: DateTime.now().toUtc(),
+    );
+  }
+
+  AiUsageSnapshot _parseAiUsageV2(
+      {required AiUsageQuery query,
+      required Map<String, dynamic> row,
+      required String rpcName}) {
+    List<Map<String, dynamic>> _asListOfMaps(Object? v) {
+      if (v is! List) return const [];
+      return v
+          .whereType<Map>()
+          .map((m) => m.cast<String, dynamic>())
+          .toList(growable: false);
+    }
+
+    final totalRequests = (row['total_request_count'] as num?)?.toInt() ?? 0;
+    final totalCost = (row['total_cost_usd'] as num?)?.toDouble() ?? 0;
+    final inputTokens = (row['total_input_tokens'] as num?)?.toInt() ?? 0;
+    final outputTokens = (row['total_output_tokens'] as num?)?.toInt() ?? 0;
+    final pagesProcessed = (row['total_pages_processed'] as num?)?.toInt() ?? 0;
+    final filesProcessed = (row['total_files_processed'] as num?)?.toInt() ?? 0;
+    final failures = (row['total_failures'] as num?)?.toInt() ?? 0;
+
+    final usageByFeatureArea = _asListOfMaps(row['usage_by_feature_area']).map((m) {
+      final feature =
+          _parseAiFeatureArea((m['feature_area'] as String?) ?? '') ??
+              AiFeatureArea.aiAssistant;
+      return AiFeatureUsageRow(
+        featureArea: feature,
+        requests: (m['request_count'] as num?)?.toInt() ?? 0,
+        inputTokens: 0,
+        outputTokens: 0,
+        failedRequests: (m['failed_request_count'] as num?)?.toInt() ?? 0,
+        estimatedCostUsd:
+            (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
+      );
+    }).toList(growable: false);
+
+    AiProviderServiceUsageRow _psRow(Map<String, dynamic> m,
+        {String? defaultProvider, String? defaultService}) {
+      return AiProviderServiceUsageRow(
+        provider: (m['provider'] as String?) ?? defaultProvider ?? 'unknown',
+        service: (m['service'] as String?) ?? defaultService ?? 'unknown',
+        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
+        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
+        inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
+        outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
+        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
+        pagesProcessed: (m['pages_processed'] as num?)?.toInt() ?? 0,
+        filesProcessed: (m['files_processed'] as num?)?.toInt() ?? 0,
+        imagesProcessed: (m['images_processed'] as num?)?.toInt() ?? 0,
+        failedRequestCount: (m['failed_request_count'] as num?)?.toInt() ?? 0,
+      );
+    }
+
+    final usageByProvider = _asListOfMaps(row['usage_by_provider'])
+        .map((m) => _psRow(m, defaultService: 'unknown'))
+        .toList(growable: false);
+
+    final usageByService = _asListOfMaps(row['usage_by_service'])
+        .map((m) => _psRow(m, defaultProvider: 'unknown'))
+        .toList(growable: false);
+
+    final usageByProviderService = _asListOfMaps(row['usage_by_provider_service'])
+        .map((m) => _psRow(m))
+        .toList(growable: false);
+
+    final usageByModelV2 = _asListOfMaps(row['usage_by_model']).map((m) {
+      return AiModelUsageRowV2(
+        provider: (m['provider'] as String?) ?? 'unknown',
+        service: (m['service'] as String?) ?? 'unknown',
+        model: (m['model'] as String?) ?? 'unknown',
+        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
+        inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
+        outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
+        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
+        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
+        failedRequestCount: (m['failed_request_count'] as num?)?.toInt() ?? 0,
+      );
+    }).toList(growable: false);
+
+    final failuresByProvider = _asListOfMaps(row['failures_by_provider'])
+        .map((m) => AiProviderServiceUsageRow(
+              provider: (m['provider'] as String?) ?? 'unknown',
+              service: (m['service'] as String?) ?? 'unknown',
+              requestCount: 0,
+              estimatedCostUsd: 0,
+              inputTokens: 0,
+              outputTokens: 0,
+              totalTokens: 0,
+              pagesProcessed: 0,
+              filesProcessed: 0,
+              imagesProcessed: 0,
+              failedRequestCount: (m['failure_count'] as num?)?.toInt() ?? 0,
+            ))
+        .toList(growable: false);
+
+    final failuresByErrorCode = _asListOfMaps(row['failures_by_error_code'])
+        .map((m) => AiFailureBreakdownRow(
+              provider: (m['provider'] as String?) ?? 'unknown',
+              service: (m['service'] as String?) ?? 'unknown',
+              errorCode: (m['error_code'] as String?) ?? 'unknown',
+              failureCount: (m['failure_count'] as num?)?.toInt() ?? 0,
+            ))
+        .toList(growable: false);
+
+    final dailyUsage = _asListOfMaps(row['daily_usage']).map((m) {
+      DateTime day;
+      try {
+        day = DateTime.parse((m['day'] as String?) ?? '').toUtc();
+      } catch (_) {
+        day = DateTime.now().toUtc();
+      }
+      return AiDailyUsageRow(
+        day: day,
+        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
+        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
+        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
+        pagesProcessed: (m['pages_processed'] as num?)?.toInt() ?? 0,
+        filesProcessed: (m['files_processed'] as num?)?.toInt() ?? 0,
+        imagesProcessed: (m['images_processed'] as num?)?.toInt() ?? 0,
+        failures: (m['failures'] as num?)?.toInt() ?? 0,
+      );
+    }).toList(growable: false);
+
+    return AiUsageSnapshot(
+      query: query,
+      source: rpcName,
+      sourceNote: null,
+      aiRequestsThisMonth: totalRequests,
+      inputTokensThisMonth: inputTokens,
+      outputTokensThisMonth: outputTokens,
+      estimatedCostThisMonthUsd: totalCost,
+      pagesProcessedThisMonth: pagesProcessed,
+      filesProcessedThisMonth: filesProcessed,
+      failedAiRequestsThisMonth: failures,
+      usersNearAiLimit: 0,
+      usersOverAiLimit: 0,
+      tokensByDay: const [],
+      tokensByFeature: const <AiFeatureArea, int>{},
+      tokensByPlan: const <String, int>{},
+      tokensByPlatform: const <String, int>{},
+      tokensByCountry: const <String, int>{},
+      dailyCost: const [],
+      estimatedDailyCostUsd: 0,
+      estimatedMonthlyCostUsd: 0,
+      costByPlan: const <String, double>{},
+      costByFeature: const <AiFeatureArea, double>{},
+      costPerActiveUserUsd: 0,
+      highCostUsers: const [],
+      limitMonitoring: const [],
+      aiErrors: const [],
+      usageByFeature: usageByFeatureArea,
+      usageByProvider: usageByProvider,
+      usageByService: usageByService,
+      usageByProviderService: usageByProviderService,
+      usageByModelV2: usageByModelV2,
+      failuresByProvider: failuresByProvider,
+      failuresByErrorCode: failuresByErrorCode,
+      dailyUsage: dailyUsage,
+      generatedAt: DateTime.now().toUtc(),
+    );
   }
 
   Future<AdminQueryResult<StorageSnapshot>> getStorageUsage(

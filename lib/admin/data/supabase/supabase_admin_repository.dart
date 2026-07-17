@@ -43,11 +43,12 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   void _setLive(AdminDataSourceKey key,
-      {required String queryName, int? rowCount}) {
+      {required String queryName, int? rowCount, String? message}) {
     _set(
       key,
       AdminDataSourceStatus(
         kind: AdminDataSourceKind.live,
+        message: message,
         queryName: queryName,
         rowCount: rowCount,
         lastRefreshedAt: DateTime.now().toUtc(),
@@ -121,6 +122,29 @@ class SupabaseAdminRepository implements AdminRepository {
     );
     _set(key, status);
     throw AdminNotInstrumentedException(status.message!);
+  }
+
+  DateTime? _tryParseDateTime(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw);
+    return null;
+  }
+
+  Future<int> _safeCountTable(SupabaseClient client, String table) async {
+    // This project’s current supabase_flutter version doesn’t expose count
+    // headers/options consistently across platforms.
+    //
+    // Marketing tables should be small; we cap the fetch size defensively.
+    const cap = 5000;
+    final dynamic res = await client.from(table).select('id').limit(cap);
+
+    if (res is List) return res.length;
+    if (res is PostgrestResponse) {
+      final data = res.data;
+      if (data is List) return data.length;
+    }
+    return 0;
   }
 
   @override
@@ -646,21 +670,25 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getAIUsage(admin: admin, query: query);
-      _setLive(AdminDataSourceKey.aiUsage,
-          queryName: 'admin_get_ai_usage_summary', rowCount: 1);
+      _setLive(
+        AdminDataSourceKey.aiUsage,
+        queryName: res.source,
+        rowCount: 1,
+        message: res.sourceNote,
+      );
       return res;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAiUsageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
         if (_mustFailClosed)
           _throwNotInstrumented(AdminDataSourceKey.aiUsage,
-              queryName: 'admin_get_ai_usage_summary');
+              queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
         _setMock(AdminDataSourceKey.aiUsage,
-            queryName: 'admin_get_ai_usage_summary');
+            queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
         return _fallback.getAiUsageSnapshot(query: query);
       }
       _setError(AdminDataSourceKey.aiUsage,
-          queryName: 'admin_get_ai_usage_summary', error: e);
+          queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2, error: e);
       rethrow;
     }
   }
@@ -829,6 +857,119 @@ class SupabaseAdminRepository implements AdminRepository {
       }
       _setError(AdminDataSourceKey.systemHealth,
           queryName: SupabaseAdminQueries.rpcSystemHealthSummary, error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<WebsiteCmsStatusSnapshot> getWebsiteCmsStatus() async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+
+    // NOTE: "UI connected" is intentionally derived from the Flutter repo wiring.
+    // As we restore CMS pages/modules, flip these to true and/or compute them
+    // from route availability.
+    const uiConnectedByTable = <String, bool>{
+      'marketing_pages': false,
+      'marketing_sections': false,
+      'marketing_blog_posts': false,
+      'marketing_faqs': false,
+      'marketing_pricing_plans': false,
+      'marketing_testimonials': false,
+      'marketing_campaigns': false,
+      'marketing_seo_settings': false,
+    };
+
+    const tables = <String>[
+      'marketing_pages',
+      'marketing_sections',
+      'marketing_blog_posts',
+      'marketing_faqs',
+      'marketing_pricing_plans',
+      'marketing_testimonials',
+      'marketing_campaigns',
+      'marketing_seo_settings',
+    ];
+
+    try {
+      final rows = <WebsiteCmsTableStatusRow>[];
+      for (final table in tables) {
+        final uiConnected = uiConnectedByTable[table] ?? false;
+        try {
+          final rowCount = await _safeCountTable(client, table);
+
+          DateTime? latestUpdatedAt;
+          try {
+            final latest = await client
+                .from(table)
+                .select('updated_at')
+                .order('updated_at', ascending: false)
+                .limit(1)
+                .maybeSingle();
+            latestUpdatedAt = _tryParseDateTime(latest?['updated_at']);
+          } catch (e) {
+            // It's OK if `updated_at` doesn't exist or isn't accessible.
+            debugPrint('Website CMS status: failed to read latest updated_at for $table: $e');
+          }
+
+          // RLS enabled is not reliably queryable via PostgREST from the client.
+          // Return null (unknown) rather than a wrong value.
+          final bool? rlsEnabled = null;
+
+          final status = !uiConnected
+              ? WebsiteCmsTableOverallStatus.missingUi
+              : (rowCount == 0
+                  ? WebsiteCmsTableOverallStatus.empty
+                  : WebsiteCmsTableOverallStatus.live);
+
+          rows.add(
+            WebsiteCmsTableStatusRow(
+              tableName: table,
+              exists: true,
+              uiConnected: uiConnected,
+              rowCount: rowCount,
+              latestUpdatedAt: latestUpdatedAt,
+              rlsEnabled: rlsEnabled,
+              status: status,
+            ),
+          );
+        } catch (e) {
+          if (_isMissingRelationError(e)) {
+            rows.add(
+              WebsiteCmsTableStatusRow(
+                tableName: table,
+                exists: false,
+                uiConnected: uiConnected,
+                rowCount: null,
+                latestUpdatedAt: null,
+                rlsEnabled: null,
+                status: WebsiteCmsTableOverallStatus.missingTable,
+                safeErrorMessage: null,
+              ),
+            );
+          } else {
+            rows.add(
+              WebsiteCmsTableStatusRow(
+                tableName: table,
+                exists: true,
+                uiConnected: uiConnected,
+                rowCount: null,
+                latestUpdatedAt: null,
+                rlsEnabled: null,
+                status: WebsiteCmsTableOverallStatus.error,
+                safeErrorMessage: formatAdminSafeError(e),
+              ),
+            );
+          }
+        }
+      }
+
+      final snap = WebsiteCmsStatusSnapshot(rows: rows, generatedAt: DateTime.now().toUtc());
+      _setLive(AdminDataSourceKey.websiteCms, queryName: 'marketing tables probe', rowCount: rows.length);
+      return snap;
+    } catch (e) {
+      debugPrint('SupabaseAdminRepository.getWebsiteCmsStatus failed: $e');
+      _setError(AdminDataSourceKey.websiteCms, queryName: 'marketing tables probe', error: e);
       rethrow;
     }
   }

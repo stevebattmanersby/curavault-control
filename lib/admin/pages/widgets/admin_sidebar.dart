@@ -68,6 +68,7 @@ class AdminSidebar extends StatelessWidget {
                   if (allowed(AppRoutes.billing)) _SidebarItem(label: 'Billing', icon: Icons.receipt_long_outlined, route: AppRoutes.billing, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.compliance)) _SidebarItem(label: 'Compliance', icon: Icons.verified_user_outlined, route: AppRoutes.compliance, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.systemHealth)) _SidebarItem(label: 'System Health', icon: Icons.monitor_heart_outlined, route: AppRoutes.systemHealth, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteStatus)) _SidebarItem(label: 'Website/CMS Status', icon: Icons.web_outlined, route: AppRoutes.websiteStatus, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.auditLogs)) _SidebarItem(label: 'Audit Logs', icon: Icons.fact_check_outlined, route: AppRoutes.auditLogs, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.securityChecklist)) _SidebarItem(label: 'Security Checklist', icon: Icons.security_outlined, route: AppRoutes.securityChecklist, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.settings)) _SidebarItem(label: 'Settings', icon: Icons.settings_outlined, route: AppRoutes.settings, currentLocation: currentLocation, onNavigate: onNavigate),

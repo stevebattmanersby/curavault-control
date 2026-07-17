@@ -765,10 +765,14 @@ class MockAdminRepository implements AdminRepository {
 
     return AiUsageSnapshot(
       query: query,
+      source: 'mock',
+      sourceNote: 'Mock snapshot (debug only).',
       aiRequestsThisMonth: aiRequests,
       inputTokensThisMonth: totalInput,
       outputTokensThisMonth: totalOutput,
       estimatedCostThisMonthUsd: estMonthlyCost,
+      pagesProcessedThisMonth: 0,
+      filesProcessedThisMonth: 0,
       failedAiRequestsThisMonth: failed,
       usersNearAiLimit: usersNearLimit,
       usersOverAiLimit: usersOverLimit,
@@ -787,6 +791,13 @@ class MockAdminRepository implements AdminRepository {
       limitMonitoring: limitMonitoring,
       aiErrors: aiErrors,
       usageByFeature: usageByFeature,
+      usageByProvider: const [],
+      usageByService: const [],
+      usageByProviderService: const [],
+      usageByModelV2: const [],
+      failuresByProvider: const [],
+      failuresByErrorCode: const [],
+      dailyUsage: const [],
       generatedAt: _now,
     );
   }
@@ -2141,5 +2152,42 @@ class MockAdminRepository implements AdminRepository {
       activeSupportSessions: active,
       expiredSupportSessions: expired,
     );
+  }
+
+  @override
+  Future<WebsiteCmsStatusSnapshot> getWebsiteCmsStatus() async {
+    await Future<void>.delayed(const Duration(milliseconds: 120));
+    final t = _now;
+    const tables = <String, bool>{
+      'marketing_pages': false,
+      'marketing_sections': false,
+      'marketing_blog_posts': false,
+      'marketing_faqs': false,
+      'marketing_pricing_plans': false,
+      'marketing_testimonials': false,
+      'marketing_campaigns': false,
+      'marketing_seo_settings': false,
+    };
+
+    final rows = <WebsiteCmsTableStatusRow>[];
+    var i = 0;
+    for (final entry in tables.entries) {
+      final count = (i % 3 == 0) ? 0 : (2 + (i * 7) % 23);
+      final ui = entry.value;
+      final status = !ui ? WebsiteCmsTableOverallStatus.missingUi : (count == 0 ? WebsiteCmsTableOverallStatus.empty : WebsiteCmsTableOverallStatus.live);
+      rows.add(
+        WebsiteCmsTableStatusRow(
+          tableName: entry.key,
+          exists: true,
+          uiConnected: ui,
+          rowCount: count,
+          latestUpdatedAt: count == 0 ? null : t.subtract(Duration(hours: 6 + (i * 9) % 60)),
+          rlsEnabled: null,
+          status: status,
+        ),
+      );
+      i++;
+    }
+    return WebsiteCmsStatusSnapshot(rows: rows, generatedAt: t);
   }
 }

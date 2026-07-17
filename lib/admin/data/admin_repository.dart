@@ -164,4 +164,15 @@ abstract interface class AdminRepository {
   ///
   /// IMPORTANT: This must not query or expose raw health data.
   Future<SecurityChecklistSnapshot> getSecurityChecklistSnapshot();
+
+  // ------------------------------
+  // Website / CMS status (marketing tables)
+  // ------------------------------
+
+  /// Status of marketing/CMS tables (safe metadata only).
+  ///
+  /// IMPORTANT:
+  /// - Must not return any page body / content_json.
+  /// - Counts and timestamps only.
+  Future<WebsiteCmsStatusSnapshot> getWebsiteCmsStatus();
 }

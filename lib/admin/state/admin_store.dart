@@ -47,6 +47,7 @@ class AdminStore extends ChangeNotifier {
     AdminDataSourceKey.billing: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
     AdminDataSourceKey.compliance: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
     AdminDataSourceKey.systemHealth: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.websiteCms: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
   };
 
   AdminDataSourceStatus dataSource(AdminDataSourceKey key) => _dataSources[key] ?? const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
@@ -100,6 +101,7 @@ class AdminStore extends ChangeNotifier {
       _compliance = null;
       _systemHealth = null;
       _securityChecklist = null;
+      _websiteCms = null;
 
       for (final k in _dataSources.keys) {
         _dataSources[k] = const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
@@ -219,6 +221,13 @@ class AdminStore extends ChangeNotifier {
   BillingQuery _billingQuery = const BillingQuery(range: AdminDateRangePreset.days30);
   BillingQuery get billingQuery => _billingQuery;
 
+  // Website / CMS status
+  WebsiteCmsStatusSnapshot? _websiteCms;
+  WebsiteCmsStatusSnapshot? get websiteCms => _websiteCms;
+
+  bool _isWebsiteCmsLoading = false;
+  bool get isWebsiteCmsLoading => _isWebsiteCmsLoading;
+
   BillingSnapshot? _billing;
   BillingSnapshot? get billing => _billing;
 
@@ -301,6 +310,7 @@ class AdminStore extends ChangeNotifier {
         refreshBilling(),
         refreshCompliance(),
         refreshSystemHealth(),
+        refreshWebsiteCmsStatus(),
         refreshSecurityChecklist(),
       ]);
     } catch (e) {
@@ -348,6 +358,27 @@ class AdminStore extends ChangeNotifier {
       }
     } finally {
       _isSystemHealthLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> refreshWebsiteCmsStatus() async {
+    if (_isWebsiteCmsLoading) return;
+    _isWebsiteCmsLoading = true;
+    notifyListeners();
+    try {
+      _websiteCms = await _repository.getWebsiteCmsStatus();
+      _syncDataSourceFromRepository(AdminDataSourceKey.websiteCms);
+    } catch (e) {
+      debugPrint('AdminStore.refreshWebsiteCmsStatus failed: $e');
+      if (e is AdminNotInstrumentedException) {
+        _websiteCms = null;
+        _setDataSource(AdminDataSourceKey.websiteCms, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+      } else {
+        _setDataSource(AdminDataSourceKey.websiteCms, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+      }
+    } finally {
+      _isWebsiteCmsLoading = false;
       notifyListeners();
     }
   }

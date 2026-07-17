@@ -20,6 +20,8 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     'admin_get_dashboard_metrics()': 'admin_get_dashboard_metrics',
     'admin_get_user_usage_summary()': 'admin_get_user_usage_summary',
     'admin_get_usage_events_summary()': 'admin_get_usage_events_summary',
+    'admin_get_ai_usage_summary()': 'admin_get_ai_usage_summary',
+    'admin_get_ai_usage_summary_v2()': 'admin_get_ai_usage_summary_v2',
     'admin_get_billing_summary()': 'admin_get_billing_summary',
     'admin_get_country_usage_summary()': 'admin_get_country_usage_summary',
     'admin_get_system_health_summary()': 'admin_get_system_health_summary',

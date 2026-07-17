@@ -90,7 +90,7 @@ class _AiUsageTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 6,
+      length: 5,
       child: Column(
         children: [
           const _AiUsageTabBar(),
@@ -98,12 +98,11 @@ class _AiUsageTabs extends StatelessWidget {
           Expanded(
             child: TabBarView(
               children: [
-                _AiOverviewTab(snapshot: snapshot),
-                _TokenUsageTab(snapshot: snapshot),
-                _CostMonitoringTab(snapshot: snapshot),
-                _LimitMonitoringTab(snapshot: snapshot),
-                _AiErrorsTab(snapshot: snapshot),
-                _UsageByFeatureTab(snapshot: snapshot),
+                _AiOverviewV2Tab(snapshot: snapshot),
+                _LlmTokenUsageTab(snapshot: snapshot),
+                _GoogleDocAiOcrTab(snapshot: snapshot),
+                _ProviderBreakdownTab(snapshot: snapshot),
+                _AiErrorsV2Tab(snapshot: snapshot),
               ],
             ),
           ),
@@ -137,12 +136,11 @@ class _AiUsageTabBar extends StatelessWidget {
         unselectedLabelColor: cs.onSurfaceVariant,
         labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
         tabs: const [
-          Tab(text: 'AI overview'),
-          Tab(text: 'Token usage'),
-          Tab(text: 'Cost monitoring'),
-          Tab(text: 'Limit monitoring'),
-          Tab(text: 'AI errors'),
-          Tab(text: 'Usage by feature'),
+          Tab(text: 'Overview'),
+          Tab(text: 'LLM token usage'),
+          Tab(text: 'Document AI / OCR'),
+          Tab(text: 'Providers'),
+          Tab(text: 'Errors'),
         ],
       ),
     );
@@ -364,6 +362,427 @@ class _FilterChip extends StatelessWidget {
               onChanged: onChanged,
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AiOverviewV2Tab extends StatelessWidget {
+  const _AiOverviewV2Tab({required this.snapshot});
+  final AiUsageSnapshot snapshot;
+
+  int _sumOpenAiLlmTokens() {
+    return snapshot.usageByProviderService
+        .where((r) => r.provider.toLowerCase() == 'openai' && r.service.toLowerCase() == 'llm')
+        .fold<int>(0, (sum, r) => sum + r.totalTokens);
+  }
+
+  int _sumGoogleDocAiPages() {
+    return snapshot.usageByProviderService
+        .where((r) => r.provider.toLowerCase() == 'google' && (r.service.toLowerCase() == 'document_ai' || r.service.toLowerCase() == 'ocr'))
+        .fold<int>(0, (sum, r) => sum + r.pagesProcessed);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
+    final openAiTokens = _sumOpenAiLlmTokens();
+    final googlePages = _sumGoogleDocAiPages();
+
+    return ListView(
+      padding: const EdgeInsets.only(bottom: 24),
+      children: [
+        if ((snapshot.sourceNote ?? '').trim().isNotEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: AdminCard(
+              padding: const EdgeInsets.all(14),
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline, color: cs.onSurfaceVariant, size: 18),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(snapshot.sourceNote!, style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.45)),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        AdminCard(
+          aiEmphasis: isAiTheme,
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(Icons.privacy_tip_outlined, color: cs.onSurfaceVariant, size: 18),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  'Privacy rule: this workspace shows only aggregates (counts/tokens/costs/error codes). It never displays prompts, responses, OCR text, document text, filenames, or file paths.',
+                  style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.md,
+          children: [
+            _MetricCard(title: 'Total AI requests (30d)', value: formatCompactInt(snapshot.aiRequestsThisMonth), icon: Icons.auto_awesome_outlined, aiEmphasis: isAiTheme),
+            _MetricCard(title: 'Total est. cost (30d)', value: AdminFormatters.usd(snapshot.estimatedCostThisMonthUsd), icon: Icons.payments_outlined, aiEmphasis: isAiTheme),
+            _MetricCard(title: 'OpenAI LLM tokens (30d)', value: formatCompactInt(openAiTokens), icon: Icons.stacked_line_chart_outlined, aiEmphasis: isAiTheme),
+            _MetricCard(title: 'Google Doc AI pages (30d)', value: formatCompactInt(googlePages), icon: Icons.article_outlined, aiEmphasis: isAiTheme),
+            _MetricCard(title: 'Failures (30d)', value: formatCompactInt(snapshot.failedAiRequestsThisMonth), icon: Icons.error_outline, aiEmphasis: isAiTheme),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
+        if (!snapshot.isLegacy)
+          _Panel(
+            title: 'Daily usage',
+            subtitle: 'Requests/cost/tokens/pages by day (aggregate only).',
+            child: SizedBox(
+              height: 260,
+              child: _AiDailyUsageTable(rows: snapshot.dailyUsage),
+            ),
+          )
+        else
+          AdminCard(
+            padding: const EdgeInsets.all(14),
+            child: Text('Daily usage breakdown is not available in legacy token-only mode.', style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          ),
+      ],
+    );
+  }
+}
+
+class _LlmTokenUsageTab extends StatelessWidget {
+  const _LlmTokenUsageTab({required this.snapshot});
+  final AiUsageSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
+    final rows = snapshot.usageByModelV2.where((r) => r.service.toLowerCase() == 'llm').toList();
+    rows.sort((a, b) => b.totalTokens.compareTo(a.totalTokens));
+
+    if (snapshot.isLegacy) {
+      return const AdminNotInstrumentedPanel(details: 'Provider/service split is not available yet. Deploy admin_get_ai_usage_summary_v2() to enable LLM breakdown.');
+    }
+
+    return AdminCard(
+      aiEmphasis: isAiTheme,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              children: [
+                Expanded(child: Text('LLM token usage', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Text('Aggregate only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: rows.isEmpty
+                ? const _EmptyState(label: 'No LLM usage rows available.')
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 18,
+                      headingTextStyle: Theme.of(context).textTheme.labelLarge,
+                      dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+                      columns: const [
+                        DataColumn(label: Text('Provider')),
+                        DataColumn(label: Text('Model')),
+                        DataColumn(label: Text('Requests')),
+                        DataColumn(label: Text('Input tokens')),
+                        DataColumn(label: Text('Output tokens')),
+                        DataColumn(label: Text('Total tokens')),
+                        DataColumn(label: Text('Failed')),
+                        DataColumn(label: Text('Est. cost')),
+                      ],
+                      rows: [
+                        for (final r in rows)
+                          DataRow(
+                            cells: [
+                              DataCell(Text(r.provider)),
+                              DataCell(Text(r.model)),
+                              DataCell(Text(formatCompactInt(r.requestCount))),
+                              DataCell(Text(formatCompactInt(r.inputTokens))),
+                              DataCell(Text(formatCompactInt(r.outputTokens))),
+                              DataCell(Text(formatCompactInt(r.totalTokens))),
+                              DataCell(Text(formatCompactInt(r.failedRequestCount))),
+                              DataCell(Text(AdminFormatters.usd(r.estimatedCostUsd))),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GoogleDocAiOcrTab extends StatelessWidget {
+  const _GoogleDocAiOcrTab({required this.snapshot});
+  final AiUsageSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
+    if (snapshot.isLegacy) {
+      return const AdminNotInstrumentedPanel(details: 'Document AI / OCR counters are tracked in v2 only. Deploy admin_get_ai_usage_summary_v2() and instrument writes to ai_usage_events.');
+    }
+
+    final rows = snapshot.usageByProviderService
+        .where((r) => r.provider.toLowerCase() == 'google' && (r.service.toLowerCase() == 'document_ai' || r.service.toLowerCase() == 'ocr'))
+        .toList();
+    rows.sort((a, b) => b.pagesProcessed.compareTo(a.pagesProcessed));
+
+    return AdminCard(
+      aiEmphasis: isAiTheme,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              children: [
+                Expanded(child: Text('Google Document AI / OCR', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Text('No OCR text stored', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: rows.isEmpty
+                ? const _EmptyState(label: 'No Google Document AI / OCR usage rows available.')
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 18,
+                      headingTextStyle: Theme.of(context).textTheme.labelLarge,
+                      dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+                      columns: const [
+                        DataColumn(label: Text('Service')),
+                        DataColumn(label: Text('Requests')),
+                        DataColumn(label: Text('Pages')),
+                        DataColumn(label: Text('Files')),
+                        DataColumn(label: Text('Failed')),
+                        DataColumn(label: Text('Est. cost')),
+                      ],
+                      rows: [
+                        for (final r in rows)
+                          DataRow(
+                            cells: [
+                              DataCell(Text(r.service)),
+                              DataCell(Text(formatCompactInt(r.requestCount))),
+                              DataCell(Text(formatCompactInt(r.pagesProcessed))),
+                              DataCell(Text(formatCompactInt(r.filesProcessed))),
+                              DataCell(Text(formatCompactInt(r.failedRequestCount))),
+                              DataCell(Text(AdminFormatters.usd(r.estimatedCostUsd))),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProviderBreakdownTab extends StatelessWidget {
+  const _ProviderBreakdownTab({required this.snapshot});
+  final AiUsageSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
+    if (snapshot.isLegacy) {
+      return const AdminNotInstrumentedPanel(details: 'Provider breakdown is available in v2 only.');
+    }
+
+    final rows = snapshot.usageByProvider.toList()..sort((a, b) => b.requestCount.compareTo(a.requestCount));
+
+    return AdminCard(
+      aiEmphasis: isAiTheme,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              children: [
+                Expanded(child: Text('Provider breakdown', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Text('Counts + cost only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: rows.isEmpty
+                ? const _EmptyState(label: 'No provider rows available.')
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 18,
+                      headingTextStyle: Theme.of(context).textTheme.labelLarge,
+                      dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+                      columns: const [
+                        DataColumn(label: Text('Provider')),
+                        DataColumn(label: Text('Requests')),
+                        DataColumn(label: Text('Tokens')),
+                        DataColumn(label: Text('Pages')),
+                        DataColumn(label: Text('Files')),
+                        DataColumn(label: Text('Failed')),
+                        DataColumn(label: Text('Est. cost')),
+                      ],
+                      rows: [
+                        for (final r in rows)
+                          DataRow(
+                            cells: [
+                              DataCell(Text(r.provider)),
+                              DataCell(Text(formatCompactInt(r.requestCount))),
+                              DataCell(Text(formatCompactInt(r.totalTokens))),
+                              DataCell(Text(formatCompactInt(r.pagesProcessed))),
+                              DataCell(Text(formatCompactInt(r.filesProcessed))),
+                              DataCell(Text(formatCompactInt(r.failedRequestCount))),
+                              DataCell(Text(AdminFormatters.usd(r.estimatedCostUsd))),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AiErrorsV2Tab extends StatelessWidget {
+  const _AiErrorsV2Tab({required this.snapshot});
+  final AiUsageSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final isAiTheme = context.select<AdminThemeStore, bool>((s) => s.mode == AdminThemeMode.ai);
+
+    if (snapshot.isLegacy) {
+      return AdminCard(
+        aiEmphasis: isAiTheme,
+        padding: const EdgeInsets.all(14),
+        child: Text('Error breakdown by provider/service is available in v2 only.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+      );
+    }
+
+    final rows = snapshot.failuresByErrorCode.toList()
+      ..sort((a, b) => b.failureCount.compareTo(a.failureCount));
+
+    return AdminCard(
+      aiEmphasis: isAiTheme,
+      padding: EdgeInsets.zero,
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+            child: Row(
+              children: [
+                Expanded(child: Text('Errors', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Text('Aggregate only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: rows.isEmpty
+                ? const _EmptyState(label: 'No failure breakdown rows available.')
+                : SingleChildScrollView(
+                    padding: const EdgeInsets.all(12),
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 18,
+                      headingTextStyle: Theme.of(context).textTheme.labelLarge,
+                      dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+                      columns: const [
+                        DataColumn(label: Text('Provider')),
+                        DataColumn(label: Text('Service')),
+                        DataColumn(label: Text('Error code')),
+                        DataColumn(label: Text('Failure count')),
+                      ],
+                      rows: [
+                        for (final r in rows)
+                          DataRow(
+                            cells: [
+                              DataCell(Text(r.provider)),
+                              DataCell(Text(r.service)),
+                              DataCell(Text(r.errorCode)),
+                              DataCell(Text(formatCompactInt(r.failureCount))),
+                            ],
+                          ),
+                      ],
+                    ),
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AiDailyUsageTable extends StatelessWidget {
+  const _AiDailyUsageTable({required this.rows});
+  final List<AiDailyUsageRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    if (rows.isEmpty) return const _EmptyState(label: 'No daily usage rows available.');
+    final sorted = rows.toList()..sort((a, b) => b.day.compareTo(a.day));
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 18,
+        headingTextStyle: Theme.of(context).textTheme.labelLarge,
+        dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+        columns: const [
+          DataColumn(label: Text('Day')),
+          DataColumn(label: Text('Requests')),
+          DataColumn(label: Text('Tokens')),
+          DataColumn(label: Text('Pages')),
+          DataColumn(label: Text('Files')),
+          DataColumn(label: Text('Failures')),
+          DataColumn(label: Text('Est. cost')),
+        ],
+        rows: [
+          for (final r in sorted)
+            DataRow(
+              cells: [
+                DataCell(Text(formatDateShort(r.day))),
+                DataCell(Text(formatCompactInt(r.requestCount))),
+                DataCell(Text(formatCompactInt(r.totalTokens))),
+                DataCell(Text(formatCompactInt(r.pagesProcessed))),
+                DataCell(Text(formatCompactInt(r.filesProcessed))),
+                DataCell(Text(formatCompactInt(r.failures))),
+                DataCell(Text(AdminFormatters.usd(r.estimatedCostUsd))),
+              ],
+            ),
         ],
       ),
     );

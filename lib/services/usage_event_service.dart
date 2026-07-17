@@ -18,6 +18,7 @@ class UsageEventService {
   static final UsageEventService instance = UsageEventService._();
 
   static const String _table = 'usage_events';
+  static const String _aiUsageTable = 'ai_usage_events';
 
   /// Explicit denylist of keys that must never appear in `properties`.
   ///
@@ -103,6 +104,115 @@ class UsageEventService {
         if (estimatedCost != null) 'estimated_cost': estimatedCost,
       },
     );
+  }
+
+  /// Tracks privacy-safe AI usage in `public.ai_usage_events` (provider/service aware).
+  ///
+  /// This is intentionally separate from general `usage_events` tracking.
+  ///
+  /// IMPORTANT PRIVACY GUARANTEES
+  /// - Do not pass prompts, responses, OCR text, document text, or filenames.
+  /// - Only pass aggregate counters (tokens/pages/files/requests) and coarse labels.
+  Future<void> trackAiUsageV2({
+    required String provider,
+    required String service,
+    String? featureArea,
+    String? model,
+    int requestCount = 1,
+    int? inputTokens,
+    int? outputTokens,
+    int? totalTokens,
+    int? pagesProcessed,
+    int? filesProcessed,
+    int? imagesProcessed,
+    int? charactersProcessed,
+    double? estimatedCostUsd,
+    required String result,
+    String? errorCode,
+    String? source,
+    String? edgeFunctionName,
+  }) async {
+    unawaited(_writeAiUsageEventImpl(
+      provider: provider,
+      service: service,
+      featureArea: featureArea,
+      model: model,
+      requestCount: requestCount,
+      inputTokens: inputTokens,
+      outputTokens: outputTokens,
+      totalTokens: totalTokens,
+      pagesProcessed: pagesProcessed,
+      filesProcessed: filesProcessed,
+      imagesProcessed: imagesProcessed,
+      charactersProcessed: charactersProcessed,
+      estimatedCostUsd: estimatedCostUsd,
+      result: result,
+      errorCode: errorCode,
+      source: source,
+      edgeFunctionName: edgeFunctionName,
+    ));
+  }
+
+  Future<void> _writeAiUsageEventImpl({
+    required String provider,
+    required String service,
+    String? featureArea,
+    String? model,
+    required int requestCount,
+    int? inputTokens,
+    int? outputTokens,
+    int? totalTokens,
+    int? pagesProcessed,
+    int? filesProcessed,
+    int? imagesProcessed,
+    int? charactersProcessed,
+    double? estimatedCostUsd,
+    required String result,
+    String? errorCode,
+    String? source,
+    String? edgeFunctionName,
+  }) async {
+    try {
+      if (!SupabaseConfig.isInitialized) return;
+      final client = SupabaseConfig.client;
+      final userId = client.auth.currentUser?.id;
+      if (userId == null || userId.isEmpty) return;
+
+      String _cleanLabel(String v, String fallback) {
+        final s = v.trim().toLowerCase();
+        return s.isEmpty ? fallback : s;
+      }
+
+      int? _nonNegInt(int? v) => (v == null) ? null : (v < 0 ? 0 : v);
+      double? _nonNegDouble(double? v) => (v == null) ? null : (v < 0 ? 0 : v);
+
+      final payload = <String, Object?>{
+        'owner_user_id': userId,
+        'provider': _cleanLabel(provider, 'unknown'),
+        'service': _cleanLabel(service, 'unknown'),
+        if ((featureArea ?? '').trim().isNotEmpty) 'feature_area': featureArea!.trim(),
+        if ((model ?? '').trim().isNotEmpty) 'model': model!.trim(),
+        'request_count': requestCount < 0 ? 0 : requestCount,
+        if (inputTokens != null) 'input_tokens': _nonNegInt(inputTokens),
+        if (outputTokens != null) 'output_tokens': _nonNegInt(outputTokens),
+        if (totalTokens != null) 'total_tokens': _nonNegInt(totalTokens),
+        if (pagesProcessed != null) 'pages_processed': _nonNegInt(pagesProcessed),
+        if (filesProcessed != null) 'files_processed': _nonNegInt(filesProcessed),
+        if (imagesProcessed != null) 'images_processed': _nonNegInt(imagesProcessed),
+        if (charactersProcessed != null) 'characters_processed': _nonNegInt(charactersProcessed),
+        if (estimatedCostUsd != null) 'estimated_cost_usd': _nonNegDouble(estimatedCostUsd),
+        'result': result.trim().isEmpty ? 'unknown' : result.trim().toLowerCase(),
+        if ((errorCode ?? '').trim().isNotEmpty) 'error_code': errorCode!.trim(),
+        if ((source ?? '').trim().isNotEmpty) 'source': source!.trim(),
+        if ((edgeFunctionName ?? '').trim().isNotEmpty)
+          'edge_function_name': edgeFunctionName!.trim(),
+      };
+
+      await client.from(_aiUsageTable).insert(payload);
+    } catch (e) {
+      // Never throw; do not log payloads.
+      if (kDebugMode) debugPrint('[ai_usage_events] write failed: $e');
+    }
   }
 
   /// Primary write method.
