@@ -699,9 +699,27 @@ class SupabaseAdminRepository implements AdminRepository {
     try {
       final admin = await _admin();
       final res = await _queries.getBillingSummary(admin: admin, query: query);
-      _setLive(AdminDataSourceKey.billing,
-          queryName: 'admin_get_billing_summary', rowCount: 1);
-      return res;
+      final diag = await _probeBillingDataSources(res.diagnostics);
+      final withDiag = BillingSnapshot(
+        query: res.query,
+        overview: res.overview,
+        subscriptions: res.subscriptions,
+        trials: res.trials,
+        failedPayments: res.failedPayments,
+        revenueByPlan: res.revenueByPlan,
+        revenueByCountry: res.revenueByCountry,
+        revenueCat: res.revenueCat,
+        diagnostics: diag,
+        generatedAt: res.generatedAt,
+      );
+
+      _setLive(
+        AdminDataSourceKey.billing,
+        queryName: diag?.summarySource ?? res.diagnostics?.summarySource ?? 'admin_get_billing_summary',
+        rowCount: (diag?.dataSources.isNotEmpty ?? false) ? diag!.dataSources.length : 1,
+        message: 'Billing diagnostics are privacy-safe; revenue is shown only when instrumented.',
+      );
+      return withDiag;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getBillingSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
@@ -716,6 +734,88 @@ class SupabaseAdminRepository implements AdminRepository {
           queryName: 'admin_get_billing_summary', error: e);
       rethrow;
     }
+  }
+
+  Future<BillingDiagnostics?> _probeBillingDataSources(
+      BillingDiagnostics? base) async {
+    final client = _client;
+    if (client == null) return base;
+
+    final now = DateTime.now().toUtc();
+    final out = <BillingDataSourceStatusRow>[];
+
+    Future<void> addCount(String name, String table,
+        {String? note,
+        Map<String, dynamic>? eq,
+        int cap = 5000}) async {
+      try {
+        dynamic q = client.from(table).select('id').limit(cap);
+        if (eq != null) {
+          for (final e in eq.entries) {
+            q = q.eq(e.key, e.value);
+          }
+        }
+        final dynamic res = await q;
+        int? n;
+        if (res is List) n = res.length;
+        if (res is PostgrestResponse) {
+          final data = res.data;
+          if (data is List) n = data.length;
+        }
+        final cappedNote = (n != null && n >= cap)
+            ? 'Count capped at $cap rows for safety.'
+            : null;
+        out.add(BillingDataSourceStatusRow(
+            name: name,
+            queryOrTable: table,
+            kind: AdminDataSourceKind.live,
+            rowCount: n,
+            lastRefreshedAt: now,
+            safeError: cappedNote ?? note));
+      } catch (e) {
+        final kind = _isMissingRelationError(e)
+            ? AdminDataSourceKind.notInstrumented
+            : AdminDataSourceKind.error;
+        out.add(BillingDataSourceStatusRow(
+            name: name,
+            queryOrTable: table,
+            kind: kind,
+            rowCount: null,
+            lastRefreshedAt: now,
+            safeError: formatAdminSafeError(e)));
+      }
+    }
+
+    // Summary RPC is already represented in `base.summarySource`.
+    out.add(BillingDataSourceStatusRow(
+        name: 'Billing summary',
+        queryOrTable: base?.summarySource ?? 'admin_get_billing_summary',
+        kind: AdminDataSourceKind.live,
+        rowCount: null,
+        lastRefreshedAt: now));
+
+    await addCount('Entitlements', 'user_entitlements', cap: 5000);
+    await addCount('Entitlements (RevenueCat)', 'user_entitlements',
+        eq: {'provider': 'revenuecat'}, cap: 5000);
+    await addCount('Subscription events', 'subscription_events', cap: 5000);
+    await addCount('RevenueCat webhooks', 'revenuecat_webhook_events', cap: 5000);
+
+    // Stripe tables are not expected in this project; probe defensively.
+    await addCount('Stripe events', 'stripe_webhook_events', cap: 2000);
+
+    if (base == null)
+      return BillingDiagnostics(
+          summarySource: 'admin_get_billing_summary',
+          revenueSource: BillingRevenueSource.unknown,
+          sections: const {},
+          dataSources: out);
+
+    return BillingDiagnostics(
+      summarySource: base.summarySource,
+      revenueSource: base.revenueSource,
+      sections: base.sections,
+      dataSources: out,
+    );
   }
 
   @override

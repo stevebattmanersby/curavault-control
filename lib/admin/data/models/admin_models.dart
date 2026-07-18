@@ -1,4 +1,5 @@
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
+import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart' show DateTimeRange;
 
@@ -444,6 +445,8 @@ class BillingOverviewMetrics {
     required this.annualRecurringRevenueUsd,
     required this.averageRevenuePerUserUsd,
     required this.trialConversionRate,
+    this.revenueMetricsInstrumented = false,
+    this.revenueMetricsNote,
   });
 
   final int activePaidUsers;
@@ -456,6 +459,86 @@ class BillingOverviewMetrics {
   final double averageRevenuePerUserUsd;
   /// Range [0..1]
   final double trialConversionRate;
+
+  /// True only when revenue metrics are sourced from a real revenue provider
+  /// (e.g. RevenueCat or Stripe) rather than placeholders.
+  ///
+  /// If false, the UI must avoid presenting 0 values as confirmed revenue.
+  final bool revenueMetricsInstrumented;
+
+  /// Optional human-safe explanation shown in admin UI.
+  final String? revenueMetricsNote;
+}
+
+enum BillingRevenueSource { revenueCat, manualEntitlement, stripe, none, unknown }
+
+extension BillingRevenueSourceX on BillingRevenueSource {
+  String get label => switch (this) {
+    BillingRevenueSource.revenueCat => 'RevenueCat',
+    BillingRevenueSource.manualEntitlement => 'Manual entitlement',
+    BillingRevenueSource.stripe => 'Stripe',
+    BillingRevenueSource.none => 'None',
+    BillingRevenueSource.unknown => 'Unknown',
+  };
+}
+
+enum BillingSectionState {
+  live,
+  partial,
+  empty,
+  notInstrumented,
+  mock,
+  error,
+}
+
+extension BillingSectionStateX on BillingSectionState {
+  String get label => switch (this) {
+    BillingSectionState.live => 'Live',
+    BillingSectionState.partial => 'Partial',
+    BillingSectionState.empty => 'Empty',
+    BillingSectionState.notInstrumented => 'Not instrumented yet',
+    BillingSectionState.mock => 'Mock / debug',
+    BillingSectionState.error => 'Error',
+  };
+}
+
+@immutable
+class BillingSectionStatus {
+  const BillingSectionStatus({required this.state, required this.message, this.requiredSource});
+  final BillingSectionState state;
+  final String message;
+  final String? requiredSource;
+}
+
+@immutable
+class BillingDataSourceStatusRow {
+  const BillingDataSourceStatusRow({required this.name, required this.queryOrTable, required this.kind, this.rowCount, this.lastRefreshedAt, this.safeError});
+
+  final String name;
+  final String queryOrTable;
+  final AdminDataSourceKind kind;
+  final int? rowCount;
+  final DateTime? lastRefreshedAt;
+  final String? safeError;
+}
+
+@immutable
+class BillingDiagnostics {
+  const BillingDiagnostics({
+    required this.summarySource,
+    required this.revenueSource,
+    required this.sections,
+    required this.dataSources,
+  });
+
+  final String summarySource;
+  final BillingRevenueSource revenueSource;
+
+  /// One status per Billing UI section/tab.
+  final Map<String, BillingSectionStatus> sections;
+
+  /// Probes used to justify what the UI is (and isn't) showing.
+  final List<BillingDataSourceStatusRow> dataSources;
 }
 
 @immutable
@@ -604,6 +687,8 @@ class BillingSnapshot {
     required this.failedPayments,
     required this.revenueByPlan,
     required this.revenueByCountry,
+    this.revenueCat,
+    this.diagnostics,
     required this.generatedAt,
   });
 
@@ -614,7 +699,43 @@ class BillingSnapshot {
   final List<FailedPaymentRow> failedPayments;
   final List<RevenueByPlanRow> revenueByPlan;
   final List<RevenueByCountryRow> revenueByCountry;
+  /// Aggregate-only RevenueCat entitlement sync health (privacy-safe).
+  ///
+  /// This is optional because not all environments will have RevenueCat wired up.
+  final RevenueCatSyncHealth? revenueCat;
+
+  /// Privacy-safe metadata describing what is truly live vs missing.
+  final BillingDiagnostics? diagnostics;
   final DateTime generatedAt;
+}
+
+@immutable
+class RevenueCatSyncHealth {
+  const RevenueCatSyncHealth({
+    required this.webhookEventRows,
+    required this.webhookFailedRows,
+    required this.webhookUnmappedAppUserIdRows,
+    required this.entitlementsRows,
+    required this.activeEntitlementsRows,
+    required this.latestWebhookReceivedAt,
+    required this.latestWebhookProcessedAt,
+    required this.latestWebhookProcessingResult,
+    required this.storeBreakdown,
+  });
+
+  final int webhookEventRows;
+  final int webhookFailedRows;
+  final int webhookUnmappedAppUserIdRows;
+
+  final int entitlementsRows;
+  final int activeEntitlementsRows;
+
+  final DateTime? latestWebhookReceivedAt;
+  final DateTime? latestWebhookProcessedAt;
+  final String? latestWebhookProcessingResult;
+
+  /// Aggregate count of active entitlements by store (e.g. app_store/play_store).
+  final Map<String, int> storeBreakdown;
 }
 
 // ------------------------------

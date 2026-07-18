@@ -40,6 +40,31 @@ class _BillingPageState extends State<BillingPage>
     final billing = store.billing;
     final role = context.watch<AdminAuthStore>().role ?? AdminRole.readOnly;
     final status = store.dataSource(AdminDataSourceKey.billing);
+    final diag = billing?.diagnostics;
+    final sections = diag?.sections ?? const <String, BillingSectionStatus>{};
+
+    Tab _statusTab(String label) {
+      final s = sections[label];
+      final state = s?.state ?? BillingSectionState.notInstrumented;
+      final dot = switch (state) {
+        BillingSectionState.live => Colors.green,
+        BillingSectionState.partial => Colors.orange,
+        BillingSectionState.empty => cs.onSurfaceVariant,
+        BillingSectionState.notInstrumented => cs.outline,
+        BillingSectionState.mock => Colors.orange,
+        BillingSectionState.error => cs.error,
+      };
+      return Tab(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(label, overflow: TextOverflow.ellipsis),
+            const SizedBox(width: 8),
+            Container(width: 8, height: 8, decoration: BoxDecoration(color: dot, borderRadius: BorderRadius.circular(99))),
+          ],
+        ),
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.all(20),
@@ -70,6 +95,10 @@ class _BillingPageState extends State<BillingPage>
           const SizedBox(height: 14),
           _BillingToolbar(role: role),
           const SizedBox(height: 14),
+          if (diag != null) ...[
+            _BillingHonestyPanel(diagnostics: diag),
+            const SizedBox(height: 14),
+          ],
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
           else if (status.kind == AdminDataSourceKind.error)
@@ -88,13 +117,13 @@ class _BillingPageState extends State<BillingPage>
               isScrollable: true,
               dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
               tabAlignment: TabAlignment.start,
-              tabs: const [
-                Tab(text: 'Overview'),
-                Tab(text: 'Subscriptions'),
-                Tab(text: 'Trials'),
-                Tab(text: 'Failed payments'),
-                Tab(text: 'Revenue by plan'),
-                Tab(text: 'Revenue by country'),
+              tabs: [
+                _statusTab('Overview'),
+                _statusTab('Subscriptions'),
+                _statusTab('Trials'),
+                _statusTab('Failed payments'),
+                _statusTab('Revenue by plan'),
+                _statusTab('Revenue by country'),
               ],
             ),
           if (status.kind != AdminDataSourceKind.notInstrumented) ...[
@@ -112,31 +141,181 @@ class _BillingPageState extends State<BillingPage>
                   children: [
                     _BillingOverviewTab(
                         overview: billing?.overview,
+                        revenueCat: billing?.revenueCat,
                         isLoading: store.isBillingLoading,
-                        generatedAt: billing?.generatedAt),
+                        generatedAt: billing?.generatedAt,
+                        diagnostics: diag),
                     _SubscriptionsTab(
                         rows: billing?.subscriptions ?? const [],
                         isLoading: store.isBillingLoading,
-                        role: role),
+                        role: role,
+                        status: sections['Subscriptions']),
                     _TrialsTab(
                         rows: billing?.trials ?? const [],
                         isLoading: store.isBillingLoading,
-                        role: role),
+                        role: role,
+                        status: sections['Trials']),
                     _FailedPaymentsTab(
                         rows: billing?.failedPayments ?? const [],
                         isLoading: store.isBillingLoading,
-                        role: role),
+                        role: role,
+                        status: sections['Failed payments']),
                     _RevenueByPlanTab(
                         rows: billing?.revenueByPlan ?? const [],
-                        isLoading: store.isBillingLoading),
+                        isLoading: store.isBillingLoading,
+                        status: sections['Revenue by plan']),
                     _RevenueByCountryTab(
                         rows: billing?.revenueByCountry ?? const [],
-                        isLoading: store.isBillingLoading),
+                        isLoading: store.isBillingLoading,
+                        status: sections['Revenue by country']),
                   ],
                 ),
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _BillingHonestyPanel extends StatelessWidget {
+  const _BillingHonestyPanel({required this.diagnostics});
+  final BillingDiagnostics diagnostics;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.fact_check_outlined, color: cs.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('Billing verifiability',
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: cs.surface,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                ),
+                child: Text('Revenue source: ${diagnostics.revenueSource.label}',
+                    style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'This page is designed to be production-safe: it will not imply revenue or payment status unless a live source is actually connected.',
+            style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          _BillingDataSourceStatusTable(diagnostics: diagnostics),
+        ],
+      ),
+    );
+  }
+}
+
+class _BillingDataSourceStatusTable extends StatelessWidget {
+  const _BillingDataSourceStatusTable({required this.diagnostics});
+  final BillingDiagnostics diagnostics;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final rows = diagnostics.dataSources;
+    if (rows.isEmpty) {
+      return Text(
+        'Data source probes are not available in this build yet.',
+        style: Theme.of(context)
+            .textTheme
+            .bodySmall
+            ?.copyWith(color: cs.onSurfaceVariant),
+      );
+    }
+
+    Widget kindPill(AdminDataSourceKind kind) {
+      Color bg;
+      Color fg;
+      String label;
+      switch (kind) {
+        case AdminDataSourceKind.live:
+          bg = cs.primaryContainer;
+          fg = cs.onPrimaryContainer;
+          label = 'Live';
+          break;
+        case AdminDataSourceKind.mock:
+          bg = cs.surface;
+          fg = cs.onSurfaceVariant;
+          label = 'Mock';
+          break;
+        case AdminDataSourceKind.notInstrumented:
+          bg = cs.surface;
+          fg = cs.onSurfaceVariant;
+          label = 'Not instrumented';
+          break;
+        case AdminDataSourceKind.error:
+          bg = cs.errorContainer;
+          fg = cs.onErrorContainer;
+          label = 'Error';
+          break;
+      }
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+        ),
+        child: Text(label,
+            style: Theme.of(context)
+                .textTheme
+                .labelMedium
+                ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+      );
+    }
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: DataTable(
+        columnSpacing: 18,
+        headingTextStyle: Theme.of(context).textTheme.labelLarge,
+        dataTextStyle: Theme.of(context).textTheme.bodyMedium,
+        columns: const [
+          DataColumn(label: Text('Source')),
+          DataColumn(label: Text('Query/table')),
+          DataColumn(label: Text('Status')),
+          DataColumn(label: Text('Rows')),
+          DataColumn(label: Text('Last refreshed')),
+          DataColumn(label: Text('Safe error')),
+        ],
+        rows: [
+          for (final r in rows)
+            DataRow(cells: [
+              DataCell(Text(r.name)),
+              DataCell(Text(r.queryOrTable)),
+              DataCell(kindPill(r.kind)),
+              DataCell(Text(r.rowCount == null ? '—' : '${r.rowCount}')),
+              DataCell(Text(r.lastRefreshedAt == null
+                  ? '—'
+                  : AdminFormatters.relativeTime(r.lastRefreshedAt!))),
+              DataCell(Text((r.safeError ?? '').trim().isEmpty ? '—' : r.safeError!)),
+            ]),
         ],
       ),
     );
@@ -413,11 +592,15 @@ class _BillingFiltersSheetState extends State<_BillingFiltersSheet> {
 class _BillingOverviewTab extends StatelessWidget {
   const _BillingOverviewTab(
       {required this.overview,
+      required this.revenueCat,
       required this.isLoading,
-      required this.generatedAt});
+      required this.generatedAt,
+      required this.diagnostics});
   final BillingOverviewMetrics? overview;
+  final RevenueCatSyncHealth? revenueCat;
   final bool isLoading;
   final DateTime? generatedAt;
+  final BillingDiagnostics? diagnostics;
 
   @override
   Widget build(BuildContext context) {
@@ -430,6 +613,15 @@ class _BillingOverviewTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(14),
       children: [
+        if (revenueCat != null) ...[
+          _RevenueCatSyncCard(health: revenueCat!),
+          const SizedBox(height: 12),
+        ],
+        if (diagnostics != null) ...[
+          _RevenueCatReadinessChecklist(
+              revenueCat: revenueCat, revenueSource: diagnostics!.revenueSource),
+          const SizedBox(height: 12),
+        ],
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -456,15 +648,21 @@ class _BillingOverviewTab extends StatelessWidget {
                 icon: Icons.warning_amber_outlined),
             _MetricCard(
                 title: 'MRR',
-                value: AdminFormatters.usd(o.monthlyRecurringRevenueUsd),
+                value: o.revenueMetricsInstrumented
+                    ? AdminFormatters.usd(o.monthlyRecurringRevenueUsd)
+                    : 'Revenue not instrumented yet',
                 icon: Icons.trending_up_outlined),
             _MetricCard(
                 title: 'ARR',
-                value: AdminFormatters.usd(o.annualRecurringRevenueUsd),
+                value: o.revenueMetricsInstrumented
+                    ? AdminFormatters.usd(o.annualRecurringRevenueUsd)
+                    : 'Revenue not instrumented yet',
                 icon: Icons.insights_outlined),
             _MetricCard(
                 title: 'ARPU',
-                value: AdminFormatters.usd(o.averageRevenuePerUserUsd),
+                value: o.revenueMetricsInstrumented
+                    ? AdminFormatters.usd(o.averageRevenuePerUserUsd)
+                    : 'Revenue not instrumented yet',
                 icon: Icons.payments_outlined),
             _MetricCard(
                 title: 'Trial conversion',
@@ -494,6 +692,19 @@ class _BillingOverviewTab extends StatelessWidget {
                       ?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
+              if ((o.revenueMetricsNote ?? '').trim().isNotEmpty) ...[
+                const SizedBox(width: 12),
+                Flexible(
+                  child: Text(
+                    o.revenueMetricsNote!,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
+                  ),
+                ),
+              ],
               if (generatedAt != null)
                 Text(
                   'Updated ${AdminFormatters.relativeTime(generatedAt!)}',
@@ -510,12 +721,198 @@ class _BillingOverviewTab extends StatelessWidget {
   }
 }
 
+class _RevenueCatSyncCard extends StatelessWidget {
+  const _RevenueCatSyncCard({required this.health});
+  final RevenueCatSyncHealth health;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+
+    final latest = health.latestWebhookReceivedAt;
+    final processed = health.latestWebhookProcessedAt;
+    final result = (health.latestWebhookProcessingResult ?? '').trim();
+
+    String statusLabel;
+    Color statusColor;
+    if (health.webhookEventRows <= 0) {
+      statusLabel = 'No webhooks received';
+      statusColor = cs.onSurfaceVariant;
+    } else if (health.webhookFailedRows > 0 || result.startsWith('error:')) {
+      statusLabel = 'Degraded';
+      statusColor = cs.error;
+    } else {
+      statusLabel = 'Healthy';
+      statusColor = Colors.green;
+    }
+
+    Widget metric(String label, String value, IconData icon,
+        {Color? iconColor}) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 18, color: iconColor ?? cs.primary),
+            const SizedBox(width: 10),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
+                const SizedBox(height: 2),
+                Text(value,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900)),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.sync_rounded, color: cs.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('RevenueCat entitlement sync',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900)),
+              ),
+              Text(statusLabel,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: statusColor, fontWeight: FontWeight.w900)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              metric('Webhook events',
+                  AdminFormatters.compactInt(health.webhookEventRows),
+                  Icons.webhook_rounded),
+              metric('Failed webhooks',
+                  AdminFormatters.compactInt(health.webhookFailedRows),
+                  Icons.error_outline_rounded,
+                  iconColor:
+                      health.webhookFailedRows > 0 ? cs.error : cs.primary),
+              metric('Unmapped app_user_id',
+                  AdminFormatters.compactInt(health.webhookUnmappedAppUserIdRows),
+                  Icons.link_off_rounded),
+              metric('Entitlements rows',
+                  AdminFormatters.compactInt(health.entitlementsRows),
+                  Icons.badge_outlined),
+              metric('Active entitlements',
+                  AdminFormatters.compactInt(health.activeEntitlementsRows),
+                  Icons.verified_outlined),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  latest == null
+                      ? 'No webhook receipt timestamp available.'
+                      : 'Latest webhook: ${AdminFormatters.relativeTime(latest)}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
+                ),
+              ),
+              if (processed != null)
+                Text(
+                  'Processed ${AdminFormatters.relativeTime(processed)}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
+                ),
+            ],
+          ),
+          if (result.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text('Latest processing result: $result',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(color: cs.onSurfaceVariant)),
+          ],
+          if (health.storeBreakdown.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Builder(
+              builder: (context) {
+                final entries = health.storeBreakdown.entries.toList()
+                  ..sort((a, b) => b.value.compareTo(a.value));
+                return Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: entries
+                      .map((e) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: cs.surface,
+                              borderRadius: BorderRadius.circular(999),
+                              border: Border.all(
+                                  color: cs.outlineVariant
+                                      .withValues(alpha: 0.35)),
+                            ),
+                            child: Text('${e.key}: ${e.value}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(color: cs.onSurfaceVariant)),
+                          ))
+                      .toList(),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 class _SubscriptionsTab extends StatelessWidget {
   const _SubscriptionsTab(
-      {required this.rows, required this.isLoading, required this.role});
+      {required this.rows,
+      required this.isLoading,
+      required this.role,
+      required this.status});
   final List<SubscriptionRow> rows;
   final bool isLoading;
   final AdminRole role;
+  final BillingSectionStatus? status;
 
   @override
   Widget build(BuildContext context) {
@@ -523,6 +920,13 @@ class _SubscriptionsTab extends StatelessWidget {
     final canSeeEmail = AdminRbac.canViewBillingEmail(role);
 
     if (isLoading && rows.isEmpty) return const _LoadingState();
+
+    if (rows.isEmpty &&
+        status != null &&
+        status!.state != BillingSectionState.live &&
+        status!.state != BillingSectionState.empty) {
+      return _TabStatusPanel(status: status!);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -603,15 +1007,23 @@ class _SubscriptionsTab extends StatelessWidget {
 
 class _TrialsTab extends StatelessWidget {
   const _TrialsTab(
-      {required this.rows, required this.isLoading, required this.role});
+      {required this.rows, required this.isLoading, required this.role, required this.status});
   final List<TrialRow> rows;
   final bool isLoading;
   final AdminRole role;
+  final BillingSectionStatus? status;
 
   @override
   Widget build(BuildContext context) {
     if (isLoading && rows.isEmpty) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
+
+    if (rows.isEmpty &&
+        status != null &&
+        status!.state != BillingSectionState.live &&
+        status!.state != BillingSectionState.empty) {
+      return _TabStatusPanel(status: status!);
+    }
     final canExtend =
         AdminRbac.canPerformBillingAction(role, BillingAdminAction.extendTrial);
 
@@ -700,16 +1112,24 @@ class _TrialsTab extends StatelessWidget {
 
 class _FailedPaymentsTab extends StatelessWidget {
   const _FailedPaymentsTab(
-      {required this.rows, required this.isLoading, required this.role});
+      {required this.rows, required this.isLoading, required this.role, required this.status});
   final List<FailedPaymentRow> rows;
   final bool isLoading;
   final AdminRole role;
+  final BillingSectionStatus? status;
 
   @override
   Widget build(BuildContext context) {
     if (isLoading && rows.isEmpty) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
     final canSeeEmail = AdminRbac.canViewBillingEmail(role);
+
+    if (rows.isEmpty &&
+        status != null &&
+        status!.state != BillingSectionState.live &&
+        status!.state != BillingSectionState.empty) {
+      return _TabStatusPanel(status: status!);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -782,14 +1202,22 @@ class _FailedPaymentsTab extends StatelessWidget {
 }
 
 class _RevenueByPlanTab extends StatelessWidget {
-  const _RevenueByPlanTab({required this.rows, required this.isLoading});
+  const _RevenueByPlanTab({required this.rows, required this.isLoading, required this.status});
   final List<RevenueByPlanRow> rows;
   final bool isLoading;
+  final BillingSectionStatus? status;
 
   @override
   Widget build(BuildContext context) {
     if (isLoading && rows.isEmpty) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
+
+    if (rows.isEmpty &&
+        status != null &&
+        status!.state != BillingSectionState.live &&
+        status!.state != BillingSectionState.empty) {
+      return _TabStatusPanel(status: status!);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -855,14 +1283,22 @@ class _RevenueByPlanTab extends StatelessWidget {
 }
 
 class _RevenueByCountryTab extends StatelessWidget {
-  const _RevenueByCountryTab({required this.rows, required this.isLoading});
+  const _RevenueByCountryTab({required this.rows, required this.isLoading, required this.status});
   final List<RevenueByCountryRow> rows;
   final bool isLoading;
+  final BillingSectionStatus? status;
 
   @override
   Widget build(BuildContext context) {
     if (isLoading && rows.isEmpty) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
+
+    if (rows.isEmpty &&
+        status != null &&
+        status!.state != BillingSectionState.live &&
+        status!.state != BillingSectionState.empty) {
+      return _TabStatusPanel(status: status!);
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1462,6 +1898,143 @@ class _EmptyState extends StatelessWidget {
                 .textTheme
                 .bodyMedium
                 ?.copyWith(color: cs.onSurfaceVariant)),
+      ),
+    );
+  }
+}
+
+class _TabStatusPanel extends StatelessWidget {
+  const _TabStatusPanel({required this.status});
+  final BillingSectionStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 560),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: cs.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.info_outline, color: cs.primary),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(status.state.label,
+                          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(status.message,
+                    style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                if ((status.requiredSource ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 10),
+                  Text('Requires: ${status.requiredSource}',
+                      style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RevenueCatReadinessChecklist extends StatelessWidget {
+  const _RevenueCatReadinessChecklist({required this.revenueCat, required this.revenueSource});
+  final RevenueCatSyncHealth? revenueCat;
+  final BillingRevenueSource revenueSource;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final t = Theme.of(context).textTheme;
+
+    final hasWebhook = (revenueCat?.webhookEventRows ?? 0) > 0;
+    final latestReceived = revenueCat?.latestWebhookReceivedAt;
+    final hasEntitlements = (revenueCat?.entitlementsRows ?? 0) > 0;
+    final hasActiveEntitlements = (revenueCat?.activeEntitlementsRows ?? 0) > 0;
+
+    Widget row(String label, {required bool ok, String? detail}) {
+      final icon = ok ? Icons.check_circle : Icons.radio_button_unchecked;
+      final color = ok ? Colors.green : cs.onSurfaceVariant;
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 18, color: color),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  if ((detail ?? '').trim().isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(detail!, style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.checklist_rounded, color: cs.primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text('RevenueCat readiness checklist',
+                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+              ),
+              Text('Detected: ${revenueSource.label}',
+                  style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            ],
+          ),
+          const SizedBox(height: 10),
+          row('RevenueCat SDK configured (consumer app)', ok: revenueSource == BillingRevenueSource.revenueCat, detail: revenueSource == BillingRevenueSource.revenueCat ? 'RevenueCat detected in entitlement aggregates.' : 'Not verifiable from Control Site repo.'),
+          row('RevenueCat webhooks configured', ok: hasWebhook, detail: hasWebhook ? 'Latest: ${latestReceived == null ? '—' : AdminFormatters.relativeTime(latestReceived)}' : 'No webhook events recorded.'),
+          row('Latest webhook received', ok: hasWebhook, detail: hasWebhook ? 'Events: ${revenueCat?.webhookEventRows ?? 0}' : null),
+          row('user_entitlements updated by webhook', ok: hasEntitlements, detail: 'Rows: ${revenueCat?.entitlementsRows ?? 0}'),
+          row('subscription_events updated by webhook', ok: false, detail: 'Not verifiable without a privacy-safe summary for subscription_events updates.'),
+          row('Sandbox purchase tested iOS', ok: false, detail: 'Manual check.'),
+          row('Sandbox purchase tested Android', ok: false, detail: 'Manual check.'),
+          row('Restore purchase tested', ok: false, detail: 'Manual check.'),
+          if (!hasActiveEntitlements) ...[
+            const SizedBox(height: 6),
+            Text(
+              'Note: Active entitlements are currently ${revenueCat?.activeEntitlementsRows ?? 0}.',
+              style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant),
+            ),
+          ],
+        ],
       ),
     );
   }

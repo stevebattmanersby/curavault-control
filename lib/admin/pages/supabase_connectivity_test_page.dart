@@ -178,7 +178,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       // Test 2) URL sanity check
       debugPrint('[SupabaseConnectivityTest] starting: URL sanity check');
       try {
-        final raw = SupabaseConfig.supabaseUrl;
+        final raw = SupabaseConfig.resolvedSupabaseProjectUrl;
         final parsed = Uri.parse(raw);
         final ok = parsed.hasScheme && parsed.host.isNotEmpty && !raw.endsWith('/rest/v1') && !raw.contains(' ');
         setState(() {
@@ -198,7 +198,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       // Test 3) Raw HTTP probe to the project root.
       debugPrint('[SupabaseConnectivityTest] starting: GET project URL');
       try {
-        final url = Uri.parse(SupabaseConfig.supabaseUrl);
+        final url = Uri.parse(SupabaseConfig.resolvedSupabaseProjectUrl);
         // Use GET instead of HEAD because some environments block HEAD or omit CORS headers.
         final probe = await httpProbe(url, method: 'GET');
         setState(() {
@@ -228,7 +228,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       // Test 4) Auth reachability check.
       debugPrint('[SupabaseConnectivityTest] starting: Auth health endpoint');
       try {
-        final authHealthUrl = Uri.parse('${SupabaseConfig.supabaseUrl}/auth/v1/health');
+        final authHealthUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
         final authProbe = await httpProbe(authHealthUrl, method: 'GET');
         setState(() {
           _authSessionOk = authProbe.ok;
@@ -251,7 +251,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       // Test 4b) Browser fetch GET (explicit).
       debugPrint('[SupabaseConnectivityTest] starting: Browser fetch GET /auth/v1/health');
       try {
-        final healthUrl = Uri.parse('${SupabaseConfig.supabaseUrl}/auth/v1/health');
+        final healthUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
         final probe = await httpProbe(healthUrl, method: 'GET', headers: const {'accept': 'application/json'});
         setState(() {
           _browserFetchGetHealthOk = probe.ok;
@@ -276,7 +276,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       // Test 4c) OPTIONS preflight-style check for token endpoint.
       debugPrint('[SupabaseConnectivityTest] starting: Browser fetch OPTIONS /auth/v1/token (preflight)');
       try {
-        final tokenUrl = Uri.parse('${SupabaseConfig.supabaseUrl}/auth/v1/token');
+        final tokenUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/token');
         final probe = await httpProbe(
           tokenUrl,
           method: 'OPTIONS',
@@ -424,7 +424,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
 
     final safeProjectOrigin = () {
       try {
-        final parsed = Uri.parse(SupabaseConfig.supabaseUrl);
+        final parsed = Uri.parse(SupabaseConfig.resolvedSupabaseProjectUrl);
         if (!parsed.hasScheme || parsed.host.isEmpty) return 'Invalid URL';
         return '${parsed.scheme}://${parsed.host}';
       } catch (_) {
@@ -458,7 +458,7 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             title: 'Config sanity',
             rows: [
               _KV('Project origin', safeProjectOrigin),
-              _KV('URL has unexpected /rest/v1 suffix', SupabaseConfig.supabaseUrl.endsWith('/rest/v1') ? 'yes (misconfigured)' : 'no'),
+              _KV('URL has unexpected /rest/v1 suffix', SupabaseConfig.resolvedSupabaseProjectUrl.endsWith('/rest/v1') ? 'yes (misconfigured)' : 'no'),
               _KV('SupabaseConfig.isInitialized', SupabaseConfig.isInitialized.toString()),
               _KV('Supabase key kind (safe)', _keyKind ?? '—'),
               _KV('Key format detail (safe)', _keyFormatDetail ?? '—'),

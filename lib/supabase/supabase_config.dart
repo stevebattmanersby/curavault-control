@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:curavault_admin/admin/utils/formatters.dart';
 
 /// Supabase configuration for this project.
 ///
@@ -66,7 +67,58 @@ class SupabaseConfig {
   static String? _runtimeAnonKey;
   static String? _runtimeControlSiteBaseUrl;
 
+  static String? _runtimeUrlSource;
+  static String? _runtimeAnonSource;
+  static String? _runtimeBaseUrlSource;
+
+  static String? _runtimeJsonLoadError;
+
   static bool _runtimeJsonLoaded = false;
+
+  /// Resolved Supabase project URL (project root) used by this process.
+  ///
+  /// This must be the project root, not `/rest/v1`.
+  static String get resolvedSupabaseProjectUrl => _resolveSupabaseUrl();
+
+  /// Supabase host only (safe for UI).
+  static String get resolvedSupabaseHost {
+    final raw = resolvedSupabaseProjectUrl;
+    if (raw.trim().isEmpty) return '';
+    try {
+      return Uri.parse(raw).host;
+    } catch (_) {
+      return '';
+    }
+  }
+
+  static bool get resolvedAnonKeyPresent => _resolveAnonKey().trim().isNotEmpty;
+  static bool get resolvedControlSiteBaseUrlPresent => _resolveControlSiteBaseUrl().trim().isNotEmpty;
+  static String get resolvedControlSiteBaseUrl => _resolveControlSiteBaseUrl();
+
+  /// Whether runtime JSON was successfully loaded (even if it contained no usable values).
+  static bool get runtimeJsonLoadAttempted => _runtimeJsonLoaded;
+
+  /// A short error message if runtime JSON failed to load/parse.
+  static String? get runtimeJsonLoadError => _runtimeJsonLoadError;
+
+  /// Human-readable summary of where config was sourced from.
+  ///
+  /// Possible values: dartDefine / runtimeJson / debugQueryParams / missing.
+  static String get configSourceSummary {
+    final hasDartUrl = supabaseUrl.trim().isNotEmpty;
+    final hasDartAnon = anonKey.trim().isNotEmpty;
+    final hasDartBase = controlSiteBaseUrl.trim().isNotEmpty;
+    if (hasDartUrl || hasDartAnon || hasDartBase) return 'dartDefine';
+
+    // If any runtime value exists, attribute to its last-known source.
+    final sources = <String>{};
+    if ((_runtimeSupabaseUrl ?? '').trim().isNotEmpty) sources.add(_runtimeUrlSource ?? 'runtimeJson');
+    if ((_runtimeAnonKey ?? '').trim().isNotEmpty) sources.add(_runtimeAnonSource ?? 'runtimeJson');
+    if ((_runtimeControlSiteBaseUrl ?? '').trim().isNotEmpty) sources.add(_runtimeBaseUrlSource ?? 'runtimeJson');
+    if (sources.isEmpty) return 'missing';
+    if (sources.length == 1) return sources.first;
+    return sources.join('+');
+  }
 
   /// Whether `SupabaseConfig.initialize()` has successfully initialized the
   /// Supabase client in this process.
@@ -190,6 +242,7 @@ class SupabaseConfig {
 
       if (needsUrl && url != null && _looksLikeHttpsUrl(url) && _looksLikeSupabaseProjectUrl(url)) {
         _runtimeSupabaseUrl = url;
+        _runtimeUrlSource = 'runtimeJson';
       }
       // Accept public keys only:
       // - legacy anon keys (JWT)
@@ -200,12 +253,15 @@ class SupabaseConfig {
       // - secret keys (sb_secret_...)
       if (needsAnon && anon != null && anon.isNotEmpty && !anon.startsWith('<') && _looksLikePublicSupabaseKey(anon) && !_looksLikeServiceRoleJwt(anon)) {
         _runtimeAnonKey = anon;
+        _runtimeAnonSource = 'runtimeJson';
       }
       if (needsBase && base != null && _looksLikeHttpsUrl(base)) {
         _runtimeControlSiteBaseUrl = base;
+        _runtimeBaseUrlSource = 'runtimeJson';
       }
     } catch (e) {
       // Missing asset or invalid JSON should not crash the app.
+      _runtimeJsonLoadError = formatAdminSafeError(e);
       debugPrint('Failed to load assets/config/control_site_config.json: $e');
     }
   }
@@ -229,12 +285,15 @@ class SupabaseConfig {
 
       if (needsUrl && qpUrl != null && qpUrl.isNotEmpty && _looksLikeHttpsUrl(qpUrl) && _looksLikeSupabaseProjectUrl(qpUrl)) {
         _runtimeSupabaseUrl = qpUrl;
+        _runtimeUrlSource = 'debugQueryParams';
       }
       if (needsAnon && qpAnon != null && qpAnon.isNotEmpty && _looksLikePublicSupabaseKey(qpAnon) && !_looksLikeServiceRoleJwt(qpAnon)) {
         _runtimeAnonKey = qpAnon;
+        _runtimeAnonSource = 'debugQueryParams';
       }
       if (needsBase && qpBase != null && qpBase.isNotEmpty && _looksLikeHttpsUrl(qpBase)) {
         _runtimeControlSiteBaseUrl = qpBase;
+        _runtimeBaseUrlSource = 'debugQueryParams';
       }
     } catch (e) {
       debugPrint('Failed to read runtime Supabase config from URL query params: $e');

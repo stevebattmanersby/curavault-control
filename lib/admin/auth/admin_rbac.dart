@@ -59,6 +59,7 @@ class AdminRbac {
     AppRoutes.compliance: compliance,
     AppRoutes.systemHealth: ops,
     AppRoutes.websiteStatus: ops,
+    AppRoutes.productionReadiness: <AdminRole>{AdminRole.owner},
     AppRoutes.auditLogs: <AdminRole>{AdminRole.owner, AdminRole.compliance},
     AppRoutes.securityChecklist: <AdminRole>{AdminRole.owner, AdminRole.compliance, AdminRole.admin},
     AppRoutes.settings: <AdminRole>{AdminRole.owner},

@@ -949,6 +949,17 @@ class MockAdminRepository implements AdminRepository {
       failedPayments: failed.where((f) => query.plan == null ? true : f.plan == query.plan).toList(),
       revenueByPlan: revenueByPlan,
       revenueByCountry: grouped,
+      revenueCat: RevenueCatSyncHealth(
+        webhookEventRows: 120 + _rng.nextInt(40),
+        webhookFailedRows: 1 + _rng.nextInt(4),
+        webhookUnmappedAppUserIdRows: _rng.nextInt(3),
+        entitlementsRows: 800 + _rng.nextInt(150),
+        activeEntitlementsRows: 720 + _rng.nextInt(120),
+        latestWebhookReceivedAt: _now.subtract(Duration(minutes: 8 + _rng.nextInt(80))),
+        latestWebhookProcessedAt: _now.subtract(Duration(minutes: 7 + _rng.nextInt(80))),
+        latestWebhookProcessingResult: _rng.nextDouble() < 0.9 ? 'ok' : 'warning:unmapped_app_user_id',
+        storeBreakdown: const {'app_store': 420, 'play_store': 300},
+      ),
       generatedAt: _now,
     );
   }

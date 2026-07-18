@@ -87,6 +87,13 @@ class SupabaseAdminQueries {
     return c;
   }
 
+  DateTime? _tryParseDateTime(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is DateTime) return raw;
+    if (raw is String) return DateTime.tryParse(raw);
+    return null;
+  }
+
   Future<AdminUser> getCurrentAdminUser() async {
     final authUser = _client.auth.currentUser;
     if (authUser == null) throw StateError('Not signed in.');
@@ -960,38 +967,62 @@ class SupabaseAdminQueries {
               annualRecurringRevenueUsd: 0,
               averageRevenuePerUserUsd: 0,
               trialConversionRate: 0,
+              revenueMetricsInstrumented: false,
+              revenueMetricsNote: 'Revenue not instrumented yet.',
             ),
             subscriptions: const [],
             trials: const [],
             failedPayments: const [],
             revenueByPlan: const [],
             revenueByCountry: const [],
+            diagnostics: BillingDiagnostics(
+              summarySource: 'admin_get_billing_summary',
+              revenueSource: BillingRevenueSource.none,
+              sections: {
+                'Overview': const BillingSectionStatus(state: BillingSectionState.empty, message: 'No billing rows have been recorded yet.', requiredSource: 'user_entitlements'),
+                'Subscriptions': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Subscription detail view is not instrumented yet.', requiredSource: 'subscription_events + detail RPC'),
+                'Trials': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Trial detail view is not instrumented yet.', requiredSource: 'subscription_events + detail RPC'),
+                'Failed payments': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Failed payment detail view is not instrumented yet.', requiredSource: 'subscription_events + detail RPC'),
+                'Revenue by plan': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue reporting is not instrumented yet.', requiredSource: 'RevenueCat or Stripe revenue feed'),
+                'Revenue by country': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue reporting is not instrumented yet.', requiredSource: 'RevenueCat or Stripe revenue feed'),
+              },
+              dataSources: const [],
+            ),
             generatedAt: DateTime.now().toUtc(),
           );
         }
 
-        int sumUserCount(bool Function(Map<String, dynamic> r) pred) =>
-            rows.where(pred).fold<int>(
-                0, (a, r) => a + ((r['user_count'] as num?)?.toInt() ?? 0));
+        int sumBy(bool Function(Map<String, dynamic> r) pred, String field) =>
+            rows.where(pred).fold<int>(0, (a, r) => a + ((r[field] as num?)?.toInt() ?? 0));
 
+        int sumUserCount(bool Function(Map<String, dynamic> r) pred) =>
+            rows.where(pred).fold<int>(0, (a, r) => a + ((r['user_count'] as num?)?.toInt() ?? 0));
+
+        final freeUsers = sumUserCount((r) => (r['plan'] ?? '').toString().toLowerCase() == 'free');
+        final trialUsers = sumUserCount((r) => (r['billing_status'] ?? '').toString().toLowerCase() == 'trialing');
+        final cancelledUsers = sumUserCount((r) {
+          final s = (r['billing_status'] ?? '').toString().toLowerCase();
+          return s == 'canceled' || s == 'cancelled' || s == 'expired';
+        });
         final activePaidUsers = sumUserCount((r) {
           final plan = (r['plan'] ?? '').toString().toLowerCase();
           final status = (r['billing_status'] ?? '').toString().toLowerCase();
           return status == 'active' && plan != 'free';
         });
-        final freeUsers = sumUserCount(
-            (r) => (r['plan'] ?? '').toString().toLowerCase() == 'free');
-        final trialUsers = sumUserCount((r) =>
-            (r['billing_status'] ?? '').toString().toLowerCase() == 'trialing');
-        final cancelledUsers = sumUserCount((r) {
-          final s = (r['billing_status'] ?? '').toString().toLowerCase();
-          return s == 'canceled' || s == 'cancelled';
-        });
-        final failedPayments = sumUserCount((r) {
-          final s = (r['billing_status'] ?? '').toString().toLowerCase();
-          return s == 'past_due' || s == 'retrying';
-        });
+        // Prefer failed_payment_count (derived from subscription_events) over guessing from status.
+        final failedPayments = rows.fold<int>(0, (a, r) => a + ((r['failed_payment_count'] as num?)?.toInt() ?? 0));
 
+        BillingRevenueSource revenueSource = BillingRevenueSource.unknown;
+        final providers = rows
+            .map((r) => (r['subscription_provider'] ?? '').toString().trim().toLowerCase())
+            .where((p) => p.isNotEmpty)
+            .toSet();
+        if (providers.contains('revenuecat')) revenueSource = BillingRevenueSource.revenueCat;
+        else if (providers.contains('stripe')) revenueSource = BillingRevenueSource.stripe;
+        else if (providers.contains('manual') || providers.contains('manual/admin') || providers.contains('manual_admin')) revenueSource = BillingRevenueSource.manualEntitlement;
+        else if (providers.isEmpty || (providers.length == 1 && providers.first == 'unknown')) revenueSource = BillingRevenueSource.none;
+
+        final revenueCat = await _tryGetRevenueCatSyncHealth();
         return BillingSnapshot(
           query: query,
           overview: BillingOverviewMetrics(
@@ -1004,12 +1035,28 @@ class SupabaseAdminQueries {
             annualRecurringRevenueUsd: 0,
             averageRevenuePerUserUsd: 0,
             trialConversionRate: 0,
+            revenueMetricsInstrumented: false,
+            revenueMetricsNote: 'Revenue not instrumented yet (no RevenueCat/Stripe revenue feed in admin summary RPC).',
           ),
           subscriptions: const [],
           trials: const [],
           failedPayments: const [],
           revenueByPlan: const [],
           revenueByCountry: const [],
+          revenueCat: revenueCat,
+          diagnostics: BillingDiagnostics(
+            summarySource: 'admin_get_billing_summary',
+            revenueSource: revenueSource,
+            sections: {
+              'Overview': BillingSectionStatus(state: BillingSectionState.live, message: 'Counts are derived from admin_get_billing_summary aggregates (user_entitlements + subscription_events).', requiredSource: 'admin_get_billing_summary'),
+              'Subscriptions': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Subscriptions table needs a privacy-safe detail RPC/view (not deployed).', requiredSource: 'admin_get_subscriptions_detail (RPC/view)'),
+              'Trials': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Trials table needs a privacy-safe detail RPC/view (not deployed).', requiredSource: 'admin_get_trials_detail (RPC/view)'),
+              'Failed payments': BillingSectionStatus(state: failedPayments > 0 ? BillingSectionState.partial : BillingSectionState.notInstrumented, message: failedPayments > 0 ? 'Failed payment count is derived from subscription_events; row-level detail is not instrumented.' : 'Failed payment detail view is not instrumented yet.', requiredSource: 'subscription_events + detail RPC'),
+              'Revenue by plan': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue by plan is not instrumented yet.', requiredSource: 'RevenueCat/Stripe revenue rollups'),
+              'Revenue by country': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue by country is not instrumented yet.', requiredSource: 'RevenueCat/Stripe revenue rollups'),
+            },
+            dataSources: const [],
+          ),
           generatedAt: DateTime.now().toUtc(),
         );
       }
@@ -1022,13 +1069,140 @@ class SupabaseAdminQueries {
     try {
       final res = await _client.rpc('control_get_billing_snapshot',
           params: _billingQueryParams(query));
-      if (res is Map<String, dynamic>) return _parseBillingSnapshot(res, query);
+      if (res is Map<String, dynamic>) {
+        final snapshot = _parseBillingSnapshot(res, query);
+        final revenueCat = await _tryGetRevenueCatSyncHealth();
+        final revenueInstrumented = snapshot.overview.monthlyRecurringRevenueUsd > 0 || snapshot.overview.annualRecurringRevenueUsd > 0;
+        final overview = snapshot.overview.revenueMetricsInstrumented
+            ? snapshot.overview
+            : BillingOverviewMetrics(
+                activePaidUsers: snapshot.overview.activePaidUsers,
+                freeUsers: snapshot.overview.freeUsers,
+                trialUsers: snapshot.overview.trialUsers,
+                cancelledUsers: snapshot.overview.cancelledUsers,
+                failedPayments: snapshot.overview.failedPayments,
+                monthlyRecurringRevenueUsd: snapshot.overview.monthlyRecurringRevenueUsd,
+                annualRecurringRevenueUsd: snapshot.overview.annualRecurringRevenueUsd,
+                averageRevenuePerUserUsd: snapshot.overview.averageRevenuePerUserUsd,
+                trialConversionRate: snapshot.overview.trialConversionRate,
+                revenueMetricsInstrumented: revenueInstrumented,
+                revenueMetricsNote: revenueInstrumented ? null : 'Revenue not instrumented yet.',
+              );
+        return BillingSnapshot(
+          query: snapshot.query,
+          overview: overview,
+          subscriptions: snapshot.subscriptions,
+          trials: snapshot.trials,
+          failedPayments: snapshot.failedPayments,
+          revenueByPlan: snapshot.revenueByPlan,
+          revenueByCountry: snapshot.revenueByCountry,
+          revenueCat: revenueCat,
+          diagnostics: BillingDiagnostics(
+            summarySource: 'control_get_billing_snapshot',
+            revenueSource: revenueInstrumented ? BillingRevenueSource.unknown : BillingRevenueSource.none,
+            sections: {
+              'Overview': const BillingSectionStatus(state: BillingSectionState.partial, message: 'Legacy billing snapshot RPC is present, but detail tables are not wired in this build.', requiredSource: 'control_get_billing_snapshot'),
+              'Subscriptions': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Subscriptions table is not instrumented yet.', requiredSource: 'admin_get_subscriptions_detail (RPC/view)'),
+              'Trials': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Trials table is not instrumented yet.', requiredSource: 'admin_get_trials_detail (RPC/view)'),
+              'Failed payments': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Failed payments table is not instrumented yet.', requiredSource: 'subscription_events + detail RPC'),
+              'Revenue by plan': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue by plan is not instrumented yet.', requiredSource: 'RevenueCat/Stripe revenue rollups'),
+              'Revenue by country': const BillingSectionStatus(state: BillingSectionState.notInstrumented, message: 'Revenue by country is not instrumented yet.', requiredSource: 'RevenueCat/Stripe revenue rollups'),
+            },
+            dataSources: const [],
+          ),
+          generatedAt: snapshot.generatedAt,
+        );
+      }
     } catch (e) {
       debugPrint(
           'SupabaseAdminQueries.getBillingSummary legacy rpc failed: $e');
     }
     throw StateError(
         'Billing summary unavailable (no admin-safe RPC deployed).');
+  }
+
+  Future<RevenueCatSyncHealth?> _tryGetRevenueCatSyncHealth() async {
+    final c = _client;
+    try {
+      // Prefer the small, aggregate-only view if present.
+      final viewRow = await c.from('revenuecat_sync_health_v1').select().maybeSingle();
+
+      int readInt(String k) {
+        final v = viewRow?[k];
+        if (v is num) return v.toInt();
+        return int.tryParse((v ?? '0').toString()) ?? 0;
+      }
+
+      DateTime? readDt(String k) {
+        final v = viewRow?[k];
+        if (v == null) return null;
+        if (v is DateTime) return v;
+        return DateTime.tryParse(v.toString());
+      }
+
+      // Latest event processing result (safe string only).
+      String? latestResult;
+      DateTime? latestProcessed;
+      DateTime? latestReceived;
+      try {
+        final latest = await c
+            .from('revenuecat_webhook_events')
+            .select('created_at, processed_at, processing_result')
+            .order('created_at', ascending: false)
+            .limit(1)
+            .maybeSingle();
+        latestResult = latest?['processing_result']?.toString();
+        latestProcessed = _tryParseDateTime(latest?['processed_at']);
+        latestReceived = _tryParseDateTime(latest?['created_at']);
+      } catch (e) {
+        debugPrint('RevenueCatSyncHealth latest webhook fetch skipped: $e');
+      }
+
+      // Count entitlements rows + active subset (cap-based; small table expected).
+      int entitlements = 0;
+      int activeEntitlements = 0;
+      final storeBreakdown = <String, int>{};
+      try {
+        final dynamic rows = await c
+            .from('user_entitlements')
+            .select('user_id, provider, store, status, subscription_status')
+            .eq('provider', 'revenuecat')
+            .limit(5000);
+        if (rows is List) {
+          entitlements = rows.length;
+          for (final r in rows) {
+            if (r is! Map) continue;
+            final status = (r['status'] ?? r['subscription_status'] ?? '')
+                .toString()
+                .toLowerCase();
+            if (status == 'active') {
+              activeEntitlements++;
+              final store = (r['store'] ?? 'unknown').toString().trim();
+              storeBreakdown[store.isEmpty ? 'unknown' : store] =
+                  (storeBreakdown[store.isEmpty ? 'unknown' : store] ?? 0) + 1;
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('RevenueCatSyncHealth entitlements scan skipped: $e');
+      }
+
+      return RevenueCatSyncHealth(
+        webhookEventRows: readInt('webhook_event_rows'),
+        latestWebhookReceivedAt: latestReceived ?? readDt('latest_webhook_received_at'),
+        latestWebhookProcessedAt: latestProcessed ?? readDt('latest_webhook_processed_at'),
+        webhookFailedRows: readInt('webhook_failed_rows'),
+        webhookUnmappedAppUserIdRows: readInt('webhook_unmapped_app_user_id_rows'),
+        entitlementsRows: entitlements,
+        activeEntitlementsRows: activeEntitlements,
+        latestWebhookProcessingResult: latestResult,
+        storeBreakdown: storeBreakdown,
+      );
+    } catch (e) {
+      // View/table not deployed yet or blocked by RLS.
+      debugPrint('RevenueCatSyncHealth unavailable: $e');
+      return null;
+    }
   }
 
   Future<UsageAnalyticsSnapshot> getUsageAnalyticsSummary(
@@ -1644,6 +1818,7 @@ BillingSnapshot _parseBillingSnapshot(
       failedPayments: const [],
       revenueByPlan: const [],
       revenueByCountry: const [],
+      revenueCat: null,
       generatedAt: DateTime.now().toUtc(),
     );
 

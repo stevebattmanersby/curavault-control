@@ -184,8 +184,8 @@ class AdminAuthStore extends ChangeNotifier {
   static void debugPrintSupabaseBootstrapStatus({String source = 'AdminAuthStore'}) {
     if (!kDebugMode) return;
 
-    final hasUrlDefine = SupabaseConfig.supabaseUrl.isNotEmpty;
-    final hasAnonDefine = SupabaseConfig.anonKey.isNotEmpty;
+    final hasResolvedUrl = SupabaseConfig.resolvedSupabaseProjectUrl.trim().isNotEmpty;
+    final hasResolvedAnon = SupabaseConfig.resolvedAnonKeyPresent;
     final serviceRoleDetected = SupabaseConfig.serviceRoleDetected || supabaseServiceRoleKey.isNotEmpty;
 
     bool instanceClientAvailable;
@@ -200,8 +200,8 @@ class AdminAuthStore extends ChangeNotifier {
       '[$source] Supabase bootstrap status: '
       'clientAvailable=$instanceClientAvailable '
       'adminAuthStoreInitialized=$_initialized '
-      'hasSUPABASE_URL=$hasUrlDefine '
-      'hasSUPABASE_ANON_KEY=$hasAnonDefine '
+      'hasSUPABASE_URL=$hasResolvedUrl '
+      'hasSUPABASE_ANON_KEY=$hasResolvedAnon '
       'serviceRoleDetected=$serviceRoleDetected',
     );
   }
