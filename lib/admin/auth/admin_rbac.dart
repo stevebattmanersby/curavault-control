@@ -58,7 +58,7 @@ class AdminRbac {
     AppRoutes.billing: billing,
     AppRoutes.compliance: compliance,
     AppRoutes.systemHealth: ops,
-    AppRoutes.websiteStatus: ops,
+    AppRoutes.websiteStatus: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
     AppRoutes.productionReadiness: <AdminRole>{AdminRole.owner},
     AppRoutes.auditLogs: <AdminRole>{AdminRole.owner, AdminRole.compliance},
     AppRoutes.securityChecklist: <AdminRole>{AdminRole.owner, AdminRole.compliance, AdminRole.admin},
@@ -113,6 +113,8 @@ class AdminRbac {
         return role == AdminRole.owner || role == AdminRole.billing;
     }
   }
+
+  static bool canManageMarketingCms(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
 
   /// Admin actions exposed in the UI.
   ///

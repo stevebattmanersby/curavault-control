@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:curavault_admin/admin/data/admin_repository.dart';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/models/cms_models.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
 import 'package:curavault_admin/admin/utils/client_context.dart';
 import 'package:flutter/foundation.dart';
@@ -2201,4 +2202,63 @@ class MockAdminRepository implements AdminRepository {
     }
     return WebsiteCmsStatusSnapshot(rows: rows, generatedAt: t);
   }
+
+  @override
+  Future<MarketingCmsSnapshot> getMarketingCmsSnapshot() async {
+    final t = _now;
+    const categories = <MarketingBlogCategoryRow>[
+      MarketingBlogCategoryRow(id: 'mock-category', slug: 'product', name: 'Product', isActive: true),
+    ];
+    final pages = <MarketingPageRow>[
+      MarketingPageRow(
+        id: 'mock-home',
+        slug: 'home',
+        title: 'Home',
+        status: MarketingContentStatus.draft,
+        excerpt: 'Primary marketing homepage.',
+        seoTitle: 'CuraVault',
+        seoDescription: 'Health record organisation through AI.',
+        updatedAt: t,
+        createdAt: t.subtract(const Duration(days: 2)),
+      ),
+    ];
+    final sections = <MarketingPageSectionRow>[
+      MarketingPageSectionRow(
+        id: 'mock-home-hero',
+        pageId: 'mock-home',
+        sectionKey: 'hero',
+        sectionType: 'hero',
+        sortOrder: 0,
+        status: MarketingContentStatus.draft,
+        title: 'Health records, calmly organised',
+        body: 'Draft homepage hero copy.',
+        updatedAt: t,
+      ),
+    ];
+    final posts = <MarketingBlogPostRow>[
+      MarketingBlogPostRow(
+        id: 'mock-post',
+        slug: 'getting-started',
+        title: 'Getting started with CuraVault',
+        status: MarketingContentStatus.draft,
+        excerpt: 'A draft launch article.',
+        categoryId: 'mock-category',
+        updatedAt: t.subtract(const Duration(hours: 2)),
+        createdAt: t.subtract(const Duration(days: 3)),
+      ),
+    ];
+    return MarketingCmsSnapshot(pages: pages, sections: sections, blogPosts: posts, categories: categories, generatedAt: t);
+  }
+
+  @override
+  Future<void> saveMarketingPage({required MarketingPageDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingSection({required MarketingSectionDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft}) async {}
+
+  @override
+  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {}
 }
