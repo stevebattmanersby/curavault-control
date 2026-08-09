@@ -1,4 +1,5 @@
 import 'package:curavault_admin/services/usage_event_service.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -6,31 +7,31 @@ void main() {
     test('rejects unsafe keys', () {
       final props =
           UsageEventService.sanitizeProperties({'title': 'should-not-send'});
-      final ok = UsageEventService.validateSafeProperties(props);
-      expect(ok, isFalse);
+      expect(() => UsageEventService.validateSafeProperties(props),
+          throwsA(isA<FlutterError>()));
     });
 
     test('rejects prompt/response/query tokens (case-insensitive)', () {
       final props =
           UsageEventService.sanitizeProperties({'PromptText': 'nope'});
-      final ok = UsageEventService.validateSafeProperties(props);
-      expect(ok, isFalse);
+      expect(() => UsageEventService.validateSafeProperties(props),
+          throwsA(isA<FlutterError>()));
     });
 
     test('rejects unsafe nested keys', () {
       final props = UsageEventService.sanitizeProperties({
         'metadata': {'queryText': 'should-not-send'},
       });
-      final ok = UsageEventService.validateSafeProperties(props);
-      expect(ok, isFalse);
+      expect(() => UsageEventService.validateSafeProperties(props),
+          throwsA(isA<FlutterError>()));
     });
 
     test('rejects oversized nested strings', () {
       final props = UsageEventService.sanitizeProperties({
         'metadata': {'safe_label': List.filled(501, 'x').join()},
       });
-      final ok = UsageEventService.validateSafeProperties(props);
-      expect(ok, isFalse);
+      expect(() => UsageEventService.validateSafeProperties(props),
+          throwsA(isA<FlutterError>()));
     });
 
     test('allows safe primitives and drops complex values', () {

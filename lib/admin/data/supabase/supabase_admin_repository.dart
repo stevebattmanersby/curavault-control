@@ -2,6 +2,7 @@ import 'package:curavault_admin/admin/data/admin_repository.dart';
 import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/data/mock_data/mock_fallback_data.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/models/cms_models.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_queries.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
 import 'package:curavault_admin/admin/utils/client_context.dart';
@@ -970,9 +971,9 @@ class SupabaseAdminRepository implements AdminRepository {
     // As we restore CMS pages/modules, flip these to true and/or compute them
     // from route availability.
     const uiConnectedByTable = <String, bool>{
-      'marketing_pages': false,
-      'marketing_sections': false,
-      'marketing_blog_posts': false,
+      'marketing_pages': true,
+      'marketing_sections': true,
+      'marketing_blog_posts': true,
       'marketing_faqs': false,
       'marketing_pricing_plans': false,
       'marketing_testimonials': false,
@@ -1072,6 +1073,262 @@ class SupabaseAdminRepository implements AdminRepository {
       _setError(AdminDataSourceKey.websiteCms, queryName: 'marketing tables probe', error: e);
       rethrow;
     }
+  }
+
+  @override
+  Future<MarketingCmsSnapshot> getMarketingCmsSnapshot() async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+
+    try {
+      final pageRows = await client
+          .from('marketing_pages')
+          .select('id, slug, title, status, template, excerpt, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+          .order('updated_at', ascending: false);
+      final sectionRows = await client
+          .from('marketing_sections')
+          .select('id, page_id, section_key, section_type, sort_order, status, eyebrow, title, body, updated_at')
+          .order('sort_order', ascending: true);
+      final categoryRows = await client.from('marketing_blog_categories').select('id, slug, name, description, is_active').order('sort_order', ascending: true);
+      final postRows = await client
+          .from('marketing_blog_posts')
+          .select('id, slug, title, status, excerpt, category_id, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+          .order('updated_at', ascending: false);
+
+      final snapshot = MarketingCmsSnapshot(
+        pages: _asList(pageRows).map(_marketingPageFromRow).toList(),
+        sections: _asList(sectionRows).map(_marketingSectionFromRow).toList(),
+        categories: _asList(categoryRows).map(_marketingCategoryFromRow).toList(),
+        blogPosts: _asList(postRows).map(_marketingBlogPostFromRow).toList(),
+        generatedAt: DateTime.now().toUtc(),
+      );
+      _setLive(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot', rowCount: snapshot.pages.length + snapshot.sections.length + snapshot.blogPosts.length);
+      return snapshot;
+    } catch (e) {
+      debugPrint('SupabaseAdminRepository.getMarketingCmsSnapshot failed: $e');
+      if (_isMissingRelationError(e)) {
+        if (_mustFailClosed) _throwNotInstrumented(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot');
+        _setMock(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot');
+        return _fallback.getMarketingCmsSnapshot();
+      }
+      _setError(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot', error: e);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> saveMarketingPage({required MarketingPageDraft draft}) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+    final admin = await _admin();
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'slug': draft.slug,
+      'title': draft.title,
+      'status': draft.status.value,
+      'template': draft.template,
+      'excerpt': _blankToNull(draft.excerpt),
+      'seo_title': _blankToNull(draft.seoTitle),
+      'seo_description': _blankToNull(draft.seoDescription),
+      'scheduled_for': draft.scheduledFor?.toUtc().toIso8601String(),
+      'updated_by': admin.id,
+      if (!isUpdate) 'created_by': admin.id,
+    };
+    if (isUpdate) {
+      await client.from('marketing_pages').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_pages').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_page_updated' : 'cms_page_created',
+      resourceType: 'marketing_page',
+      resourceId: draft.id,
+      newValue: {'slug': draft.slug, 'status': draft.status.value},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingSection({required MarketingSectionDraft draft}) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+    final admin = await _admin();
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'page_id': draft.pageId,
+      'section_key': draft.sectionKey,
+      'section_type': draft.sectionType,
+      'sort_order': draft.sortOrder,
+      'status': draft.status.value,
+      'eyebrow': _blankToNull(draft.eyebrow),
+      'title': _blankToNull(draft.title),
+      'body': _blankToNull(draft.body),
+      'updated_by': admin.id,
+      if (!isUpdate) 'created_by': admin.id,
+    };
+    if (isUpdate) {
+      await client.from('marketing_sections').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_sections').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_section_updated' : 'cms_section_created',
+      resourceType: 'marketing_section',
+      resourceId: draft.id,
+      newValue: {'page_id': draft.pageId, 'section_key': draft.sectionKey, 'status': draft.status.value},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft}) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+    final admin = await _admin();
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'slug': draft.slug,
+      'title': draft.title,
+      'status': draft.status.value,
+      'excerpt': _blankToNull(draft.excerpt),
+      'body_markdown': _blankToNull(draft.bodyMarkdown),
+      'category_id': _blankToNull(draft.categoryId),
+      'seo_title': _blankToNull(draft.seoTitle),
+      'seo_description': _blankToNull(draft.seoDescription),
+      'scheduled_for': draft.scheduledFor?.toUtc().toIso8601String(),
+      'updated_by': admin.id,
+      if (!isUpdate) 'created_by': admin.id,
+    };
+    if (isUpdate) {
+      await client.from('marketing_blog_posts').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_blog_posts').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_blog_post_updated' : 'cms_blog_post_created',
+      resourceType: 'marketing_blog_post',
+      resourceId: draft.id,
+      newValue: {'slug': draft.slug, 'status': draft.status.value},
+    );
+  }
+
+  @override
+  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {
+    final client = _client;
+    if (client == null) throw StateError('Supabase not initialized/configured.');
+    final admin = await _admin();
+    final now = DateTime.now().toUtc().toIso8601String();
+    final table = switch (resourceType) {
+      'page' => 'marketing_pages',
+      'blog_post' => 'marketing_blog_posts',
+      _ => throw ArgumentError.value(resourceType, 'resourceType', 'Unsupported CMS resource type'),
+    };
+    final row = <String, dynamic>{
+      'status': status.value,
+      'updated_by': admin.id,
+      if (status == MarketingContentStatus.published) ...{
+        'published_at': now,
+        'published_by': admin.id,
+        'scheduled_for': null,
+        'archived_at': null,
+      },
+      if (status == MarketingContentStatus.draft) ...{
+        'scheduled_for': null,
+        'archived_at': null,
+      },
+      if (status == MarketingContentStatus.archived) 'archived_at': now,
+    };
+    await client.from(table).update(row).eq('id', resourceId);
+    await _auditCmsAction(
+      actionType: switch (status) {
+        MarketingContentStatus.published => 'cms_${resourceType}_published',
+        MarketingContentStatus.archived => 'cms_${resourceType}_archived',
+        MarketingContentStatus.draft => 'cms_${resourceType}_unpublished',
+        MarketingContentStatus.review => 'cms_${resourceType}_sent_to_review',
+        MarketingContentStatus.scheduled => 'cms_${resourceType}_scheduled',
+      },
+      resourceType: 'marketing_$resourceType',
+      resourceId: resourceId,
+      newValue: {'status': status.value},
+    );
+  }
+
+  List<Map<String, dynamic>> _asList(dynamic rows) {
+    if (rows is List) return rows.whereType<Map>().map((row) => Map<String, dynamic>.from(row)).toList();
+    return const [];
+  }
+
+  String? _blankToNull(String? value) {
+    final trimmed = value?.trim();
+    if (trimmed == null || trimmed.isEmpty) return null;
+    return trimmed;
+  }
+
+  DateTime _requiredDate(dynamic value) => _tryParseDateTime(value) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+
+  MarketingPageRow _marketingPageFromRow(Map<String, dynamic> row) => MarketingPageRow(
+        id: row['id']?.toString() ?? '',
+        slug: row['slug']?.toString() ?? '',
+        title: row['title']?.toString() ?? 'Untitled page',
+        status: MarketingContentStatus.parse(row['status']?.toString()),
+        template: row['template']?.toString(),
+        excerpt: row['excerpt']?.toString(),
+        seoTitle: row['seo_title']?.toString(),
+        seoDescription: row['seo_description']?.toString(),
+        publishedAt: _tryParseDateTime(row['published_at']),
+        scheduledFor: _tryParseDateTime(row['scheduled_for']),
+        updatedAt: _requiredDate(row['updated_at']),
+        createdAt: _requiredDate(row['created_at']),
+      );
+
+  MarketingPageSectionRow _marketingSectionFromRow(Map<String, dynamic> row) => MarketingPageSectionRow(
+        id: row['id']?.toString() ?? '',
+        pageId: row['page_id']?.toString() ?? '',
+        sectionKey: row['section_key']?.toString() ?? '',
+        sectionType: row['section_type']?.toString() ?? 'content',
+        sortOrder: row['sort_order'] is int ? row['sort_order'] as int : int.tryParse(row['sort_order']?.toString() ?? '') ?? 0,
+        status: MarketingContentStatus.parse(row['status']?.toString()),
+        eyebrow: row['eyebrow']?.toString(),
+        title: row['title']?.toString(),
+        body: row['body']?.toString(),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingBlogCategoryRow _marketingCategoryFromRow(Map<String, dynamic> row) => MarketingBlogCategoryRow(
+        id: row['id']?.toString() ?? '',
+        slug: row['slug']?.toString() ?? '',
+        name: row['name']?.toString() ?? 'Uncategorised',
+        description: row['description']?.toString(),
+        isActive: row['is_active'] == true,
+      );
+
+  MarketingBlogPostRow _marketingBlogPostFromRow(Map<String, dynamic> row) => MarketingBlogPostRow(
+        id: row['id']?.toString() ?? '',
+        slug: row['slug']?.toString() ?? '',
+        title: row['title']?.toString() ?? 'Untitled post',
+        status: MarketingContentStatus.parse(row['status']?.toString()),
+        excerpt: row['excerpt']?.toString(),
+        categoryId: row['category_id']?.toString(),
+        seoTitle: row['seo_title']?.toString(),
+        seoDescription: row['seo_description']?.toString(),
+        publishedAt: _tryParseDateTime(row['published_at']),
+        scheduledFor: _tryParseDateTime(row['scheduled_for']),
+        updatedAt: _requiredDate(row['updated_at']),
+        createdAt: _requiredDate(row['created_at']),
+      );
+
+  Future<void> _auditCmsAction({required String actionType, required String resourceType, String? resourceId, Map<String, dynamic>? newValue}) async {
+    final admin = await _admin();
+    await createAuditLog(
+      entry: AdminAuditLogCreate(
+        adminUserId: admin.id,
+        actionType: actionType,
+        result: 'success',
+        newValue: <String, dynamic>{
+          'resource_type': resourceType,
+          if (resourceId != null) 'resource_id': resourceId,
+          if (newValue != null) ...newValue,
+        },
+      ),
+    );
   }
 
   @override

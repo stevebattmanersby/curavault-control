@@ -5,6 +5,7 @@ import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/data/mock_admin_repository.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_repository.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/models/cms_models.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/utils/formatters.dart';
 import 'package:flutter/foundation.dart';
@@ -102,6 +103,7 @@ class AdminStore extends ChangeNotifier {
       _systemHealth = null;
       _securityChecklist = null;
       _websiteCms = null;
+      _marketingCms = null;
 
       for (final k in _dataSources.keys) {
         _dataSources[k] = const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
@@ -224,6 +226,9 @@ class AdminStore extends ChangeNotifier {
   // Website / CMS status
   WebsiteCmsStatusSnapshot? _websiteCms;
   WebsiteCmsStatusSnapshot? get websiteCms => _websiteCms;
+
+  MarketingCmsSnapshot? _marketingCms;
+  MarketingCmsSnapshot? get marketingCms => _marketingCms;
 
   bool _isWebsiteCmsLoading = false;
   bool get isWebsiteCmsLoading => _isWebsiteCmsLoading;
@@ -368,11 +373,13 @@ class AdminStore extends ChangeNotifier {
     notifyListeners();
     try {
       _websiteCms = await _repository.getWebsiteCmsStatus();
+      _marketingCms = await _repository.getMarketingCmsSnapshot();
       _syncDataSourceFromRepository(AdminDataSourceKey.websiteCms);
     } catch (e) {
       debugPrint('AdminStore.refreshWebsiteCmsStatus failed: $e');
       if (e is AdminNotInstrumentedException) {
         _websiteCms = null;
+        _marketingCms = null;
         _setDataSource(AdminDataSourceKey.websiteCms, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
       } else {
         _setDataSource(AdminDataSourceKey.websiteCms, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
@@ -381,6 +388,30 @@ class AdminStore extends ChangeNotifier {
       _isWebsiteCmsLoading = false;
       notifyListeners();
     }
+  }
+
+  Future<void> saveMarketingPage(MarketingPageDraft draft) async {
+    await _repository.saveMarketingPage(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingSection(MarketingSectionDraft draft) async {
+    await _repository.saveMarketingSection(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingBlogPost(MarketingBlogPostDraft draft) async {
+    await _repository.saveMarketingBlogPost(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {
+    await _repository.updateMarketingContentStatus(resourceType: resourceType, resourceId: resourceId, status: status);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
   }
 
   Future<void> setComplianceQuery(ComplianceQuery query) async {

@@ -1,4 +1,5 @@
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
+import 'package:curavault_admin/admin/data/models/cms_models.dart';
 
 abstract interface class AdminRepository {
   Future<AdminUser> getCurrentAdmin();
@@ -175,4 +176,19 @@ abstract interface class AdminRepository {
   /// - Must not return any page body / content_json.
   /// - Counts and timestamps only.
   Future<WebsiteCmsStatusSnapshot> getWebsiteCmsStatus();
+
+  /// Owner/admin marketing CMS management and read-only inspection data.
+  Future<MarketingCmsSnapshot> getMarketingCmsSnapshot();
+
+  Future<void> saveMarketingPage({required MarketingPageDraft draft});
+
+  Future<void> saveMarketingSection({required MarketingSectionDraft draft});
+
+  Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft});
+
+  Future<void> updateMarketingContentStatus({
+    required String resourceType,
+    required String resourceId,
+    required MarketingContentStatus status,
+  });
 }
