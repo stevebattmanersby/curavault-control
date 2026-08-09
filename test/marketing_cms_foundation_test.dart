@@ -76,6 +76,9 @@ void main() {
       expect(sql, contains('marketing_sections_public_published_read'));
       expect(sql, contains('marketing_blog_posts_public_published_read'));
       expect(sql, contains("visibility = 'public'"));
+      expect(sql, contains('p.og_image_asset_id = id'));
+      expect(sql, contains('where p.category_id = id'));
+      expect(sql, contains('where pt.tag_id = id'));
     });
 
     test('allows read-only admins to inspect but not write', () {

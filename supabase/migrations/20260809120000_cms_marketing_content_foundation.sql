@@ -263,7 +263,40 @@ create policy "marketing_media_public_published_read"
 on public.marketing_media_assets
 for select
 to anon, authenticated
-using (visibility = 'public');
+using (
+  visibility = 'public'
+  and (
+    exists (
+      select 1
+      from public.marketing_pages p
+      where p.og_image_asset_id = id
+        and p.status = 'published'
+        and p.archived_at is null
+        and p.published_at is not null
+        and p.published_at <= now()
+    )
+    or exists (
+      select 1
+      from public.marketing_sections s
+      join public.marketing_pages p on p.id = s.page_id
+      where s.media_asset_id = id
+        and s.status = 'published'
+        and p.status = 'published'
+        and p.archived_at is null
+        and p.published_at is not null
+        and p.published_at <= now()
+    )
+    or exists (
+      select 1
+      from public.marketing_blog_posts p
+      where p.og_image_asset_id = id
+        and p.status = 'published'
+        and p.archived_at is null
+        and p.published_at is not null
+        and p.published_at <= now()
+    )
+  )
+);
 
 drop policy if exists "marketing_pages_public_published_read" on public.marketing_pages;
 create policy "marketing_pages_public_published_read"
@@ -312,14 +345,36 @@ create policy "marketing_blog_categories_public_active_read"
 on public.marketing_blog_categories
 for select
 to anon, authenticated
-using (is_active = true);
+using (
+  is_active = true
+  and exists (
+    select 1
+    from public.marketing_blog_posts p
+    where p.category_id = id
+      and p.status = 'published'
+      and p.archived_at is null
+      and p.published_at is not null
+      and p.published_at <= now()
+  )
+);
 
 drop policy if exists "marketing_blog_tags_public_read" on public.marketing_blog_tags;
 create policy "marketing_blog_tags_public_read"
 on public.marketing_blog_tags
 for select
 to anon, authenticated
-using (true);
+using (
+  exists (
+    select 1
+    from public.marketing_blog_post_tags pt
+    join public.marketing_blog_posts p on p.id = pt.post_id
+    where pt.tag_id = id
+      and p.status = 'published'
+      and p.archived_at is null
+      and p.published_at is not null
+      and p.published_at <= now()
+  )
+);
 
 drop policy if exists "marketing_blog_post_tags_public_read" on public.marketing_blog_post_tags;
 create policy "marketing_blog_post_tags_public_read"
