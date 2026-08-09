@@ -269,7 +269,7 @@ using (
     exists (
       select 1
       from public.marketing_pages p
-      where p.og_image_asset_id = id
+      where p.og_image_asset_id = marketing_media_assets.id
         and p.status = 'published'
         and p.archived_at is null
         and p.published_at is not null
@@ -279,7 +279,7 @@ using (
       select 1
       from public.marketing_sections s
       join public.marketing_pages p on p.id = s.page_id
-      where s.media_asset_id = id
+      where s.media_asset_id = marketing_media_assets.id
         and s.status = 'published'
         and p.status = 'published'
         and p.archived_at is null
@@ -289,7 +289,7 @@ using (
     or exists (
       select 1
       from public.marketing_blog_posts p
-      where p.og_image_asset_id = id
+      where p.og_image_asset_id = marketing_media_assets.id
         and p.status = 'published'
         and p.archived_at is null
         and p.published_at is not null
@@ -350,7 +350,7 @@ using (
   and exists (
     select 1
     from public.marketing_blog_posts p
-    where p.category_id = id
+    where p.category_id = marketing_blog_categories.id
       and p.status = 'published'
       and p.archived_at is null
       and p.published_at is not null
@@ -368,7 +368,7 @@ using (
     select 1
     from public.marketing_blog_post_tags pt
     join public.marketing_blog_posts p on p.id = pt.post_id
-    where pt.tag_id = id
+    where pt.tag_id = marketing_blog_tags.id
       and p.status = 'published'
       and p.archived_at is null
       and p.published_at is not null
