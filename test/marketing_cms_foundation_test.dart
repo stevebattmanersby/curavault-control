@@ -172,4 +172,51 @@ void main() {
       expect(sql, isNot(contains("'in_review'")));
     });
   });
+
+  group('Marketing CMS control-site wiring', () {
+    late final String nav;
+    late final String sidebar;
+    late final String page;
+    late final String repository;
+
+    setUpAll(() {
+      nav = File('lib/nav.dart').readAsStringSync();
+      sidebar =
+          File('lib/admin/pages/widgets/admin_sidebar.dart').readAsStringSync();
+      page =
+          File('lib/admin/pages/website_cms_status_page.dart').readAsStringSync();
+      repository = File(
+        'lib/admin/data/supabase/supabase_admin_repository.dart',
+      ).readAsStringSync();
+    });
+
+    test('exposes restored Website admin sections as first-class routes', () {
+      for (final route in [
+        'websitePages',
+        'websiteBlog',
+        'websiteSeo',
+        'websitePricing',
+        'websiteFaqs',
+        'websiteTestimonials',
+        'websiteCampaigns',
+        'websiteAssets',
+      ]) {
+        expect(nav, contains(route));
+        expect(sidebar, contains(route));
+      }
+      expect(sidebar, contains("'Website'"));
+    });
+
+    test('keeps Stripe Prep archived from the control-site sidebar', () {
+      expect(sidebar, isNot(contains('Stripe Prep')));
+      expect(sidebar, isNot(contains('stripePrep')));
+    });
+
+    test('uses the canonical media assets table for Website assets', () {
+      expect(page, contains("WebsiteCmsSection.assets => 'marketing_media_assets'"));
+      expect(repository, contains("'marketing_media_assets'"));
+      expect(page, isNot(contains("WebsiteCmsSection.assets => 'marketing_assets'")));
+      expect(repository, isNot(contains("'marketing_assets'")));
+    });
+  });
 }

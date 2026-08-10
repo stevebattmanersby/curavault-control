@@ -58,6 +58,7 @@ class AdminSidebar extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.md),
                 children: [
+                  const _SidebarSection(label: 'Operations'),
                   if (allowed(AppRoutes.dashboard)) _SidebarItem(label: 'Dashboard', icon: Icons.dashboard_outlined, route: AppRoutes.dashboard, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.users)) _SidebarItem(label: 'Users', icon: Icons.people_alt_outlined, route: AppRoutes.users, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.support)) _SidebarItem(label: 'Support', icon: Icons.support_agent_outlined, route: AppRoutes.support, currentLocation: currentLocation, onNavigate: onNavigate),
@@ -68,11 +69,21 @@ class AdminSidebar extends StatelessWidget {
                   if (allowed(AppRoutes.billing)) _SidebarItem(label: 'Billing', icon: Icons.receipt_long_outlined, route: AppRoutes.billing, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.compliance)) _SidebarItem(label: 'Compliance', icon: Icons.verified_user_outlined, route: AppRoutes.compliance, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.systemHealth)) _SidebarItem(label: 'System Health', icon: Icons.monitor_heart_outlined, route: AppRoutes.systemHealth, currentLocation: currentLocation, onNavigate: onNavigate),
-                  if (allowed(AppRoutes.websiteStatus)) _SidebarItem(label: 'Website/CMS Status', icon: Icons.web_outlined, route: AppRoutes.websiteStatus, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.productionReadiness)) _SidebarItem(label: 'Production Readiness', icon: Icons.verified_outlined, route: AppRoutes.productionReadiness, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.auditLogs)) _SidebarItem(label: 'Audit Logs', icon: Icons.fact_check_outlined, route: AppRoutes.auditLogs, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.securityChecklist)) _SidebarItem(label: 'Security Checklist', icon: Icons.security_outlined, route: AppRoutes.securityChecklist, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.settings)) _SidebarItem(label: 'Settings', icon: Icons.settings_outlined, route: AppRoutes.settings, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.adminDataTest)) _SidebarItem(label: 'Admin Data Test', icon: Icons.science_outlined, route: AppRoutes.adminDataTest, currentLocation: currentLocation, onNavigate: onNavigate),
+                  const SizedBox(height: AppSpacing.md),
+                  const _SidebarSection(label: 'Website'),
+                  if (allowed(AppRoutes.websitePages)) _SidebarItem(label: 'Pages', icon: Icons.web_asset_outlined, route: AppRoutes.websitePages, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteBlog)) _SidebarItem(label: 'Blog', icon: Icons.article_outlined, route: AppRoutes.websiteBlog, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteSeo)) _SidebarItem(label: 'SEO', icon: Icons.manage_search_outlined, route: AppRoutes.websiteSeo, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websitePricing)) _SidebarItem(label: 'Pricing', icon: Icons.sell_outlined, route: AppRoutes.websitePricing, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteFaqs)) _SidebarItem(label: 'FAQs', icon: Icons.quiz_outlined, route: AppRoutes.websiteFaqs, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteTestimonials)) _SidebarItem(label: 'Testimonials', icon: Icons.reviews_outlined, route: AppRoutes.websiteTestimonials, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteCampaigns)) _SidebarItem(label: 'Campaigns', icon: Icons.campaign_outlined, route: AppRoutes.websiteCampaigns, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.websiteAssets)) _SidebarItem(label: 'Assets', icon: Icons.photo_library_outlined, route: AppRoutes.websiteAssets, currentLocation: currentLocation, onNavigate: onNavigate),
                 ],
               ),
             ),
@@ -122,6 +133,27 @@ class AdminSidebar extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SidebarSection extends StatelessWidget {
+  const _SidebarSection({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.xs),
+      child: Text(
+        label.toUpperCase(),
+        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.1,
+            ),
       ),
     );
   }

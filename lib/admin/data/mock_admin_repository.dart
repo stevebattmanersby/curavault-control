@@ -2171,14 +2171,15 @@ class MockAdminRepository implements AdminRepository {
     await Future<void>.delayed(const Duration(milliseconds: 120));
     final t = _now;
     const tables = <String, bool>{
-      'marketing_pages': false,
-      'marketing_sections': false,
-      'marketing_blog_posts': false,
-      'marketing_faqs': false,
-      'marketing_pricing_plans': false,
-      'marketing_testimonials': false,
-      'marketing_campaigns': false,
-      'marketing_seo_settings': false,
+      'marketing_pages': true,
+      'marketing_sections': true,
+      'marketing_blog_posts': true,
+      'marketing_faqs': true,
+      'marketing_pricing_plans': true,
+      'marketing_testimonials': true,
+      'marketing_campaigns': true,
+      'marketing_seo_settings': true,
+      'marketing_media_assets': true,
     };
 
     final rows = <WebsiteCmsTableStatusRow>[];

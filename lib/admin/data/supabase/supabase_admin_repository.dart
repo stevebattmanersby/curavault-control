@@ -967,18 +967,16 @@ class SupabaseAdminRepository implements AdminRepository {
     final client = _client;
     if (client == null) throw StateError('Supabase not initialized/configured.');
 
-    // NOTE: "UI connected" is intentionally derived from the Flutter repo wiring.
-    // As we restore CMS pages/modules, flip these to true and/or compute them
-    // from route availability.
     const uiConnectedByTable = <String, bool>{
       'marketing_pages': true,
       'marketing_sections': true,
       'marketing_blog_posts': true,
-      'marketing_faqs': false,
-      'marketing_pricing_plans': false,
-      'marketing_testimonials': false,
-      'marketing_campaigns': false,
-      'marketing_seo_settings': false,
+      'marketing_faqs': true,
+      'marketing_pricing_plans': true,
+      'marketing_testimonials': true,
+      'marketing_campaigns': true,
+      'marketing_seo_settings': true,
+      'marketing_media_assets': true,
     };
 
     const tables = <String>[
@@ -990,6 +988,7 @@ class SupabaseAdminRepository implements AdminRepository {
       'marketing_testimonials',
       'marketing_campaigns',
       'marketing_seo_settings',
+      'marketing_media_assets',
     ];
 
     try {
