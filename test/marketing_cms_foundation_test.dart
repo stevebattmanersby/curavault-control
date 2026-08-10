@@ -45,14 +45,37 @@ void main() {
 
   group('Marketing CMS migration', () {
     late final String sql;
+    late final String migrationPath;
 
     setUpAll(() {
-      sql = File(
-              'supabase/migrations/20260809120000_cms_marketing_content_foundation.sql')
-          .readAsStringSync();
+      final migrations = Directory('supabase/migrations')
+          .listSync()
+          .whereType<File>()
+          .where((file) =>
+              file.path.endsWith('_reconcile_existing_marketing_cms.sql'))
+          .toList();
+      expect(migrations, hasLength(1));
+      migrationPath = migrations.single.path;
+      sql = migrations.single.readAsStringSync();
     });
 
-    test('creates the core marketing content tables', () {
+    test('replaces the unapplied foundation migration with a live delta', () {
+      expect(
+        File(
+          'supabase/migrations/20260809120000_cms_marketing_content_foundation.sql',
+        ).existsSync(),
+        isFalse,
+      );
+      expect(migrationPath, contains('reconcile_existing_marketing_cms'));
+      expect(
+        sql,
+        contains(
+          'Reconcile the Control Site marketing CMS with the existing live CMS backend.',
+        ),
+      );
+    });
+
+    test('creates or extends the core marketing content tables', () {
       for (final table in [
         'marketing_pages',
         'marketing_sections',
@@ -67,17 +90,26 @@ void main() {
         expect(sql,
             contains('alter table public.$table enable row level security'));
       }
+      expect(sql, contains('alter table public.marketing_pages'));
+      expect(sql, contains('add column if not exists template'));
+      expect(sql, contains('add column if not exists scheduled_for'));
+      expect(sql, contains('alter table public.marketing_sections'));
+      expect(sql, contains('add column if not exists eyebrow'));
+      expect(sql, contains('alter table public.marketing_blog_posts'));
+      expect(sql, contains('add column if not exists category_id'));
     });
 
     test('keeps public reads limited to published or public assets', () {
       expect(sql, contains('marketing_pages_public_published_read'));
       expect(sql, contains("status = 'published'"));
       expect(sql, contains('published_at <= now()'));
+      expect(sql, contains('archived_at is null'));
       expect(sql, contains('marketing_sections_public_published_read'));
       expect(sql, contains('marketing_blog_posts_public_published_read'));
       expect(sql, contains("visibility = 'public'"));
       expect(sql, contains('p.og_image_asset_id = marketing_media_assets.id'));
-      expect(sql, contains('where p.category_id = marketing_blog_categories.id'));
+      expect(
+          sql, contains('where p.category_id = marketing_blog_categories.id'));
       expect(sql, contains('where pt.tag_id = marketing_blog_tags.id'));
     });
 
@@ -86,8 +118,36 @@ void main() {
       expect(sql, contains("'owner', 'admin'"));
       expect(
           sql,
+          contains(
+              'drop policy if exists "marketing_pages_write_active_admin"'));
+      expect(
+          sql,
+          contains(
+              'drop policy if exists "marketing_sections_write_active_admin"'));
+      expect(
+          sql,
+          contains(
+              'drop policy if exists "marketing_blog_posts_write_active_admin"'));
+      expect(
+          sql,
           isNot(contains(
               "current_admin_role() in ('owner', 'admin', 'read_only')\n) with check")));
+    });
+
+    test('reviews Data API grants separately from RLS', () {
+      expect(
+          sql,
+          contains(
+              'revoke all on public.marketing_pages from anon, authenticated'));
+      expect(
+          sql,
+          contains(
+              'grant select on public.marketing_pages to anon, authenticated'));
+      expect(
+          sql,
+          contains(
+              'grant insert, update, delete on public.marketing_pages to authenticated'));
+      expect(sql, isNot(contains('auth.role()')));
     });
   });
 }
