@@ -146,3 +146,92 @@ Production remains unchanged. Before any production operation is considered, val
 - Flutter tests and analysis pass.
 
 Normal `db push` should not be used until the linked migration-list comparison confirms that the restored canonical history aligns and only the CMS delta remains pending.
+
+## Shared Consumer Baseline Recovery
+
+The Control Site migration chain depends on shared consumer schema that existed
+in the linked Supabase project before the canonical Control Site migration
+history begins. A clean local replay failed because `20260702133740` updates
+`public.user_entitlements` unconditionally after guarded `alter table if exists`
+statements.
+
+The following genuine consumer migrations were recovered into this repository
+byte-for-byte so a clean local replay has the same shared baseline dependencies
+as the linked project:
+
+| Version | Source | Provenance | SHA-256 |
+| --- | --- | --- | --- |
+| `20260317` | `curavult-app/lib/supabase/migrations/20260317_0001_user_entitlements.sql` | Commit `cb5bc318ec7c6724584a8ddbab5a70558653bd95` (`V3 . Phase 4`) | `1f3489c0a1ec0942055a5929b6589ba114a1fa93fc56600d221db54bbad20606` |
+| `20260329` | `curavult-app/lib/supabase/migrations/20260329_0002_core_health_tables.sql` | Current consumer repository baseline | `905c6cd8ba3e4be9ffe009754617f57f9b9eddf5199cf283b06f01fa0ed8a371` |
+| `20260504110000` | Historical `curavult-app/supabase/migrations/20260504110000_billing_foundation.sql` | Git blob `ec3e81983a15cf84e9651bb9cf891cf75629aebc` from commit `de49d102c8792e0ab968e59a8b61053654f72a0b` | `ac3ff3c4f5dc4634ee4ac3a54cdd1b10c4dcf13740381c2a625faec681297bec` |
+
+The baseline files are intentionally not rewritten, combined, or normalized.
+They preserve their original filenames so the missing shared history is visible.
+
+Read-only production metadata inspection showed the baseline-created shared
+tables exist in the linked project or have been deliberately superseded by later
+migrations:
+
+- `public.user_entitlements` exists and is evolved to the current
+  `starter | plus | family` plan vocabulary.
+- `public.user_profiles`, `public.family_members`, `public.medical_records`,
+  `public.medications`, `public.insurance_cards`, `public.vaccinations`,
+  `public.appointments`, `public.blood_pressure_readings`, and
+  `public.medical_documents` exist with RLS enabled.
+- `public.subscription_events` exists and is now server-only after the later
+  `subscription_events_server_only` hardening.
+- The historical `stripe_customers` table from the billing foundation is no
+  longer present in the linked project and is treated as superseded by the
+  current Stripe/RevenueCat entitlement path rather than as an active runtime
+  dependency.
+
+Production migration history has not been repaired. The following baseline
+versions remain local-only until an explicit production history repair is
+approved:
+
+- `20260317`
+- `20260329`
+- `20260504110000`
+
+## Entitlement Parity Delta
+
+The disposable replay proved two `public.user_entitlements` objects existed in
+production but were not recreated by the recovered local chain:
+
+- `user_entitlements_updated_at_idx`
+- `user_entitlements_limits_check`
+
+The live definitions inspected read-only from `curavault-clean` are:
+
+```sql
+CREATE INDEX user_entitlements_updated_at_idx
+ON public.user_entitlements USING btree (updated_at);
+```
+
+```sql
+CHECK (((max_storage_mb >= 0) AND (max_family_members >= 0)))
+```
+
+The check constraint is validated in production. The index is valid, ready, and
+has no predicate.
+
+The local-only parity migration
+`20260810180047_entitlement_parity_baseline_objects.sql` recreates only these
+two objects. It is forward-only and safe for production replay because it:
+
+- creates the index only when missing;
+- creates the constraint only when missing;
+- validates an existing matching constraint when needed;
+- raises instead of silently accepting an object with the same name but a
+  different definition;
+- does not insert, update, delete, or backfill entitlement rows.
+
+After this reconciliation, a normal `db push` is still not appropriate until the
+linked migration history is repaired or otherwise explicitly reconciled. The
+expected local-only versions before that repair are:
+
+- `20260317`
+- `20260329`
+- `20260504110000`
+- `20260810003557`
+- `20260810180047`
