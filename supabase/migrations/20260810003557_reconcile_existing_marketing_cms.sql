@@ -203,35 +203,23 @@ alter table public.marketing_blog_posts
 
 do $$
 begin
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'marketing_pages_status_check'
-      and conrelid = 'public.marketing_pages'::regclass
-  ) then
-    alter table public.marketing_pages
-      add constraint marketing_pages_status_check
-      check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
-  end if;
+  alter table public.marketing_pages
+    drop constraint if exists marketing_pages_status_check;
+  alter table public.marketing_pages
+    add constraint marketing_pages_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
 
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'marketing_sections_status_check'
-      and conrelid = 'public.marketing_sections'::regclass
-  ) then
-    alter table public.marketing_sections
-      add constraint marketing_sections_status_check
-      check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
-  end if;
+  alter table public.marketing_sections
+    drop constraint if exists marketing_sections_status_check;
+  alter table public.marketing_sections
+    add constraint marketing_sections_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
 
-  if not exists (
-    select 1 from pg_constraint
-    where conname = 'marketing_blog_posts_status_check'
-      and conrelid = 'public.marketing_blog_posts'::regclass
-  ) then
-    alter table public.marketing_blog_posts
-      add constraint marketing_blog_posts_status_check
-      check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
-  end if;
+  alter table public.marketing_blog_posts
+    drop constraint if exists marketing_blog_posts_status_check;
+  alter table public.marketing_blog_posts
+    add constraint marketing_blog_posts_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
 
   if not exists (
     select 1 from pg_constraint
