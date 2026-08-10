@@ -1003,7 +1003,7 @@ class _BlogEditorSheetState extends State<_BlogEditorSheet> {
                 onChanged: (value) => setState(() => _status = value)),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String?>(
-              initialValue: _categoryId,
+              value: _categoryId,
               decoration: const InputDecoration(labelText: 'Category'),
               items: [
                 const DropdownMenuItem<String?>(
@@ -1171,7 +1171,7 @@ class _StatusField extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: DropdownButtonFormField<MarketingContentStatus>(
-        initialValue: value,
+        value: value,
         decoration: const InputDecoration(labelText: 'Status'),
         items: [
           for (final status in MarketingContentStatus.values)
