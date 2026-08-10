@@ -149,5 +149,27 @@ void main() {
               'grant insert, update, delete on public.marketing_pages to authenticated'));
       expect(sql, isNot(contains('auth.role()')));
     });
+
+    test('broadens existing workflow status constraints deliberately', () {
+      for (final constraint in [
+        'marketing_pages_status_check',
+        'marketing_sections_status_check',
+        'marketing_blog_posts_status_check',
+      ]) {
+        expect(sql, contains('drop constraint if exists $constraint'));
+        expect(sql, contains('add constraint $constraint'));
+      }
+
+      for (final status in MarketingContentStatus.values) {
+        expect(
+          sql,
+          contains("'${status.value}'"),
+          reason: '${status.value} must be accepted by the CMS status checks',
+        );
+      }
+
+      expect(sql, isNot(contains("'deleted'")));
+      expect(sql, isNot(contains("'in_review'")));
+    });
   });
 }
