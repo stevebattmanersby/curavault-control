@@ -25,6 +25,17 @@ void main() {
       expect(task.riskLevel, DevelopmentRiskLevel.high);
       expect(task.status, DevelopmentTaskStatus.awaitingApproval);
     });
+
+    test('keeps evidence records separate from task prompt records', () {
+      final item = DevelopmentEvidenceItem(
+          id: 'evidence-id',
+          kind: 'Review',
+          label: 'security',
+          summary: 'Approved',
+          recordedAt: DateTime.utc(2026, 8, 30));
+      expect(item.kind, 'Review');
+      expect(item.summary, 'Approved');
+    });
   });
 
   group('Development control permissions', () {
@@ -50,7 +61,10 @@ void main() {
     test('keeps support and billing outside development control', () {
       expect(rbac, contains('canViewDevelopmentControl'));
       expect(rbac, contains('canCreateDevelopmentTasks'));
-      expect(rbac, contains('AppRoutes.developmentOverview: <AdminRole>{AdminRole.owner, AdminRole.admin}'));
+      expect(
+          rbac,
+          contains(
+              'AppRoutes.developmentOverview: <AdminRole>{AdminRole.owner, AdminRole.admin}'));
     });
 
     test('allows only compliance security-review submission', () {
@@ -65,7 +79,8 @@ void main() {
         'developmentTasks',
         'developmentPrompts',
         'developmentReviews',
-        'developmentReleases'
+        'developmentReleases',
+        'developmentEvidence'
       ]) {
         expect(nav, contains(route));
         expect(sidebar, contains(route));
@@ -110,11 +125,31 @@ void main() {
       expect(sql, contains('revoke all on table public.%I from anon'));
       expect(sql, contains("public.current_admin_role() <> 'owner'"));
       expect(sql, contains('owner approval required'));
+      expect(sql, contains('admin_development_task_approval_state_check'));
+      expect(
+          sql,
+          contains(
+              "status <> 'approved' or (human_approval_status = 'approved'"));
+      expect(sql, contains("status not in ('approved', 'completed')"));
+      expect(sql, contains('approval attribution is server controlled'));
+      expect(sql, contains('recorded approval attribution is immutable'));
       expect(sql, contains('admin_audit_development_mutation'));
       expect(
           sql,
           isNot(contains(
               'grant select on table public.admin_development_tasks to anon')));
+    });
+
+    test('has an evidence-only store query without task request fields', () {
+      final store = File('lib/admin/state/development_control_store.dart')
+          .readAsStringSync();
+      final evidenceMethod =
+          store.substring(store.indexOf('Future<void> loadEvidence()'));
+      expect(store, contains('Future<void> loadEvidence()'));
+      expect(evidenceMethod, contains('admin_development_task_events'));
+      expect(evidenceMethod, contains('admin_development_reviews'));
+      expect(evidenceMethod, isNot(contains('original_product_request')));
+      expect(evidenceMethod, isNot(contains('execution_prompt')));
     });
 
     test('does not add execution, credential, or patient-data fields', () {

@@ -148,3 +148,17 @@ class DevelopmentPromptTemplate {
         version: (map['version'] as num?)?.toInt() ?? 1,
       );
 }
+
+class DevelopmentEvidenceItem {
+  const DevelopmentEvidenceItem(
+      {required this.id,
+      required this.kind,
+      required this.label,
+      required this.summary,
+      required this.recordedAt});
+  final String id;
+  final String kind;
+  final String label;
+  final String? summary;
+  final DateTime recordedAt;
+}

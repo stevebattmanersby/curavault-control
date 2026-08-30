@@ -10,11 +10,11 @@ The Development Control Plane records CuraVault engineering work as administrati
 
 ## Permissions and RLS
 
-The existing `admin_users` allow-list remains authoritative. Owner and Admin can read or manage task prompts; only Owner can approve high-risk work. Compliance can submit a security review and inspect review/release evidence. Read-only can inspect that evidence only. Support and Billing have no Development section access. Every table has RLS, anon has no access, and the browser receives no service-role capability.
+The existing `admin_users` allow-list remains authoritative. Owner and Admin can read or manage task prompts; only Owner can grant formal approval. Compliance can submit a security review and inspect the evidence-only view: reviews, checks, releases, and event metadata. Read-only can inspect that evidence only. Support and Billing have no Development section access. Every table has RLS, anon has no access, and the browser receives no service-role capability.
 
 ## Audit and lifecycle
 
-Database audit triggers write actor, entity, action, and constrained state metadata to `admin_audit_log`; free-text requests and prompts are deliberately excluded. Task status is a workflow record only. High and critical risk work cannot self-approve: Owner approval is recorded separately from task status.
+Database audit triggers write actor, entity, action, and constrained state metadata to `admin_audit_log`; free-text requests and prompts are deliberately excluded. Task status is a workflow record only. `approved` always requires a recorded Owner approval; high/critical work also cannot become `completed` without that approval. Approval attribution is written by the database and becomes immutable.
 
 ## Phase 1 limits
 

@@ -136,6 +136,85 @@ class DevelopmentTaskDetailPage extends StatelessWidget {
   }
 }
 
+class DevelopmentEvidencePage extends StatefulWidget {
+  const DevelopmentEvidencePage({super.key});
+  @override
+  State<DevelopmentEvidencePage> createState() =>
+      _DevelopmentEvidencePageState();
+}
+
+class _DevelopmentEvidencePageState extends State<DevelopmentEvidencePage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<DevelopmentControlStore>().loadEvidence());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<DevelopmentControlStore>();
+    return AdminPageScaffold(
+      title: 'Development Evidence',
+      subtitle:
+          'Reviews, checks, releases, and event metadata only. Task requests and prompts are excluded.',
+      actions: [
+        IconButton(
+            onPressed: () =>
+                context.read<DevelopmentControlStore>().loadEvidence(),
+            tooltip: 'Refresh',
+            icon: const Icon(Icons.refresh))
+      ],
+      child: store.loading
+          ? const Center(child: CircularProgressIndicator())
+          : store.error != null
+              ? _EmptyState(message: store.error!)
+              : store.evidence.isEmpty
+                  ? const _EmptyState(
+                      message: 'No development evidence has been recorded yet.')
+                  : ListView.separated(
+                      itemCount: store.evidence.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final item = store.evidence[index];
+                        return AdminCard(
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                              Text(item.kind,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary)),
+                              Text(item.label,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .titleMedium
+                                      ?.copyWith(fontWeight: FontWeight.w700)),
+                              if (item.summary?.isNotEmpty ?? false)
+                                Padding(
+                                    padding: const EdgeInsets.only(top: 4),
+                                    child: Text(item.summary!)),
+                              Padding(
+                                  padding: const EdgeInsets.only(top: 6),
+                                  child: Text(item.recordedAt.toIso8601String(),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelSmall
+                                          ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurfaceVariant)))
+                            ]));
+                      }),
+    );
+  }
+}
+
 class _Overview extends StatelessWidget {
   const _Overview({required this.tasks});
   final List<DevelopmentTask> tasks;

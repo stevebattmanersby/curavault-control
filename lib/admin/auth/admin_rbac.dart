@@ -63,6 +63,7 @@ class AdminRbac {
     AppRoutes.developmentPrompts: <AdminRole>{AdminRole.owner, AdminRole.admin},
     AppRoutes.developmentReviews: <AdminRole>{AdminRole.owner, AdminRole.admin},
     AppRoutes.developmentReleases: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentEvidence: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.compliance, AdminRole.readOnly},
     AppRoutes.websiteStatus: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
     AppRoutes.websitePages: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
     AppRoutes.websiteBlog: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},

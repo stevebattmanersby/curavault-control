@@ -205,6 +205,7 @@ class AppRouter {
             GoRoute(path: AppRoutes.developmentPrompts, name: 'developmentPrompts', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.prompts))),
             GoRoute(path: AppRoutes.developmentReviews, name: 'developmentReviews', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.reviews))),
             GoRoute(path: AppRoutes.developmentReleases, name: 'developmentReleases', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.releases))),
+            GoRoute(path: AppRoutes.developmentEvidence, name: 'developmentEvidence', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentEvidencePage())),
             GoRoute(path: AppRoutes.developmentTasks, name: 'developmentTasks', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.tasks)), routes: [
               GoRoute(path: ':taskId', name: 'developmentTaskDetail', pageBuilder: (context, state) => NoTransitionPage(child: DevelopmentTaskDetailPage(taskId: state.pathParameters['taskId'] ?? ''))),
             ]),
@@ -253,6 +254,7 @@ class AppRoutes {
   static const String developmentPrompts = '/development/prompts';
   static const String developmentReviews = '/development/reviews';
   static const String developmentReleases = '/development/releases';
+  static const String developmentEvidence = '/development/evidence';
   static const String websiteStatus = '/website/status';
   static const String websitePages = '/website/pages';
   static const String websiteBlog = '/website/blog';

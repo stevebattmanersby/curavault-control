@@ -7,11 +7,13 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class DevelopmentControlStore extends ChangeNotifier {
   List<DevelopmentTask> _tasks = const [];
   List<DevelopmentPromptTemplate> _prompts = const [];
+  List<DevelopmentEvidenceItem> _evidence = const [];
   bool _loading = false;
   String? _error;
 
   List<DevelopmentTask> get tasks => _tasks;
   List<DevelopmentPromptTemplate> get prompts => _prompts;
+  List<DevelopmentEvidenceItem> get evidence => _evidence;
   bool get loading => _loading;
   String? get error => _error;
 
@@ -95,5 +97,64 @@ class DevelopmentControlStore extends ChangeNotifier {
         .from('admin_development_prompt_templates')
         .update({'is_active': false}).eq('id', prompt.id);
     await load(includePrompts: true);
+  }
+
+  /// This deliberately queries evidence tables, never task requests/prompts.
+  Future<void> loadEvidence() async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final results = await Future.wait<dynamic>([
+        _client
+            .from('admin_development_task_events')
+            .select('id,event_type,summary,created_at')
+            .order('created_at', ascending: false)
+            .limit(100),
+        _client
+            .from('admin_development_reviews')
+            .select('id,review_type,summary,created_at')
+            .order('created_at', ascending: false)
+            .limit(100),
+        _client
+            .from('admin_development_checks')
+            .select('id,name,summary,recorded_at')
+            .order('recorded_at', ascending: false)
+            .limit(100),
+        _client
+            .from('admin_releases')
+            .select('id,release_name,notes,created_at')
+            .order('created_at', ascending: false)
+            .limit(100),
+      ]);
+      DateTime at(Map<String, dynamic> row, String field) =>
+          DateTime.tryParse(row[field] as String? ?? '')?.toLocal() ??
+          DateTime.fromMillisecondsSinceEpoch(0);
+      List<DevelopmentEvidenceItem> rows(List raw, String kind,
+              String labelField, String timeField, String summaryField) =>
+          raw.map((item) {
+            final row = Map<String, dynamic>.from(item as Map);
+            return DevelopmentEvidenceItem(
+                id: row['id'] as String,
+                kind: kind,
+                label: row[labelField] as String? ?? kind,
+                summary: row[summaryField] as String?,
+                recordedAt: at(row, timeField));
+          }).toList();
+      _evidence = [
+        ...rows(
+            results[0] as List, 'Event', 'event_type', 'created_at', 'summary'),
+        ...rows(results[1] as List, 'Review', 'review_type', 'created_at',
+            'summary'),
+        ...rows(results[2] as List, 'Check', 'name', 'recorded_at', 'summary'),
+        ...rows(results[3] as List, 'Release', 'release_name', 'created_at',
+            'notes'),
+      ]..sort((left, right) => right.recordedAt.compareTo(left.recordedAt));
+    } catch (_) {
+      _error = 'Development evidence could not be loaded.';
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
   }
 }

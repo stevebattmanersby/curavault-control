@@ -63,7 +63,12 @@ create table if not exists public.admin_development_tasks (
   updated_at timestamptz not null default now(),
   completed_at timestamptz,
   cancelled_at timestamptz,
-  check ((approved_by is null) = (approved_at is null))
+  check ((approved_by is null) = (approved_at is null)),
+  constraint admin_development_task_approval_state_check check (
+    (human_approval_status <> 'approved' or (approved_by is not null and approved_at is not null))
+    and (status <> 'approved' or (human_approval_status = 'approved' and approved_by is not null and approved_at is not null))
+    and (risk_level not in ('high', 'critical') or status not in ('approved', 'completed') or (human_approval_status = 'approved' and approved_by is not null and approved_at is not null))
+  )
 );
 
 create table if not exists public.admin_development_task_events (
@@ -179,14 +184,23 @@ $$;
 create or replace function public.admin_guard_development_approval()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if (new.approved_by is distinct from old.approved_by or new.approved_at is distinct from old.approved_at or new.human_approval_status is distinct from old.human_approval_status)
-     and public.current_admin_role() <> 'owner' then
-    raise exception 'owner approval required';
+  if new.human_approval_status = 'approved' and old.human_approval_status <> 'approved' then
+    if public.current_admin_role() <> 'owner' then
+      raise exception 'owner approval required';
+    end if;
+    new.approved_by := auth.uid();
+    new.approved_at := now();
+  elsif old.human_approval_status = 'approved'
+     and (new.human_approval_status is distinct from old.human_approval_status
+       or new.approved_by is distinct from old.approved_by
+       or new.approved_at is distinct from old.approved_at) then
+    raise exception 'recorded approval attribution is immutable';
+  elsif new.approved_by is distinct from old.approved_by or new.approved_at is distinct from old.approved_at then
+    raise exception 'approval attribution is server controlled';
   end if;
-  if new.risk_level in ('high', 'critical') and new.human_approval_status = 'approved' and new.approved_by is null then
-    raise exception 'high-risk approval requires an authenticated owner';
+  if new.risk_level in ('high', 'critical') and new.status in ('approved', 'completed') and new.human_approval_status <> 'approved' then
+    raise exception 'high-risk completion requires recorded owner approval';
   end if;
-  if new.human_approval_status = 'approved' and new.approved_by is null then new.approved_by := auth.uid(); new.approved_at := now(); end if;
   return new;
 end;
 $$;

@@ -81,6 +81,7 @@ class AdminSidebar extends StatelessWidget {
                   if (allowed(AppRoutes.developmentPrompts)) _SidebarItem(label: 'Prompt Library', icon: Icons.library_books_outlined, route: AppRoutes.developmentPrompts, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.developmentReviews)) _SidebarItem(label: 'Reviews', icon: Icons.rate_review_outlined, route: AppRoutes.developmentReviews, currentLocation: currentLocation, onNavigate: onNavigate),
                   if (allowed(AppRoutes.developmentReleases)) _SidebarItem(label: 'Releases', icon: Icons.rocket_launch_outlined, route: AppRoutes.developmentReleases, currentLocation: currentLocation, onNavigate: onNavigate),
+                  if (allowed(AppRoutes.developmentEvidence)) _SidebarItem(label: 'Evidence', icon: Icons.fact_check_outlined, route: AppRoutes.developmentEvidence, currentLocation: currentLocation, onNavigate: onNavigate),
                   const SizedBox(height: AppSpacing.md),
                   const _SidebarSection(label: 'Website'),
                   if (allowed(AppRoutes.websitePages)) _SidebarItem(label: 'Pages', icon: Icons.web_asset_outlined, route: AppRoutes.websitePages, currentLocation: currentLocation, onNavigate: onNavigate),
