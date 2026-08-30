@@ -26,7 +26,8 @@ Future<void> main() async {
   SupabaseConfig.debugPrintEnvStatus(source: 'main(afterSupabaseInitialize)');
 
   // Temporary diagnostics (prints only true/false flags).
-  AdminAuthStore.debugPrintSupabaseBootstrapStatus(source: 'main(afterSupabaseInitialize)');
+  AdminAuthStore.debugPrintSupabaseBootstrapStatus(
+      source: 'main(afterSupabaseInitialize)');
   runApp(const MyApp());
 }
 

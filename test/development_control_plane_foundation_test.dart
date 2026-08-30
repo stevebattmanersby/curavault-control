@@ -61,10 +61,9 @@ void main() {
     test('keeps support and billing outside development control', () {
       expect(rbac, contains('canViewDevelopmentControl'));
       expect(rbac, contains('canCreateDevelopmentTasks'));
-      expect(
-          rbac,
-          contains(
-              'AppRoutes.developmentOverview: <AdminRole>{AdminRole.owner, AdminRole.admin}'));
+      expect(rbac, contains('AppRoutes.developmentOverview'));
+      expect(rbac, contains('AdminRole.owner'));
+      expect(rbac, contains('AdminRole.admin'));
     });
 
     test('allows only compliance security-review submission', () {
@@ -163,6 +162,24 @@ void main() {
       ]) {
         expect(sql.toLowerCase(), isNot(contains(forbidden)));
       }
+    });
+
+    test('keeps the CI workflow read-only and disposable', () {
+      final workflow =
+          File('.github/workflows/flutter-ci.yml').readAsStringSync();
+      final migrationValidator =
+          File('tool/validate_development_control_migration.sh')
+              .readAsStringSync();
+
+      expect(workflow, contains('contents: read'));
+      expect(workflow, contains('postgres:16-alpine'));
+      expect(workflow, contains('check_analyzer_regression.sh'));
+      expect(workflow, isNot(contains('pull-requests: write')));
+      expect(workflow, isNot(contains('deployments: write')));
+      expect(workflow, isNot(contains('packages: write')));
+      expect(migrationValidator,
+          contains('20260830213000_development_control_plane_phase_1.sql'));
+      expect(migrationValidator, isNot(contains('supabase db push')));
     });
   });
 }

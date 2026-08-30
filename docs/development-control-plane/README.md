@@ -19,3 +19,7 @@ Database audit triggers write actor, entity, action, and constrained state metad
 ## Phase 1 limits
 
 No Codex/OpenAI execution, GitHub write operation, CI rerun, shell execution, webhook, deployment, merge, or secret storage exists in this phase. GitHub fields are manually entered references only.
+
+## Validation
+
+Pull requests run a read-only changed-Dart format gate, a baseline-aware analyzer regression gate, deterministic Flutter tests, and a disposable PostgreSQL validation of the Development Control migration. Existing analyzer debt is reported but does not fail unrelated work; newly introduced diagnostics fail the gate. The database job uses only synthetic records and is destroyed with the CI job; it does not contact Supabase. Production migration application remains separately authorized.

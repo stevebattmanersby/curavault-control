@@ -39,13 +39,24 @@ AdminRole? parseAdminRole(String? value) {
 /// Note: This is UI enforcement; database security still must be enforced with
 /// RLS + safe summary views.
 class AdminRbac {
-  static const all = <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.support, AdminRole.billing, AdminRole.compliance, AdminRole.readOnly};
+  static const all = <AdminRole>{
+    AdminRole.owner,
+    AdminRole.admin,
+    AdminRole.support,
+    AdminRole.billing,
+    AdminRole.compliance,
+    AdminRole.readOnly
+  };
 
   static const support = <AdminRole>{AdminRole.owner, AdminRole.support};
   static const billing = <AdminRole>{AdminRole.owner, AdminRole.billing};
   static const compliance = <AdminRole>{AdminRole.owner, AdminRole.compliance};
   static const ops = <AdminRole>{AdminRole.owner, AdminRole.admin};
-  static const analytics = <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly};
+  static const analytics = <AdminRole>{
+    AdminRole.owner,
+    AdminRole.admin,
+    AdminRole.readOnly
+  };
 
   static const Map<String, Set<AdminRole>> routeAccess = {
     AppRoutes.dashboard: all,
@@ -53,29 +64,84 @@ class AdminRbac {
     AppRoutes.support: support,
     AppRoutes.plansPermissions: billing,
     AppRoutes.usageAnalytics: analytics,
-    AppRoutes.storage: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.billing},
+    AppRoutes.storage: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.billing
+    },
     AppRoutes.aiUsage: analytics,
     AppRoutes.billing: billing,
     AppRoutes.compliance: compliance,
     AppRoutes.systemHealth: ops,
-    AppRoutes.developmentOverview: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentOverview: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin
+    },
     AppRoutes.developmentTasks: <AdminRole>{AdminRole.owner, AdminRole.admin},
     AppRoutes.developmentPrompts: <AdminRole>{AdminRole.owner, AdminRole.admin},
     AppRoutes.developmentReviews: <AdminRole>{AdminRole.owner, AdminRole.admin},
-    AppRoutes.developmentReleases: <AdminRole>{AdminRole.owner, AdminRole.admin},
-    AppRoutes.developmentEvidence: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.compliance, AdminRole.readOnly},
-    AppRoutes.websiteStatus: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websitePages: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteBlog: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteSeo: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websitePricing: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteFaqs: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteTestimonials: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteCampaigns: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
-    AppRoutes.websiteAssets: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
+    AppRoutes.developmentReleases: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin
+    },
+    AppRoutes.developmentEvidence: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.compliance,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteStatus: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websitePages: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteBlog: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteSeo: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websitePricing: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteFaqs: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteTestimonials: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteCampaigns: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
+    AppRoutes.websiteAssets: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.readOnly
+    },
     AppRoutes.productionReadiness: <AdminRole>{AdminRole.owner},
     AppRoutes.auditLogs: <AdminRole>{AdminRole.owner, AdminRole.compliance},
-    AppRoutes.securityChecklist: <AdminRole>{AdminRole.owner, AdminRole.compliance, AdminRole.admin},
+    AppRoutes.securityChecklist: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.compliance,
+      AdminRole.admin
+    },
     AppRoutes.settings: <AdminRole>{AdminRole.owner},
     AppRoutes.adminTest: all,
     AppRoutes.adminDataTest: all,
@@ -85,7 +151,11 @@ class AdminRbac {
     // Exact match, or a nested sub-route under a known route.
     for (final entry in routeAccess.entries) {
       final route = entry.key;
-      if (location == route || location.startsWith('$route/') || location.startsWith('$route?')) return entry.value.contains(role);
+      if (location == route ||
+          location.startsWith('$route/') ||
+          location.startsWith('$route?')) {
+        return entry.value.contains(role);
+      }
     }
     // Unknown route => deny.
     return false;
@@ -93,31 +163,36 @@ class AdminRbac {
 
   /// Email is considered sensitive metadata and is only visible to specific roles.
   static bool canViewUserEmail(AdminRole role) => switch (role) {
-    AdminRole.owner || AdminRole.support || AdminRole.billing || AdminRole.compliance => true,
-    _ => false,
-  };
+        AdminRole.owner ||
+        AdminRole.support ||
+        AdminRole.billing ||
+        AdminRole.compliance =>
+          true,
+        _ => false,
+      };
 
   /// Compliance workflows are more sensitive: only compliance + super admins.
   static bool canViewComplianceEmail(AdminRole role) => switch (role) {
-    AdminRole.owner || AdminRole.compliance => true,
-    _ => false,
-  };
+        AdminRole.owner || AdminRole.compliance => true,
+        _ => false,
+      };
 
   /// Billing email visibility is more restrictive than general user-email visibility.
   ///
   /// This is used for billing tables (subscriptions, failed payments) where email
   /// is only needed for billing workflow.
   static bool canViewBillingEmail(AdminRole role) => switch (role) {
-    AdminRole.owner || AdminRole.billing => true,
-    _ => false,
-  };
+        AdminRole.owner || AdminRole.billing => true,
+        _ => false,
+      };
 
   static bool canExportAuditCsv(AdminRole role) => switch (role) {
-    AdminRole.owner || AdminRole.compliance => true,
-    _ => false,
-  };
+        AdminRole.owner || AdminRole.compliance => true,
+        _ => false,
+      };
 
-  static bool canPerformBillingAction(AdminRole role, BillingAdminAction action) {
+  static bool canPerformBillingAction(
+      AdminRole role, BillingAdminAction action) {
     switch (action) {
       case BillingAdminAction.extendTrial:
       case BillingAdminAction.changePlan:
@@ -128,17 +203,30 @@ class AdminRbac {
     }
   }
 
-  static bool canManageMarketingCms(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canManageMarketingCms(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
 
-  static bool canViewDevelopmentControl(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
-  static bool canViewDevelopmentEvidence(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin || role == AdminRole.compliance || role == AdminRole.readOnly;
-  static bool canCreateDevelopmentTasks(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
-  static bool canEditDevelopmentTasks(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
-  static bool canManagePromptTemplates(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
-  static bool canSubmitArchitectureReview(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
-  static bool canSubmitSecurityReview(AdminRole? role) => role == AdminRole.owner || role == AdminRole.compliance;
-  static bool canApproveHighRiskDevelopment(AdminRole? role) => role == AdminRole.owner;
-  static bool canManageReleaseRecords(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canViewDevelopmentControl(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canViewDevelopmentEvidence(AdminRole? role) =>
+      role == AdminRole.owner ||
+      role == AdminRole.admin ||
+      role == AdminRole.compliance ||
+      role == AdminRole.readOnly;
+  static bool canCreateDevelopmentTasks(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canEditDevelopmentTasks(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canManagePromptTemplates(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canSubmitArchitectureReview(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canSubmitSecurityReview(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.compliance;
+  static bool canApproveHighRiskDevelopment(AdminRole? role) =>
+      role == AdminRole.owner;
+  static bool canManageReleaseRecords(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
 
   /// Admin actions exposed in the UI.
   ///
@@ -151,13 +239,17 @@ class AdminRbac {
         return role == AdminRole.owner || role == AdminRole.billing;
       case AdminUserAction.adjustStorageLimit:
       case AdminUserAction.adjustAiLimit:
-        return role == AdminRole.owner || role == AdminRole.billing || role == AdminRole.admin;
+        return role == AdminRole.owner ||
+            role == AdminRole.billing ||
+            role == AdminRole.admin;
       case AdminUserAction.suspendAccount:
       case AdminUserAction.unsuspendAccount:
         return role == AdminRole.owner;
       case AdminUserAction.forceLogout:
       case AdminUserAction.revokeSessions:
-        return role == AdminRole.owner || role == AdminRole.support || role == AdminRole.admin;
+        return role == AdminRole.owner ||
+            role == AdminRole.support ||
+            role == AdminRole.admin;
       case AdminUserAction.startSupportSession:
       case AdminUserAction.closeSupportSession:
         return role == AdminRole.owner || role == AdminRole.support;
@@ -216,17 +308,17 @@ enum AdminUserAction {
 
 extension AdminUserActionX on AdminUserAction {
   String get label => switch (this) {
-    AdminUserAction.changePlan => 'Change plan',
-    AdminUserAction.extendTrial => 'Extend trial',
-    AdminUserAction.adjustStorageLimit => 'Adjust storage limit',
-    AdminUserAction.adjustAiLimit => 'Adjust AI limit',
-    AdminUserAction.suspendAccount => 'Suspend account',
-    AdminUserAction.unsuspendAccount => 'Unsuspend account',
-    AdminUserAction.forceLogout => 'Force logout',
-    AdminUserAction.revokeSessions => 'Revoke sessions',
-    AdminUserAction.startSupportSession => 'Start support session',
-    AdminUserAction.closeSupportSession => 'Close support session',
-    AdminUserAction.triggerComplianceExport => 'Trigger compliance export',
-    AdminUserAction.triggerDeletionWorkflow => 'Trigger deletion workflow',
-  };
+        AdminUserAction.changePlan => 'Change plan',
+        AdminUserAction.extendTrial => 'Extend trial',
+        AdminUserAction.adjustStorageLimit => 'Adjust storage limit',
+        AdminUserAction.adjustAiLimit => 'Adjust AI limit',
+        AdminUserAction.suspendAccount => 'Suspend account',
+        AdminUserAction.unsuspendAccount => 'Unsuspend account',
+        AdminUserAction.forceLogout => 'Force logout',
+        AdminUserAction.revokeSessions => 'Revoke sessions',
+        AdminUserAction.startSupportSession => 'Start support session',
+        AdminUserAction.closeSupportSession => 'Close support session',
+        AdminUserAction.triggerComplianceExport => 'Trigger compliance export',
+        AdminUserAction.triggerDeletionWorkflow => 'Trigger deletion workflow',
+      };
 }
