@@ -58,6 +58,11 @@ class AdminRbac {
     AppRoutes.billing: billing,
     AppRoutes.compliance: compliance,
     AppRoutes.systemHealth: ops,
+    AppRoutes.developmentOverview: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentTasks: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentPrompts: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentReviews: <AdminRole>{AdminRole.owner, AdminRole.admin},
+    AppRoutes.developmentReleases: <AdminRole>{AdminRole.owner, AdminRole.admin},
     AppRoutes.websiteStatus: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
     AppRoutes.websitePages: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
     AppRoutes.websiteBlog: <AdminRole>{AdminRole.owner, AdminRole.admin, AdminRole.readOnly},
@@ -123,6 +128,16 @@ class AdminRbac {
   }
 
   static bool canManageMarketingCms(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+
+  static bool canViewDevelopmentControl(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canViewDevelopmentEvidence(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin || role == AdminRole.compliance || role == AdminRole.readOnly;
+  static bool canCreateDevelopmentTasks(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canEditDevelopmentTasks(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canManagePromptTemplates(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canSubmitArchitectureReview(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
+  static bool canSubmitSecurityReview(AdminRole? role) => role == AdminRole.owner || role == AdminRole.compliance;
+  static bool canApproveHighRiskDevelopment(AdminRole? role) => role == AdminRole.owner;
+  static bool canManageReleaseRecords(AdminRole? role) => role == AdminRole.owner || role == AdminRole.admin;
 
   /// Admin actions exposed in the UI.
   ///

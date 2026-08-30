@@ -6,6 +6,7 @@ import 'package:curavault_admin/nav.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/state/admin_store.dart';
+import 'package:curavault_admin/admin/state/development_control_store.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
 import 'package:curavault_admin/services/usage_event_service.dart';
 import 'package:curavault_admin/supabase/supabase_config.dart';
@@ -40,6 +41,7 @@ class _MyAppState extends State<MyApp> {
   late final AdminAuthStore _auth;
   late final AdminStore _adminStore;
   late final AdminThemeStore _themeStore;
+  late final DevelopmentControlStore _developmentControlStore;
   late final GoRouter _router;
 
   @override
@@ -48,6 +50,7 @@ class _MyAppState extends State<MyApp> {
     _auth = AdminAuthStore()..bootstrap();
     _adminStore = AdminStore(auth: _auth);
     _themeStore = AdminThemeStore();
+    _developmentControlStore = DevelopmentControlStore();
     _themeStore.bootstrap(auth: _auth);
     _router = AppRouter.createRouter(_auth);
 
@@ -68,6 +71,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: _auth),
         ChangeNotifierProvider.value(value: _adminStore),
         ChangeNotifierProvider.value(value: _themeStore),
+        ChangeNotifierProvider.value(value: _developmentControlStore),
       ],
       child: Consumer<AdminThemeStore>(
         builder: (context, themeStore, _) {

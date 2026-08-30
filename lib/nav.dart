@@ -4,6 +4,7 @@ import 'package:curavault_admin/admin/pages/audit_logs_page.dart';
 import 'package:curavault_admin/admin/pages/billing_page.dart';
 import 'package:curavault_admin/admin/pages/compliance_page.dart';
 import 'package:curavault_admin/admin/pages/dashboard_page.dart';
+import 'package:curavault_admin/admin/pages/development_control_page.dart';
 import 'package:curavault_admin/admin/pages/loading_page.dart';
 import 'package:curavault_admin/admin/pages/login_page.dart';
 import 'package:curavault_admin/admin/pages/plans_permissions_page.dart';
@@ -200,6 +201,13 @@ class AppRouter {
             GoRoute(path: AppRoutes.billing, name: 'billing', pageBuilder: (context, state) => const NoTransitionPage(child: BillingPage())),
             GoRoute(path: AppRoutes.compliance, name: 'compliance', pageBuilder: (context, state) => const NoTransitionPage(child: CompliancePage())),
             GoRoute(path: AppRoutes.systemHealth, name: 'systemHealth', pageBuilder: (context, state) => const NoTransitionPage(child: SystemHealthPage())),
+            GoRoute(path: AppRoutes.developmentOverview, name: 'developmentOverview', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.overview))),
+            GoRoute(path: AppRoutes.developmentPrompts, name: 'developmentPrompts', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.prompts))),
+            GoRoute(path: AppRoutes.developmentReviews, name: 'developmentReviews', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.reviews))),
+            GoRoute(path: AppRoutes.developmentReleases, name: 'developmentReleases', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.releases))),
+            GoRoute(path: AppRoutes.developmentTasks, name: 'developmentTasks', pageBuilder: (context, state) => const NoTransitionPage(child: DevelopmentControlPage(section: DevelopmentSection.tasks)), routes: [
+              GoRoute(path: ':taskId', name: 'developmentTaskDetail', pageBuilder: (context, state) => NoTransitionPage(child: DevelopmentTaskDetailPage(taskId: state.pathParameters['taskId'] ?? ''))),
+            ]),
             GoRoute(path: AppRoutes.websiteStatus, name: 'websiteStatus', pageBuilder: (context, state) => const NoTransitionPage(child: WebsiteCmsStatusPage(section: WebsiteCmsSection.status))),
             GoRoute(path: AppRoutes.websitePages, name: 'websitePages', pageBuilder: (context, state) => const NoTransitionPage(child: WebsiteCmsStatusPage(section: WebsiteCmsSection.pages))),
             GoRoute(path: AppRoutes.websiteBlog, name: 'websiteBlog', pageBuilder: (context, state) => const NoTransitionPage(child: WebsiteCmsStatusPage(section: WebsiteCmsSection.blog))),
@@ -240,6 +248,11 @@ class AppRoutes {
   static const String billing = '/billing';
   static const String compliance = '/compliance';
   static const String systemHealth = '/system-health';
+  static const String developmentOverview = '/development';
+  static const String developmentTasks = '/development/tasks';
+  static const String developmentPrompts = '/development/prompts';
+  static const String developmentReviews = '/development/reviews';
+  static const String developmentReleases = '/development/releases';
   static const String websiteStatus = '/website/status';
   static const String websitePages = '/website/pages';
   static const String websiteBlog = '/website/blog';
