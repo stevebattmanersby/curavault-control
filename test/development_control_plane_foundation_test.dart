@@ -410,8 +410,10 @@ void main() {
     });
 
     test('keeps worker identity and RPCs outside browser roles', () {
-      expect(sql,
-          contains('create role curavault_codex_worker nologin noinherit'));
+      expect(
+          sql, contains('create role curavault_codex_worker login noinherit'));
+      expect(
+          sql, contains('alter role curavault_codex_worker login noinherit'));
       expect(sql, contains('for update skip locked'));
       expect(sql, contains('worker_lease_token_hash'));
       expect(

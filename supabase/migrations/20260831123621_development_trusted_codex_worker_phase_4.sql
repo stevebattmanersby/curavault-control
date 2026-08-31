@@ -1,13 +1,16 @@
 -- CuraVault Control Site: Phase 4 trusted Codex worker boundary.
 -- This migration adds no browser execution capability and no credentials. The
--- dedicated NOLOGIN worker role is a database authorization boundary; its
+-- dedicated LOGIN/NOINHERIT worker role is a database authorization boundary; its
 -- login credential must be provisioned only by the isolated worker host.
 
 begin;
 
 do $$ begin
-  create role curavault_codex_worker nologin noinherit;
-exception when duplicate_object then null; end $$;
+  create role curavault_codex_worker login noinherit;
+exception when duplicate_object then
+  alter role curavault_codex_worker login noinherit;
+end $$;
+grant usage on schema public to curavault_codex_worker;
 
 alter table public.admin_development_execution_jobs
   add column if not exists worker_id text check (worker_id is null or worker_id ~ '^[a-zA-Z0-9_.-]{1,80}$'),
@@ -127,7 +130,7 @@ end $$;
 create or replace function public.worker_get_codex_execution_context(p_job_id uuid, p_lease_token text)
 returns table(task_id uuid, repository text, base_sha text, task_prompt text, acceptance_notes text, policy_version text, model_id text, max_runtime_seconds integer, cancellation_requested boolean)
 language plpgsql security definer set search_path = public as $$
-declare v_job public.admin_development_execution_jobs; v_task public.admin_development_tasks; v_config public.admin_development_execution_provider_configuration;
+declare v_job public.admin_development_execution_jobs; v_task public.admin_development_tasks; v_config public.admin_development_execution_provider_configuration; v_authorization public.admin_development_codex_execution_authorizations;
 begin
   perform public.worker_require_codex_identity();
   select * into v_job from public.admin_development_execution_jobs where id=p_job_id and provider='codex'
@@ -139,6 +142,14 @@ begin
   if v_job.repository <> v_config.allowed_repository or v_job.base_branch !~ v_config.allowed_base_branch_pattern or v_job.resolved_base_sha !~ '^[0-9a-f]{40,64}$' then raise exception 'execution_output_policy_violation'; end if;
   if v_job.task_snapshot_hash <> public.admin_development_execution_snapshot(v_task) or v_job.provider_policy_version <> v_config.policy_version then raise exception 'stale_task_snapshot'; end if;
   if public.admin_development_codex_effective_risk(v_task)='critical' then raise exception 'critical_execution_not_supported'; end if;
+  if public.admin_development_codex_effective_risk(v_task)='high' then
+    select * into v_authorization from public.admin_development_codex_execution_authorizations where task_id=v_task.id and revoked_at is null;
+    if not found or v_authorization.task_snapshot_hash <> v_job.task_snapshot_hash
+      or v_authorization.provider_policy_version <> v_config.policy_version
+      or v_authorization.repository <> v_job.repository or v_authorization.base_branch <> v_job.base_branch then
+      raise exception 'codex_execution_authorization_stale';
+    end if;
+  end if;
   return query select v_task.id,v_job.repository,v_job.resolved_base_sha,v_task.execution_prompt,v_task.acceptance_notes,v_config.policy_version,v_config.model_id,v_job.max_runtime_seconds,(v_job.status='cancel_requested');
 end $$;
 
@@ -196,7 +207,16 @@ returns table(provider_enabled boolean,worker_healthy boolean,repository_revisio
 language plpgsql security definer set search_path = public as $$
 begin
   if not public.is_active_admin() or public.current_admin_role() not in ('owner','admin') then raise exception 'development_execution_not_authorized'; end if;
-  return query select c.is_enabled,exists(select 1 from public.admin_development_codex_worker_status s where s.last_successful_poll_at>now()-interval '2 minutes'),exists(select 1 from public.admin_development_repository_revisions r where r.repository='stevebattmanersby/curavult-app' and r.base_branch='main' and r.resolved_at>now()-interval '15 minutes'),c.model_id='gpt-5.3-codex',w.live_execution_enabled,w.isolation_verified,w.network_policy_verified,c.is_enabled and w.live_execution_enabled and w.isolation_verified and w.network_policy_verified and w.repository_credential_verified and w.provider_credential_verified and w.monitoring_verified from public.admin_development_execution_provider_configuration c cross join public.admin_development_codex_worker_configuration w where c.provider='codex' and w.singleton;
+  return query select c.is_enabled,
+    exists(select 1 from public.admin_development_codex_worker_status s where s.last_successful_poll_at>now()-interval '2 minutes'),
+    exists(select 1 from public.admin_development_repository_revisions r where r.repository='stevebattmanersby/curavult-app' and r.base_branch='main' and r.resolved_at>now()-interval '15 minutes'),
+    c.model_id='gpt-5.3-codex',w.live_execution_enabled,w.isolation_verified,w.network_policy_verified,
+    c.is_enabled and w.live_execution_enabled and w.isolation_verified and w.network_policy_verified
+      and w.repository_credential_verified and w.provider_credential_verified and w.monitoring_verified
+      and c.model_id='gpt-5.3-codex'
+      and exists(select 1 from public.admin_development_codex_worker_status s where s.last_successful_poll_at>now()-interval '2 minutes')
+      and exists(select 1 from public.admin_development_repository_revisions r where r.repository='stevebattmanersby/curavult-app' and r.base_branch='main' and r.resolved_at>now()-interval '15 minutes')
+  from public.admin_development_execution_provider_configuration c cross join public.admin_development_codex_worker_configuration w where c.provider='codex' and w.singleton;
 end $$;
 
 revoke all on function public.worker_require_codex_identity() from public,anon,authenticated;

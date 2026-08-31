@@ -430,8 +430,8 @@ expect_rejected 'authenticated worker claim' "set role authenticated; select * f
 run_sql <<'SQL'
 do $$
 begin
-  if not exists (select 1 from pg_roles where rolname = 'curavault_codex_worker' and not rolcanlogin and not rolinherit) then
-    raise exception 'worker identity is not NOLOGIN/NOINHERIT';
+  if not exists (select 1 from pg_roles where rolname = 'curavault_codex_worker' and rolcanlogin and not rolinherit) then
+    raise exception 'worker identity is not LOGIN/NOINHERIT';
   end if;
   if has_function_privilege('authenticated', 'public.worker_claim_codex_execution(text)', 'execute') then
     raise exception 'browser role can claim worker jobs';
@@ -439,6 +439,46 @@ begin
   if (select live_execution_enabled from public.admin_development_codex_worker_configuration where singleton) then
     raise exception 'worker live execution was enabled by default';
   end if;
+end $$;
+SQL
+
+expect_rejected 'owner worker claim' "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); select * from public.worker_claim_codex_execution('owner-worker');"
+expect_rejected 'worker direct execution table read' "set session authorization curavault_codex_worker; select * from public.admin_development_execution_jobs;"
+expect_rejected 'worker owner authorization RPC' "set session authorization curavault_codex_worker; select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'worker privilege escalation' "set session authorization curavault_codex_worker; grant select on public.admin_development_execution_jobs to curavault_codex_worker;"
+
+run_sql <<'SQL'
+update public.admin_development_codex_worker_configuration set fake_execution_enabled = true, live_execution_enabled = true,
+  isolation_verified = true, network_policy_verified = true, repository_credential_verified = true,
+  provider_credential_verified = true, monitoring_verified = true where singleton;
+insert into public.admin_development_codex_worker_status(worker_id, last_successful_poll_at, active_job_count)
+values ('readiness-worker', now(), 0) on conflict(worker_id) do update set last_successful_poll_at=excluded.last_successful_poll_at;
+
+-- The actual worker session identity can call its narrow RPC; it cannot use a
+-- browser role or table grants to do so.
+set session authorization curavault_codex_worker;
+select count(*) from public.worker_claim_codex_execution('synthetic-worker');
+reset session authorization;
+
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+do $$
+declare v_ready record; v_constraint text;
+begin
+  select * into v_ready from public.admin_codex_live_execution_readiness();
+  if not v_ready.can_execute then raise exception 'all readiness gates should allow execution'; end if;
+  update public.admin_development_execution_provider_configuration set is_enabled=false where provider='codex'; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'provider-disabled readiness allowed'; end if; update public.admin_development_execution_provider_configuration set is_enabled=true where provider='codex';
+  update public.admin_development_codex_worker_status set last_successful_poll_at=now()-interval '3 minutes'; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'stale-worker readiness allowed'; end if; update public.admin_development_codex_worker_status set last_successful_poll_at=now();
+  update public.admin_development_repository_revisions set resolved_at=now()-interval '16 minutes'; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'stale-revision readiness allowed'; end if; update public.admin_development_repository_revisions set resolved_at=now();
+  select conname into v_constraint from pg_constraint where conrelid='public.admin_development_execution_provider_configuration'::regclass and contype='c' and pg_get_constraintdef(oid) like '%model_id%';
+  execute format('alter table public.admin_development_execution_provider_configuration drop constraint %I', v_constraint);
+  update public.admin_development_execution_provider_configuration set model_id='invalid' where provider='codex'; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'invalid-model readiness allowed'; end if; update public.admin_development_execution_provider_configuration set model_id='gpt-5.3-codex' where provider='codex';
+  update public.admin_development_codex_worker_configuration set live_execution_enabled=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'live-gate-disabled readiness allowed'; end if; update public.admin_development_codex_worker_configuration set live_execution_enabled=true where singleton;
+  update public.admin_development_codex_worker_configuration set isolation_verified=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'isolation-unverified readiness allowed'; end if; update public.admin_development_codex_worker_configuration set isolation_verified=true where singleton;
+  update public.admin_development_codex_worker_configuration set network_policy_verified=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'network-unverified readiness allowed'; end if; update public.admin_development_codex_worker_configuration set network_policy_verified=true where singleton;
+  update public.admin_development_codex_worker_configuration set repository_credential_verified=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'repository-credential-unverified readiness allowed'; end if; update public.admin_development_codex_worker_configuration set repository_credential_verified=true where singleton;
+  update public.admin_development_codex_worker_configuration set provider_credential_verified=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'provider-credential-unverified readiness allowed'; end if; update public.admin_development_codex_worker_configuration set provider_credential_verified=true where singleton;
+  update public.admin_development_codex_worker_configuration set monitoring_verified=false where singleton; select * into v_ready from public.admin_codex_live_execution_readiness(); if v_ready.can_execute then raise exception 'monitoring-unverified readiness allowed'; end if; update public.admin_development_codex_worker_configuration set monitoring_verified=true where singleton;
+  select * into v_ready from public.admin_codex_live_execution_readiness(); if not v_ready.can_execute then raise exception 'restored readiness did not allow execution'; end if;
 end $$;
 SQL
 

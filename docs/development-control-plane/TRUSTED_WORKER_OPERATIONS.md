@@ -8,7 +8,7 @@ The host must give the control worker an outbound allow-list for PostgreSQL/Supa
 
 ## Identity and secrets
 
-The worker uses the dedicated database identity `curavault_codex_worker`; it can invoke only the `worker_*_codex_execution` RPCs. It is not an authenticated browser Admin and has no table write grants. Host secret injection supplies separate worker database, OpenAI, and GitHub read-only credentials. They are never stored in PostgreSQL, Flutter, Docker layers, workspaces, CI, or logs.
+The worker authenticates as the dedicated `LOGIN NOINHERIT` database identity `curavault_codex_worker`. The migration never sets a password: privileged host infrastructure provisions and rotates that external credential. The worker can invoke only the `worker_*_codex_execution` RPCs. It is not an authenticated browser Admin, cannot assume Admin/Owner roles, and has no table write grants. Host secret injection supplies separate worker database, OpenAI, and GitHub read-only credentials. They are never stored in PostgreSQL, Flutter, Docker layers, workspaces, CI, or logs.
 
 Use a GitHub App or fine-grained credential scoped only to `contents:read` on `stevebattmanersby/curavult-app`. No `contents:write`, pull-request, workflow, administration, push, branch, merge, or deployment privilege is allowed. Clone at the server-derived SHA, verify detached `HEAD`, remove/neutralize `origin`, and reject any remote change before accepting evidence.
 
