@@ -26,6 +26,9 @@ enable Codex provider or worker live execution from this guide.
    file.
 6. Run `verify-host-contract.sh`, inspect Docker sandbox settings, and record
    safe evidence. Do not set verification flags until this host evidence exists.
+   The Phase 5 control worker has no Docker socket; live execution remains
+   disabled until a separately reviewed host-local sandbox supervisor can call
+   the fixed runner without disclosing the Docker API to the worker.
 
 ## Credential procedures
 

@@ -10,8 +10,10 @@ management CIDR, apply `cloud-init.yaml`, then enable UFW only after verifying
 the source-restricted SSH rule through the cloud console or private management
 network. Copy the reviewed repository/image, create root-owned `/etc/curavault-trusted-worker/worker.env`
 with mode `0600`, then install and enable the systemd unit. Do not set either
-live gate true. The container needs a Docker socket only in the control plane
-to create constrained sandboxes; the sandbox never receives the socket.
+live gate true. Neither the control worker nor the sandbox receives a Docker
+socket. Before real execution is enabled, a separately reviewed, host-local
+sandbox-supervisor boundary must invoke the fixed sandbox runner without
+exposing the Docker API to the worker.
 
 Run `scripts/verify-host-contract.sh` on the host after Docker installation.
 It verifies the no-network sandbox contract without credentials or a live API.

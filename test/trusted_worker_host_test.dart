@@ -20,6 +20,7 @@ void main() {
     expect(cloudInit, isNot(contains("[ufw, allow, '22/tcp']")));
     expect(compose, contains('user: "65532:65532"'));
     expect(compose, contains('no-new-privileges:true'));
+    expect(compose, isNot(contains('/var/run/docker.sock')));
     expect(sandbox, contains('--network none'));
     expect(sandbox, contains('--pids-limit 256'));
     expect(sandbox, contains('--memory 2g'));
