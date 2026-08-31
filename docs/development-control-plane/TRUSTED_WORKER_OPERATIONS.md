@@ -2,7 +2,7 @@
 
 ## Status and host choice
 
-Phase 4 supplies a deployable worker image and a database control-plane; no worker host is deployed and live Codex remains disabled. The production target is a dedicated Kubernetes or VM-grade isolated execution host: a small control worker claims database jobs and creates a separate, short-lived sandbox for each workspace. This is selected over Cloud Run Jobs, ECS/Fargate, Fly.io, Railway, and Render because a simple shared container cannot independently demonstrate no-egress workspace execution, filesystem isolation, or process termination without an additional sandbox boundary.
+Phase 5 selects a dedicated supported Ubuntu LTS x86_64 VM: a small control worker claims database jobs and creates a separate, short-lived Docker sandbox for each workspace. The VM is preferred over Kubernetes because CuraVault permits one active job and needs a clearly auditable host boundary before cluster orchestration. Cloud Run Jobs, ECS/Fargate, Fly.io, Railway, and Render are rejected for this first rollout because a simple shared container cannot independently demonstrate no-egress workspace execution, filesystem isolation, or process termination without an additional sandbox boundary. No worker host is deployed and live Codex remains disabled.
 
 The host must give the control worker an outbound allow-list for PostgreSQL/Supabase, GitHub read APIs, and OpenAI Responses. The per-job sandbox must have no general egress, no Docker socket, no host home, no SSH mount, no signing/deployment credentials, and a bounded writable filesystem. Until those policies are independently verified, `live_execution_enabled` remains false.
 

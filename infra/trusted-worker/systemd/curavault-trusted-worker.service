@@ -1,0 +1,20 @@
+[Unit]
+Description=CuraVault trusted Codex control worker
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/curavault-trusted-worker
+ExecStart=/usr/bin/docker compose -f infra/trusted-worker/docker-compose.yml up --remove-orphans
+ExecStop=/usr/bin/docker compose -f infra/trusted-worker/docker-compose.yml down
+Restart=on-failure
+RestartSec=30
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/curavault-trusted-worker /var/run/docker.sock
+
+[Install]
+WantedBy=multi-user.target

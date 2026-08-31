@@ -1,0 +1,21 @@
+services:
+  control-worker:
+    image: curavault-trusted-worker:reviewed
+    user: "65532:65532"
+    restart: unless-stopped
+    env_file:
+      - /etc/curavault-trusted-worker/worker.env
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    volumes:
+      - /var/lib/curavault-trusted-worker/workspaces:/workspaces:rw
+      # Required only for the control worker to create the constrained sandbox.
+      - /var/run/docker.sock:/var/run/docker.sock
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    networks: [control-plane]
+networks:
+  control-plane:
+    internal: false

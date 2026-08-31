@@ -80,6 +80,8 @@ jobs:
         run: docker build --file worker/Dockerfile --tag curavault-trusted-worker:ci .
       - name: Verify worker image does not run as root
         run: test "$(docker image inspect curavault-trusted-worker:ci --format '{{.Config.User}}')" = "65532:65532"
+      - name: Verify credential-free no-egress sandbox contract
+        run: SANDBOX_IMAGE=curavault-trusted-worker:ci bash infra/trusted-worker/scripts/verify-host-contract.sh
 
   development-control-migration:
     name: Development Control migration validation

@@ -1,0 +1,30 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages: [docker.io, ufw, unattended-upgrades]
+users:
+  - default
+ssh_pwauth: false
+disable_root: true
+write_files:
+  - path: /etc/ssh/sshd_config.d/99-curavault-worker.conf
+    permissions: '0644'
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin no
+      KbdInteractiveAuthentication no
+      AllowTcpForwarding no
+      X11Forwarding no
+  - path: /etc/apt/apt.conf.d/20auto-upgrades
+    permissions: '0644'
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+runcmd:
+  - [ufw, default, deny, incoming]
+  - [ufw, default, allow, outgoing]
+  # Do not enable UFW until the Owner has added a source-restricted SSH rule
+  # from the cloud console or an attached private management network. The
+  # deployment guide supplies the exact command; opening 22/tcp globally is
+  # intentionally not a valid bootstrap default.
+  - [systemctl, restart, ssh]
