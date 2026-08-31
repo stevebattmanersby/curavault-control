@@ -3,6 +3,7 @@ import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/data/models/development_control_models.dart';
 import 'package:curavault_admin/admin/state/development_control_store.dart';
 import 'package:curavault_admin/admin/widgets/admin_layout.dart';
+import 'package:curavault_admin/nav.dart';
 import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -42,7 +43,7 @@ class _DevelopmentControlPageState extends State<DevelopmentControlPage> {
     return AdminPageScaffold(
       title: title,
       subtitle:
-          'Administrative development metadata only. No execution or secret storage.',
+          'Administrative workflow metadata and mock-only evidence. No secrets or external execution.',
       actions: [
         if (widget.section == DevelopmentSection.tasks && canCreate)
           FilledButton.icon(
@@ -84,6 +85,7 @@ class DevelopmentTaskDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final role = context.watch<AdminAuthStore>().role;
     final task = context
         .watch<DevelopmentControlStore>()
         .tasks
@@ -99,6 +101,15 @@ class DevelopmentTaskDetailPage extends StatelessWidget {
     return AdminPageScaffold(
       title: '${task.taskKey}  ${task.title}',
       subtitle: '${task.repository} · ${task.status.label}',
+      actions: [
+        if (AdminRbac.canRequestMockDevelopmentExecution(role) &&
+            task.executionPrompt?.isNotEmpty == true)
+          FilledButton.icon(
+            onPressed: () => _confirmMockExecution(context, task),
+            icon: const Icon(Icons.play_arrow_outlined),
+            label: const Text('Request mock run'),
+          ),
+      ],
       child: SingleChildScrollView(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [
@@ -132,6 +143,173 @@ class DevelopmentTaskDetailPage extends StatelessWidget {
                   'Evidence and reviews are reference records. Phase 1 does not run CI, GitHub actions, agents, or deployments.'),
         ]),
       ),
+    );
+  }
+}
+
+class DevelopmentRunsPage extends StatefulWidget {
+  const DevelopmentRunsPage({super.key});
+
+  @override
+  State<DevelopmentRunsPage> createState() => _DevelopmentRunsPageState();
+}
+
+class _DevelopmentRunsPageState extends State<DevelopmentRunsPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => context.read<DevelopmentControlStore>().loadRuns());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<DevelopmentControlStore>();
+    return AdminPageScaffold(
+      title: 'Execution Runs',
+      subtitle:
+          'Policy-governed mock records only. No code, repository, provider, or deployment action is performed.',
+      actions: [
+        IconButton(
+            onPressed: () => context.read<DevelopmentControlStore>().loadRuns(),
+            tooltip: 'Refresh',
+            icon: const Icon(Icons.refresh))
+      ],
+      child: store.loading
+          ? const Center(child: CircularProgressIndicator())
+          : store.error != null
+              ? _EmptyState(message: store.error!)
+              : store.runs.isEmpty
+                  ? const _EmptyState(
+                      message: 'No execution runs recorded yet.')
+                  : ListView.separated(
+                      itemCount: store.runs.length,
+                      separatorBuilder: (_, __) =>
+                          const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (context, index) {
+                        final run = store.runs[index];
+                        return AdminCard(
+                            child: InkWell(
+                          onTap: () =>
+                              context.go('/development/runs/${run.id}'),
+                          borderRadius: BorderRadius.circular(AppRadius.xl),
+                          child: Padding(
+                            padding: const EdgeInsets.all(AppSpacing.xs),
+                            child: Row(children: [
+                              Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                    Text(run.jobKey,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w700)),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                        '${run.repository} · ${run.baseBranch} · attempt ${run.attemptNumber}'),
+                                  ])),
+                              _ExecutionStatusBadge(status: run.status),
+                            ]),
+                          ),
+                        ));
+                      }),
+    );
+  }
+}
+
+class DevelopmentRunDetailPage extends StatefulWidget {
+  const DevelopmentRunDetailPage({super.key, required this.runId});
+  final String runId;
+
+  @override
+  State<DevelopmentRunDetailPage> createState() =>
+      _DevelopmentRunDetailPageState();
+}
+
+class _DevelopmentRunDetailPageState extends State<DevelopmentRunDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) =>
+        context.read<DevelopmentControlStore>().loadRunDetail(widget.runId));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final store = context.watch<DevelopmentControlStore>();
+    final run = store.runs.where((item) => item.id == widget.runId).firstOrNull;
+    if (run == null) {
+      WidgetsBinding.instance.addPostFrameCallback(
+          (_) => context.read<DevelopmentControlStore>().loadRuns());
+      return const AdminPageScaffold(
+          title: 'Execution Run',
+          child: Center(child: CircularProgressIndicator()));
+    }
+    final role = context.watch<AdminAuthStore>().role;
+    final cancellable = {
+      DevelopmentExecutionStatus.requested,
+      DevelopmentExecutionStatus.policyCheck,
+      DevelopmentExecutionStatus.queued,
+      DevelopmentExecutionStatus.starting,
+      DevelopmentExecutionStatus.running,
+    }.contains(run.status);
+    return AdminPageScaffold(
+      title: run.jobKey,
+      subtitle: 'Mock execution evidence only',
+      actions: [
+        if (cancellable && AdminRbac.canRequestMockDevelopmentExecution(role))
+          OutlinedButton.icon(
+              onPressed: () => _cancelMockExecution(context, run.id),
+              icon: const Icon(Icons.cancel_outlined),
+              label: const Text('Cancel mock run')),
+      ],
+      child: SingleChildScrollView(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Wrap(spacing: AppSpacing.sm, runSpacing: AppSpacing.sm, children: [
+          _ExecutionStatusBadge(status: run.status),
+          _Meta(label: 'Provider', value: run.provider),
+          _Meta(label: 'Mode', value: run.executorMode),
+          _Meta(label: 'Attempt', value: '${run.attemptNumber}'),
+        ]),
+        const SizedBox(height: AppSpacing.lg),
+        _ContentCard(
+            title: 'Repository context',
+            content: '${run.repository}\nBase branch: ${run.baseBranch}'),
+        if (store.selectedRunPolicy != null) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ContentCard(
+              title: 'Policy decision',
+              content:
+                  '${store.selectedRunPolicy!.decision.label}\n${store.selectedRunPolicy!.reasons.join(', ')}'),
+        ],
+        if (run.failureSummary?.isNotEmpty == true) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ContentCard(
+              title: 'Safe failure summary', content: run.failureSummary!),
+        ],
+        if (run.resultSummary?.isNotEmpty == true) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ContentCard(title: 'Result summary', content: run.resultSummary!),
+        ],
+        const SizedBox(height: AppSpacing.md),
+        Text('Lifecycle', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sm),
+        if (store.selectedRunEvents.isEmpty)
+          const Text('No lifecycle evidence is available yet.')
+        else
+          ...store.selectedRunEvents.map((event) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.history_outlined),
+                title: Text(event.eventType),
+                subtitle: Text(event.summary),
+                trailing: Text(event.createdAt.toIso8601String(),
+                    style: Theme.of(context).textTheme.labelSmall),
+              )),
+      ])),
     );
   }
 }
@@ -478,6 +656,15 @@ class _StatusBadge extends StatelessWidget {
       Chip(visualDensity: VisualDensity.compact, label: Text(status.label));
 }
 
+class _ExecutionStatusBadge extends StatelessWidget {
+  const _ExecutionStatusBadge({required this.status});
+  final DevelopmentExecutionStatus status;
+
+  @override
+  Widget build(BuildContext context) =>
+      Chip(visualDensity: VisualDensity.compact, label: Text(status.label));
+}
+
 class _Meta extends StatelessWidget {
   const _Meta({required this.label, required this.value});
   final String label;
@@ -490,6 +677,54 @@ Future<void> _showTaskForm(BuildContext context) async {
   final store = context.read<DevelopmentControlStore>();
   await showDialog<void>(
       context: context, builder: (_) => _TaskForm(store: store));
+}
+
+Future<void> _confirmMockExecution(
+    BuildContext context, DevelopmentTask task) async {
+  final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+              title: const Text('Request mock run?'),
+              content: Text(
+                  '${task.taskKey} will be checked against the server-side execution policy. This creates lifecycle evidence only: it does not run code, contact Codex/OpenAI, write to GitHub, or deploy anything.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Cancel')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Request mock run')),
+              ]));
+  if (confirmed != true || !context.mounted) return;
+  try {
+    await context.read<DevelopmentControlStore>().requestMockExecution(task.id);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Mock execution request recorded. Review Runs for policy evidence.')));
+      context.go(AppRoutes.developmentRuns);
+    }
+  } on StateError catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+}
+
+Future<void> _cancelMockExecution(BuildContext context, String runId) async {
+  try {
+    await context.read<DevelopmentControlStore>().cancelMockExecution(runId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Mock execution cancellation recorded.')));
+    }
+  } on StateError catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
 }
 
 Future<void> _showPromptForm(BuildContext context) async {

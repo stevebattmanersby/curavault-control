@@ -16,6 +16,22 @@ enum DevelopmentTaskStatus {
   cancelled,
 }
 
+enum DevelopmentExecutionStatus {
+  requested,
+  policyCheck,
+  rejected,
+  queued,
+  starting,
+  running,
+  succeeded,
+  failed,
+  cancelRequested,
+  cancelled,
+  timedOut,
+}
+
+enum DevelopmentExecutionPolicyDecision { allow, deny, manualReviewRequired }
+
 String _wireName(Enum value) => value.name.replaceAllMapped(
     RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
 
@@ -36,6 +52,23 @@ extension DevelopmentRiskLevelX on DevelopmentRiskLevel {
 }
 
 extension DevelopmentTaskStatusX on DevelopmentTaskStatus {
+  String get value => _wireName(this);
+  String get label => value
+      .split('_')
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+      .join(' ');
+}
+
+extension DevelopmentExecutionStatusX on DevelopmentExecutionStatus {
+  String get value => _wireName(this);
+  String get label => value
+      .split('_')
+      .map((word) => '${word[0].toUpperCase()}${word.substring(1)}')
+      .join(' ');
+}
+
+extension DevelopmentExecutionPolicyDecisionX
+    on DevelopmentExecutionPolicyDecision {
   String get value => _wireName(this);
   String get label => value
       .split('_')
@@ -161,4 +194,113 @@ class DevelopmentEvidenceItem {
   final String label;
   final String? summary;
   final DateTime recordedAt;
+}
+
+/// Safe execution metadata only. Prompts, product requests, credentials, raw
+/// output, and command content are intentionally not modelled here.
+class DevelopmentExecutionJob {
+  const DevelopmentExecutionJob({
+    required this.id,
+    required this.taskId,
+    required this.jobKey,
+    required this.provider,
+    required this.executorMode,
+    required this.status,
+    required this.attemptNumber,
+    required this.repository,
+    required this.baseBranch,
+    required this.createdAt,
+    required this.updatedAt,
+    this.failureCode,
+    this.failureSummary,
+    this.resultSummary,
+  });
+
+  final String id;
+  final String taskId;
+  final String jobKey;
+  final String provider;
+  final String executorMode;
+  final DevelopmentExecutionStatus status;
+  final int attemptNumber;
+  final String repository;
+  final String baseBranch;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final String? failureCode;
+  final String? failureSummary;
+  final String? resultSummary;
+
+  factory DevelopmentExecutionJob.fromMap(Map<String, dynamic> map) =>
+      DevelopmentExecutionJob(
+        id: map['id'] as String,
+        taskId: map['task_id'] as String,
+        jobKey: map['job_key'] as String,
+        provider: map['provider'] as String? ?? 'mock',
+        executorMode: map['executor_mode'] as String? ?? 'mock',
+        status: _parseEnum(DevelopmentExecutionStatus.values,
+            map['status'] as String?, DevelopmentExecutionStatus.requested),
+        attemptNumber: (map['attempt_number'] as num?)?.toInt() ?? 1,
+        repository: map['repository'] as String? ?? '',
+        baseBranch: map['base_branch'] as String? ?? '',
+        createdAt:
+            DateTime.tryParse(map['created_at'] as String? ?? '')?.toLocal() ??
+                DateTime.fromMillisecondsSinceEpoch(0),
+        updatedAt:
+            DateTime.tryParse(map['updated_at'] as String? ?? '')?.toLocal() ??
+                DateTime.fromMillisecondsSinceEpoch(0),
+        failureCode: map['failure_code'] as String?,
+        failureSummary: map['failure_summary'] as String?,
+        resultSummary: map['result_summary'] as String?,
+      );
+}
+
+class DevelopmentExecutionEvent {
+  const DevelopmentExecutionEvent({
+    required this.id,
+    required this.eventType,
+    required this.summary,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String eventType;
+  final String summary;
+  final DateTime createdAt;
+
+  factory DevelopmentExecutionEvent.fromMap(Map<String, dynamic> map) =>
+      DevelopmentExecutionEvent(
+        id: map['id'] as String,
+        eventType: map['event_type'] as String? ?? 'event',
+        summary: map['summary'] as String? ?? '',
+        createdAt:
+            DateTime.tryParse(map['created_at'] as String? ?? '')?.toLocal() ??
+                DateTime.fromMillisecondsSinceEpoch(0),
+      );
+}
+
+class DevelopmentExecutionPolicyRecord {
+  const DevelopmentExecutionPolicyRecord({
+    required this.decision,
+    required this.reasons,
+    required this.evaluatedAt,
+  });
+
+  final DevelopmentExecutionPolicyDecision decision;
+  final List<String> reasons;
+  final DateTime evaluatedAt;
+
+  factory DevelopmentExecutionPolicyRecord.fromMap(Map<String, dynamic> map) {
+    final rawReasons = map['reasons'];
+    return DevelopmentExecutionPolicyRecord(
+      decision: _parseEnum(DevelopmentExecutionPolicyDecision.values,
+          map['decision'] as String?, DevelopmentExecutionPolicyDecision.deny),
+      reasons: rawReasons is List
+          ? rawReasons.whereType<String>().toList(growable: false)
+          : const [],
+      evaluatedAt:
+          DateTime.tryParse(map['evaluated_at'] as String? ?? '')?.toLocal() ??
+              DateTime.fromMillisecondsSinceEpoch(0),
+    );
+  }
 }

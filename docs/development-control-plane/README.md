@@ -16,9 +16,17 @@ The existing `admin_users` allow-list remains authoritative. Owner and Admin can
 
 Database audit triggers write actor, entity, action, and constrained state metadata to `admin_audit_log`; free-text requests and prompts are deliberately excluded. Task status is a workflow record only. `approved` always requires a recorded Owner approval; high/critical work also cannot become `completed` without that approval. Approval attribution is written by the database and becomes immutable.
 
+## Phase 2 dispatcher foundation
+
+Phase 2 adds a durable, policy-governed **mock-only** execution ledger. The browser submits a task ID only; PostgreSQL loads the task, hashes the stored execution prompt, evaluates recorded approval/review state, creates an idempotent `CVRUN-######` job, and records policy and lifecycle evidence. A server-managed database configuration row defaults to disabled. Authenticated roles have no read/write policy or direct grant for that switch; a future privileged deployment path must be separately designed and reviewed. Configuration changes are safely audited. No browser control exists.
+
+The only provider and executor mode defined or accepted by the database are `mock`. The deterministic mock processor never invokes Codex/OpenAI, executes shell commands, calls GitHub, accesses a repository, starts CI, stores credentials, merges code, or deploys. The Runs view exposes safe metadata, policy outcomes, and concise lifecycle summaries. It never exposes stored task requests or prompts to Compliance/Read-only roles.
+
+Low-risk tasks may be mock-eligible in `ready`, `awaiting_review`, or `approved`. Medium tasks require `approved` plus Architecture review. High tasks require recorded Owner approval plus Architecture and Security review. Critical work returns `manual_review_required` and is not dispatched. Rejection, retry limit, cancellation, snapshot-change, and controlled mock-failure outcomes are all durable and auditable. Retries are explicit and bounded to three attempts; duplicate active requests return the same job.
+
 ## Phase 1 limits
 
-No Codex/OpenAI execution, GitHub write operation, CI rerun, shell execution, webhook, deployment, merge, or secret storage exists in this phase. GitHub fields are manually entered references only.
+No Codex/OpenAI execution, GitHub write operation, CI rerun, shell execution, webhook, deployment, merge, or secret storage exists in this phase. GitHub fields are manually entered references only. A future real-provider integration requires a separately approved server-side dispatcher design, credential isolation, architecture review, security review, provider policy, and a dedicated migration; Phase 2 does not create that capability.
 
 ## Validation
 
