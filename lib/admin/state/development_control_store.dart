@@ -11,6 +11,7 @@ class DevelopmentControlStore extends ChangeNotifier {
   List<DevelopmentExecutionJob> _runs = const [];
   List<DevelopmentExecutionEvent> _selectedRunEvents = const [];
   DevelopmentExecutionPolicyRecord? _selectedRunPolicy;
+  CodexWorkerReadiness? _codexWorkerReadiness;
   bool _loading = false;
   String? _error;
 
@@ -20,6 +21,7 @@ class DevelopmentControlStore extends ChangeNotifier {
   List<DevelopmentExecutionJob> get runs => _runs;
   List<DevelopmentExecutionEvent> get selectedRunEvents => _selectedRunEvents;
   DevelopmentExecutionPolicyRecord? get selectedRunPolicy => _selectedRunPolicy;
+  CodexWorkerReadiness? get codexWorkerReadiness => _codexWorkerReadiness;
   bool get loading => _loading;
   String? get error => _error;
 
@@ -185,6 +187,20 @@ class DevelopmentControlStore extends ChangeNotifier {
       _loading = false;
       notifyListeners();
     }
+  }
+
+  /// Only server-derived readiness booleans reach the browser.
+  Future<void> loadCodexWorkerReadiness() async {
+    try {
+      final result = await _client.rpc('admin_codex_live_execution_readiness');
+      if (result is List && result.isNotEmpty) {
+        _codexWorkerReadiness = CodexWorkerReadiness.fromMap(
+            Map<String, dynamic>.from(result.first as Map));
+      }
+    } catch (_) {
+      _codexWorkerReadiness = null;
+    }
+    notifyListeners();
   }
 
   Future<void> loadRunDetail(String jobId) async {

@@ -161,17 +161,21 @@ class _DevelopmentRunsPageState extends State<DevelopmentRunsPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<DevelopmentControlStore>().loadRuns());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DevelopmentControlStore>().loadRuns();
+      context.read<DevelopmentControlStore>().loadCodexWorkerReadiness();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final store = context.watch<DevelopmentControlStore>();
+    final readiness = store.codexWorkerReadiness;
     return AdminPageScaffold(
       title: 'Execution Runs',
-      subtitle:
-          'Policy-governed execution evidence. Codex remains disabled until trusted worker hosting is separately enabled.',
+      subtitle: readiness?.canExecute == true
+          ? 'Policy-governed execution evidence. Trusted worker readiness is verified.'
+          : 'Policy-governed execution evidence. Codex remains disabled until trusted worker hosting is separately enabled.',
       actions: [
         IconButton(
             onPressed: () => context.read<DevelopmentControlStore>().loadRuns(),

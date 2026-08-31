@@ -69,7 +69,17 @@ jobs:
         with:
           deno-version: v2.x
       - name: Run credential-free provider contract tests
-        run: deno test --allow-net worker/codex_execution_provider_test.ts
+        run: deno test --allow-net --allow-env --allow-read --allow-write worker/codex_execution_provider_test.ts worker/runtime/worker_runtime_test.ts
+
+  trusted-worker-container:
+    name: Trusted worker container contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the credential-free non-root worker image
+        run: docker build --file worker/Dockerfile --tag curavault-trusted-worker:ci .
+      - name: Verify worker image does not run as root
+        run: test "$(docker image inspect curavault-trusted-worker:ci --format '{{.Config.User}}')" = "65532:65532"
 
   development-control-migration:
     name: Development Control migration validation

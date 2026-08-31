@@ -2,9 +2,9 @@
 
 ## Status
 
-Phase 3 establishes the Codex provider control plane. Codex is disabled by
-default and this repository does not deploy a trusted worker. No live provider
-call is made by CI or by the Flutter browser client.
+Phase 4 establishes the Codex worker control-plane boundary. Codex is disabled
+by default, no worker host is deployed, and no live provider call is made by
+CI or by the Flutter browser client.
 
 ## Trust boundary
 
@@ -26,7 +26,7 @@ authorizations until they are renewed against the current task snapshot.
 
 ## Worker and credentials
 
-A future trusted worker owns the provider API credential, read-only repository
+A dedicated worker identity owns the provider API credential, read-only repository
 credential, and database worker credential. None are stored in PostgreSQL,
 Flutter, generated assets, the editable workspace, or CI. The worker constructs
 a trusted envelope and sends untrusted task content in a distinct delimited
@@ -86,11 +86,26 @@ diff hash, concise validation summaries, policy result, and cleanup result.
 Raw model reasoning, raw worker logs, prompts, credentials, and uncontrolled
 terminal output are excluded from the evidence UI.
 
+## Phase 4 worker control plane
+
+Worker-only RPCs atomically claim a pinned queued job, issue a hashed lease,
+renew heartbeats, load the server-derived envelope, and accept only
+lease-owned start, success, or bounded-failure transitions. Browser roles have
+no execute grant for those RPCs or table access to worker readiness/configuration.
+The private readiness endpoint reports only safe booleans to Owner/Admin.
+
+The included Deno runtime defaults both live and fake execution off. Its fake
+provider uses the real lifecycle with no network or credentials. The Docker
+image is non-root, contains no secrets, has no Docker socket, and exposes only
+a controlled `/workspaces` path. See [TRUSTED_WORKER_OPERATIONS.md](TRUSTED_WORKER_OPERATIONS.md).
+
 ## Enablement checklist
 
 - [ ] architecture review
 - [ ] security review
-- [ ] worker environment deployed
+- [x] worker container reviewed
+- [x] synthetic fake-provider lifecycle implemented
+- [ ] worker host selected and deployed
 - [ ] provider secret provisioned
 - [ ] repository read credential provisioned
 - [ ] repository allow-list confirmed
