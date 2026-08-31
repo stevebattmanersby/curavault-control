@@ -90,6 +90,12 @@ class AdminRbac {
       AdminRole.compliance,
       AdminRole.readOnly
     },
+    AppRoutes.developmentRuns: <AdminRole>{
+      AdminRole.owner,
+      AdminRole.admin,
+      AdminRole.compliance,
+      AdminRole.readOnly
+    },
     AppRoutes.websiteStatus: <AdminRole>{
       AdminRole.owner,
       AdminRole.admin,
@@ -226,6 +232,8 @@ class AdminRbac {
   static bool canApproveHighRiskDevelopment(AdminRole? role) =>
       role == AdminRole.owner;
   static bool canManageReleaseRecords(AdminRole? role) =>
+      role == AdminRole.owner || role == AdminRole.admin;
+  static bool canRequestMockDevelopmentExecution(AdminRole? role) =>
       role == AdminRole.owner || role == AdminRole.admin;
 
   /// Admin actions exposed in the UI.

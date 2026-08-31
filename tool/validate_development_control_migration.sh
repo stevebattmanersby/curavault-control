@@ -42,6 +42,7 @@ SQL
 
 run_sql -f supabase/migrations/20260612230013_20260612_create_control_site_admin_tables.sql
 run_sql -f supabase/migrations/20260830213000_development_control_plane_phase_1.sql
+run_sql -f supabase/migrations/20260831090000_development_execution_dispatcher_phase_2.sql
 
 run_sql <<'SQL'
 do $$
@@ -49,7 +50,7 @@ declare table_count integer; rls_count integer; policy_count integer; index_coun
 begin
   select count(*) into table_count from pg_class where relnamespace = 'public'::regnamespace and relname = any(array['admin_development_tasks','admin_development_task_events','admin_development_prompt_templates','admin_development_reviews','admin_development_checks','admin_releases']);
   select count(*) into rls_count from pg_class where relnamespace = 'public'::regnamespace and relname = any(array['admin_development_tasks','admin_development_task_events','admin_development_prompt_templates','admin_development_reviews','admin_development_checks','admin_releases']) and relrowsecurity;
-  select count(*) into policy_count from pg_policies where (schemaname = 'public' and tablename like 'admin_development%') or (schemaname = 'public' and tablename = 'admin_releases');
+  select count(*) into policy_count from pg_policies where schemaname = 'public' and tablename = any(array['admin_development_tasks','admin_development_task_events','admin_development_prompt_templates','admin_development_reviews','admin_development_checks','admin_releases']);
   select count(*) into index_count from pg_indexes where schemaname = 'public' and indexname in ('admin_development_tasks_status_updated_idx','admin_development_tasks_risk_updated_idx','admin_development_tasks_repository_updated_idx','admin_development_events_task_created_idx','admin_development_reviews_task_type_idx','admin_development_checks_task_status_idx','admin_releases_status_created_idx');
   if table_count <> 6 or rls_count <> 6 or policy_count <> 15 or index_count <> 7 or to_regclass('public.admin_development_task_key_seq') is null then
     raise exception 'development control schema assets are incomplete';
@@ -120,4 +121,116 @@ assert_count 'support evidence visibility' 0 "set role authenticated; select set
 assert_count 'billing evidence visibility' 0 "set role authenticated; select set_config('request.jwt.claim.sub', '66666666-6666-6666-6666-666666666666', false); select count(*) from public.admin_development_task_events;"
 expect_rejected 'anon evidence read' "set role anon; select count(*) from public.admin_development_task_events;"
 
-echo 'Development Control Phase 1 migration validation passed.'
+run_sql <<'SQL'
+do $$
+declare table_count integer; rls_count integer; active_index boolean; anon_execute boolean; direct_update boolean; provider_values text[];
+begin
+  select count(*) into table_count from pg_class where relnamespace = 'public'::regnamespace and relname = any(array['admin_development_execution_jobs','admin_development_execution_events','admin_development_execution_policy_decisions','admin_development_execution_configuration']);
+  select count(*) into rls_count from pg_class where relnamespace = 'public'::regnamespace and relname = any(array['admin_development_execution_jobs','admin_development_execution_events','admin_development_execution_policy_decisions','admin_development_execution_configuration']) and relrowsecurity;
+  select exists(select 1 from pg_indexes where schemaname = 'public' and indexname = 'admin_development_one_active_execution_per_task_idx') into active_index;
+  select has_function_privilege('anon', 'public.admin_request_mock_development_execution(uuid, boolean)', 'execute') into anon_execute;
+  select has_table_privilege('authenticated', 'public.admin_development_execution_configuration', 'update') into direct_update;
+  select array_agg(enumlabel order by enumsortorder) into provider_values from pg_enum where enumtypid = 'public.development_execution_provider'::regtype;
+  if table_count <> 4 or rls_count <> 4 or not active_index or anon_execute or direct_update or provider_values <> array['mock'] then
+    raise exception 'phase 2 execution schema security assets are incomplete';
+  end if;
+end $$;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+update public.admin_development_tasks
+  set execution_prompt = 'Synthetic mock-only task',
+      architecture_review_status = 'approved',
+      human_approval_status = 'approved',
+      status = 'approved'
+  where title = 'Synthetic task one';
+
+-- The default server-side gate is closed, so the first request is durable
+-- evidence of a rejection rather than an execution.
+select job_status from public.admin_request_mock_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic task one'));
+reset role;
+do $$
+begin
+  if (select status from public.admin_development_execution_jobs order by created_at limit 1) <> 'rejected' then
+    raise exception 'disabled execution gate did not reject mock run';
+  end if;
+end $$;
+SQL
+
+expect_rejected 'owner direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+expect_rejected 'admin direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+expect_rejected 'compliance direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '33333333-3333-3333-3333-333333333333', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+expect_rejected 'readonly direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '44444444-4444-4444-4444-444444444444', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+expect_rejected 'support direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+expect_rejected 'billing direct mock enable' "set role authenticated; select set_config('request.jwt.claim.sub', '66666666-6666-6666-6666-666666666666', false); update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';"
+
+run_sql <<'SQL'
+-- This is privileged disposable-database setup, not a browser/API path.
+update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';
+do $$
+begin
+  if (select count(*) from public.admin_development_execution_configuration where provider = 'mock' and is_enabled) <> 1 then
+    raise exception 'privileged mock enablement did not persist';
+  end if;
+  if (select count(*) from public.admin_audit_log where action_type = 'development.execution.configuration.updated' and next @> '{"provider":"mock","is_enabled":true}'::jsonb) <> 1 then
+    raise exception 'mock configuration update was not audited';
+  end if;
+end $$;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+insert into public.admin_development_tasks (title, original_product_request, risk_level)
+values ('Synthetic concurrency task', 'Synthetic concurrency request', 'medium');
+update public.admin_development_tasks
+  set execution_prompt = 'Synthetic concurrent mock-only task',
+      architecture_review_status = 'approved',
+      human_approval_status = 'approved',
+      status = 'approved'
+  where title = 'Synthetic concurrency task';
+select job_status from public.admin_request_mock_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic task one'), true);
+reset role;
+do $$
+declare success_count integer; event_count integer; prompt_leak integer; attempts smallint;
+begin
+  select count(*), max(attempt_number) into success_count, attempts from public.admin_development_execution_jobs where status = 'succeeded';
+  select count(*) into event_count from public.admin_development_execution_events where event_type in ('execution_requested', 'policy_check_started', 'execution_queued', 'execution_starting', 'execution_running', 'execution_succeeded');
+  select count(*) into prompt_leak from public.admin_audit_log where next::text ilike '%Synthetic mock-only task%';
+  if success_count <> 1 or attempts <> 2 or event_count <> 8 or prompt_leak <> 0 then
+    raise exception 'mock lifecycle, bounded retry, or prompt isolation invariant failed';
+  end if;
+end $$;
+SQL
+
+# Two independent authenticated sessions request the same eligible task. The
+# task row lock plus deterministic idempotency key must leave exactly one job.
+(
+  run_sql -c "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); select * from public.admin_request_mock_development_execution((select id from public.admin_development_tasks where title = 'Synthetic concurrency task'), false);" >/dev/null
+) & first_request=$!
+(
+  run_sql -c "set role authenticated; select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false); select * from public.admin_request_mock_development_execution((select id from public.admin_development_tasks where title = 'Synthetic concurrency task'), false);" >/dev/null
+) & second_request=$!
+wait "$first_request"
+wait "$second_request"
+
+run_sql <<'SQL'
+do $$
+declare job_count integer; active_count integer;
+begin
+  select count(*) into job_count from public.admin_development_execution_jobs
+    where task_id = (select id from public.admin_development_tasks where title = 'Synthetic concurrency task');
+  select count(*) into active_count from public.admin_development_execution_jobs
+    where task_id = (select id from public.admin_development_tasks where title = 'Synthetic concurrency task')
+      and status in ('requested', 'policy_check', 'queued', 'starting', 'running', 'cancel_requested');
+  if job_count <> 1 or active_count <> 0 then
+    raise exception 'concurrent mock requests were not idempotent';
+  end if;
+end $$;
+SQL
+
+assert_count 'compliance execution evidence visibility' 3 "set role authenticated; select set_config('request.jwt.claim.sub', '33333333-3333-3333-3333-333333333333', false); select count(*) from public.admin_development_execution_jobs;"
+assert_count 'support execution evidence visibility' 0 "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); select count(*) from public.admin_development_execution_jobs;"
+expect_rejected 'anon mock execution request' "set role anon; select * from public.admin_request_mock_development_execution('11111111-1111-1111-1111-111111111111', false);"
+
+echo 'Development Control Phase 1 and Phase 2 migration validation passed.'

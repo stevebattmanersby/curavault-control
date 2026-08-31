@@ -36,6 +36,29 @@ void main() {
       expect(item.kind, 'Review');
       expect(item.summary, 'Approved');
     });
+
+    test('parses safe execution and policy evidence records', () {
+      final job = DevelopmentExecutionJob.fromMap({
+        'id': 'run-id',
+        'task_id': 'task-id',
+        'job_key': 'CVRUN-000001',
+        'status': 'succeeded',
+        'attempt_number': 2,
+        'repository': 'curavault/control',
+        'base_branch': 'main',
+        'created_at': '2026-08-31T12:00:00Z',
+        'updated_at': '2026-08-31T12:00:01Z',
+      });
+      final policy = DevelopmentExecutionPolicyRecord.fromMap({
+        'decision': 'allow',
+        'reasons': ['medium_risk_reviewed_mock_allowed'],
+        'evaluated_at': '2026-08-31T12:00:00Z',
+      });
+      expect(job.status, DevelopmentExecutionStatus.succeeded);
+      expect(job.attemptNumber, 2);
+      expect(policy.decision, DevelopmentExecutionPolicyDecision.allow);
+      expect(policy.reasons, ['medium_risk_reviewed_mock_allowed']);
+    });
   });
 
   group('Development control permissions', () {
@@ -180,6 +203,115 @@ void main() {
       expect(migrationValidator,
           contains('20260830213000_development_control_plane_phase_1.sql'));
       expect(migrationValidator, isNot(contains('supabase db push')));
+    });
+  });
+
+  group('Development execution dispatcher', () {
+    late final String sql;
+    late final String store;
+    late final String page;
+
+    setUpAll(() {
+      sql = File(
+              'supabase/migrations/20260831090000_development_execution_dispatcher_phase_2.sql')
+          .readAsStringSync();
+      store = File('lib/admin/state/development_control_store.dart')
+          .readAsStringSync();
+      page = File('lib/admin/pages/development_control_page.dart')
+          .readAsStringSync();
+    });
+
+    test('creates durable jobs, events, and policy records with RLS', () {
+      for (final table in [
+        'admin_development_execution_jobs',
+        'admin_development_execution_events',
+        'admin_development_execution_policy_decisions',
+        'admin_development_execution_configuration',
+      ]) {
+        expect(sql, contains('public.$table'));
+      }
+      expect(
+          sql, contains('admin_development_one_active_execution_per_task_idx'));
+      expect(
+          sql,
+          contains(
+              "where status in ('requested', 'policy_check', 'queued', 'starting', 'running', 'cancel_requested')"));
+      expect(sql, contains('enable row level security'));
+      expect(
+          sql,
+          contains(
+              'revoke all on table public.%I from public, anon, authenticated'));
+    });
+
+    test('keeps dispatch server-governed, idempotent, and mock-only', () {
+      expect(sql, contains('admin_development_mock_execution_enabled'));
+      expect(sql, contains('is_enabled boolean not null default false'));
+      expect(sql, contains('admin_audit_development_execution_configuration'));
+      expect(sql, contains('admin_request_mock_development_execution'));
+      expect(sql, contains('task_snapshot_hash'));
+      expect(sql, contains('idempotency_key'));
+      expect(sql, contains("check (provider = 'mock')"));
+      expect(sql, contains("check (executor_mode = 'mock')"));
+      expect(sql, contains("enum ('mock')"));
+      expect(sql, isNot(contains("enum ('mock', 'codex')")));
+      expect(sql, contains('admin_process_mock_development_execution'));
+      expect(sql, contains('critical_execution_not_supported'));
+      expect(sql, contains('execution_retry_limit_reached'));
+    });
+
+    test('does not introduce an execution credential or external action path',
+        () {
+      for (final forbidden in [
+        'service_role',
+        'github_token',
+        'openai_key',
+        'codex_api',
+        'shell_command',
+        'curl ',
+        'http://',
+        'https://',
+      ]) {
+        expect(sql.toLowerCase(), isNot(contains(forbidden)));
+      }
+    });
+
+    test('keeps configuration private and grants only dispatcher RPCs', () {
+      expect(
+          sql,
+          isNot(contains(
+              'grant select on table public.admin_development_execution_configuration')));
+      expect(
+          sql,
+          isNot(contains(
+              'grant update on table public.admin_development_execution_configuration')));
+      expect(
+          sql,
+          contains(
+              'grant execute on function public.admin_request_mock_development_execution(uuid, boolean) to authenticated'));
+      expect(
+          sql,
+          contains(
+              'revoke all on function public.admin_development_mock_execution_enabled() from public, anon, authenticated'));
+      final retryFunction = sql.substring(sql.indexOf(
+          'create or replace function public.admin_retry_mock_development_execution'));
+      expect(retryFunction, contains('development_execution_not_authorized'));
+      expect(
+          retryFunction,
+          contains(
+              'public.admin_request_mock_development_execution(p_task_id, true)'));
+    });
+
+    test('keeps browser dispatch to a task identifier and safe run evidence',
+        () {
+      final requestMethod =
+          store.substring(store.indexOf('Future<void> requestMockExecution'));
+      expect(requestMethod, contains("'p_task_id': taskId"));
+      expect(requestMethod, isNot(contains('executionPrompt')));
+      expect(store, contains('Future<void> loadRuns()'));
+      expect(store, contains('Future<void> loadRunDetail(String jobId)'));
+      expect(page, contains('Request mock run'));
+      expect(page, contains('does not run code, contact Codex/OpenAI'));
+      expect(page, contains('DevelopmentRunsPage'));
     });
   });
 }

@@ -4,7 +4,7 @@ on:
   pull_request:
   push:
     branches:
-      - feature/development-control-plane-phase-1
+      - feature/development-control-plane-phase-*
 
 permissions:
   contents: read
@@ -26,6 +26,11 @@ jobs:
         shell: bash
         run: |
           base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ "$base_sha" =~ ^0+$ ]] || \
+              ! git cat-file -e "$base_sha^{commit}" 2>/dev/null || \
+              ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
+            base_sha="$(git rev-parse "$GITHUB_SHA^")"
+          fi
           changed_dart_files="$(git diff --name-only "$base_sha" "$GITHUB_SHA" -- '*.dart')"
           if [[ -n "$changed_dart_files" ]]; then
             dart format --output=none --set-exit-if-changed $changed_dart_files
@@ -48,6 +53,11 @@ jobs:
         shell: bash
         run: |
           base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ "$base_sha" =~ ^0+$ ]] || \
+              ! git cat-file -e "$base_sha^{commit}" 2>/dev/null || \
+              ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
+            base_sha="$(git rev-parse "$GITHUB_SHA^")"
+          fi
           bash tool/check_analyzer_regression.sh "$base_sha"
 
   development-control-migration:
@@ -77,5 +87,5 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install --yes postgresql-client
-      - name: Apply and validate the disposable Phase 1 schema
+      - name: Apply and validate the disposable Development Control schema
         run: bash tool/validate_development_control_migration.sh

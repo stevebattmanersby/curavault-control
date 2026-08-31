@@ -2,18 +2,24 @@ import 'package:curavault_admin/admin/data/models/development_control_models.dar
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// A narrow, admin-only data surface for Phase 1 workflow records.
-/// It intentionally has no execution, webhook, GitHub, or secret capability.
+/// An admin-only workflow and mock-execution metadata surface.
+/// Browser code has no provider credential, command, GitHub, or deployment path.
 class DevelopmentControlStore extends ChangeNotifier {
   List<DevelopmentTask> _tasks = const [];
   List<DevelopmentPromptTemplate> _prompts = const [];
   List<DevelopmentEvidenceItem> _evidence = const [];
+  List<DevelopmentExecutionJob> _runs = const [];
+  List<DevelopmentExecutionEvent> _selectedRunEvents = const [];
+  DevelopmentExecutionPolicyRecord? _selectedRunPolicy;
   bool _loading = false;
   String? _error;
 
   List<DevelopmentTask> get tasks => _tasks;
   List<DevelopmentPromptTemplate> get prompts => _prompts;
   List<DevelopmentEvidenceItem> get evidence => _evidence;
+  List<DevelopmentExecutionJob> get runs => _runs;
+  List<DevelopmentExecutionEvent> get selectedRunEvents => _selectedRunEvents;
+  DevelopmentExecutionPolicyRecord? get selectedRunPolicy => _selectedRunPolicy;
   bool get loading => _loading;
   String? get error => _error;
 
@@ -155,6 +161,90 @@ class DevelopmentControlStore extends ChangeNotifier {
     } finally {
       _loading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> loadRuns() async {
+    _loading = true;
+    _error = null;
+    notifyListeners();
+    try {
+      final rows = await _client
+          .from('admin_development_execution_jobs')
+          .select(
+              'id,task_id,job_key,provider,executor_mode,status,attempt_number,repository,base_branch,created_at,updated_at,failure_code,failure_summary,result_summary')
+          .order('created_at', ascending: false)
+          .limit(100);
+      _runs = (rows as List)
+          .map((row) => DevelopmentExecutionJob.fromMap(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
+    } catch (_) {
+      _error = 'Execution records could not be loaded.';
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> loadRunDetail(String jobId) async {
+    _loading = true;
+    _error = null;
+    _selectedRunEvents = const [];
+    _selectedRunPolicy = null;
+    notifyListeners();
+    try {
+      final results = await Future.wait<dynamic>([
+        _client
+            .from('admin_development_execution_events')
+            .select('id,event_type,summary,created_at')
+            .eq('execution_job_id', jobId)
+            .order('created_at'),
+        _client
+            .from('admin_development_execution_policy_decisions')
+            .select('decision,reasons,evaluated_at')
+            .eq('execution_job_id', jobId)
+            .order('evaluated_at', ascending: false)
+            .limit(1),
+      ]);
+      _selectedRunEvents = (results[0] as List)
+          .map((row) => DevelopmentExecutionEvent.fromMap(
+              Map<String, dynamic>.from(row as Map)))
+          .toList();
+      final policies = results[1] as List;
+      if (policies.isNotEmpty) {
+        _selectedRunPolicy = DevelopmentExecutionPolicyRecord.fromMap(
+            Map<String, dynamic>.from(policies.first as Map));
+      }
+    } catch (_) {
+      _error = 'Execution evidence could not be loaded.';
+    } finally {
+      _loading = false;
+      notifyListeners();
+    }
+  }
+
+  /// The browser submits only a task ID. The database loads task context,
+  /// hashes the stored prompt, evaluates policy, and performs mock-only work.
+  Future<void> requestMockExecution(String taskId) async {
+    try {
+      await _client.rpc('admin_request_mock_development_execution', params: {
+        'p_task_id': taskId,
+      });
+      await loadRuns();
+    } catch (_) {
+      throw StateError('The mock execution request could not be completed.');
+    }
+  }
+
+  Future<void> cancelMockExecution(String jobId) async {
+    try {
+      await _client.rpc('admin_cancel_development_execution', params: {
+        'p_job_id': jobId,
+      });
+      await loadRuns();
+    } catch (_) {
+      throw StateError('The mock execution could not be cancelled.');
     }
   }
 }

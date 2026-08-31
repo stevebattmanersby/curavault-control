@@ -220,6 +220,13 @@ class AdminSidebar extends StatelessWidget {
                         route: AppRoutes.developmentEvidence,
                         currentLocation: currentLocation,
                         onNavigate: onNavigate),
+                  if (allowed(AppRoutes.developmentRuns))
+                    _SidebarItem(
+                        label: 'Runs',
+                        icon: Icons.playlist_play_outlined,
+                        route: AppRoutes.developmentRuns,
+                        currentLocation: currentLocation,
+                        onNavigate: onNavigate),
                   const SizedBox(height: AppSpacing.md),
                   const _SidebarSection(label: 'Website'),
                   if (allowed(AppRoutes.websitePages))

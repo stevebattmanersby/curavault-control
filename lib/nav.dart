@@ -307,6 +307,19 @@ class AppRouter {
                 pageBuilder: (context, state) =>
                     const NoTransitionPage(child: DevelopmentEvidencePage())),
             GoRoute(
+                path: AppRoutes.developmentRuns,
+                name: 'developmentRuns',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: DevelopmentRunsPage()),
+                routes: [
+                  GoRoute(
+                      path: ':runId',
+                      name: 'developmentRunDetail',
+                      pageBuilder: (context, state) => NoTransitionPage(
+                          child: DevelopmentRunDetailPage(
+                              runId: state.pathParameters['runId'] ?? ''))),
+                ]),
+            GoRoute(
                 path: AppRoutes.developmentTasks,
                 name: 'developmentTasks',
                 pageBuilder: (context, state) => const NoTransitionPage(
@@ -427,6 +440,7 @@ class AppRoutes {
   static const String developmentReviews = '/development/reviews';
   static const String developmentReleases = '/development/releases';
   static const String developmentEvidence = '/development/evidence';
+  static const String developmentRuns = '/development/runs';
   static const String websiteStatus = '/website/status';
   static const String websitePages = '/website/pages';
   static const String websiteBlog = '/website/blog';
