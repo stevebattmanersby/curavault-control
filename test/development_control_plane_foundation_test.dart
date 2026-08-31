@@ -369,7 +369,8 @@ void main() {
       expect(sql, contains('provider_policy_version text not null'));
       expect(sql, contains('repository text not null'));
       expect(sql, contains('base_branch text not null'));
-      expect(sql, contains('public.admin_development_execution_snapshot(v_task)'));
+      expect(
+          sql, contains('public.admin_development_execution_snapshot(v_task)'));
       expect(sql, contains('p_task.task_type'));
       expect(sql, contains('admin_development_codex_effective_risk'));
       expect(sql, contains('codex_concurrency_limit_reached'));
