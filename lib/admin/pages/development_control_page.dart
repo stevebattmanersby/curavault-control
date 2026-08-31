@@ -109,6 +109,9 @@ class DevelopmentTaskDetailPage extends StatelessWidget {
             icon: const Icon(Icons.play_arrow_outlined),
             label: const Text('Request mock run'),
           ),
+        if (AdminRbac.canRequestMockDevelopmentExecution(role) &&
+            task.executionPrompt?.isNotEmpty == true)
+          _CodexExecutionAction(task: task),
       ],
       child: SingleChildScrollView(
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -168,7 +171,7 @@ class _DevelopmentRunsPageState extends State<DevelopmentRunsPage> {
     return AdminPageScaffold(
       title: 'Execution Runs',
       subtitle:
-          'Policy-governed mock records only. No code, repository, provider, or deployment action is performed.',
+          'Policy-governed execution evidence. Codex remains disabled until trusted worker hosting is separately enabled.',
       actions: [
         IconButton(
             onPressed: () => context.read<DevelopmentControlStore>().loadRuns(),
@@ -209,7 +212,7 @@ class _DevelopmentRunsPageState extends State<DevelopmentRunsPage> {
                                                 fontWeight: FontWeight.w700)),
                                     const SizedBox(height: 4),
                                     Text(
-                                        '${run.repository} · ${run.baseBranch} · attempt ${run.attemptNumber}'),
+                                        '${run.provider} · ${run.repository} · ${run.baseBranch} · attempt ${run.attemptNumber}'),
                                   ])),
                               _ExecutionStatusBadge(status: run.status),
                             ]),
@@ -258,7 +261,7 @@ class _DevelopmentRunDetailPageState extends State<DevelopmentRunDetailPage> {
     }.contains(run.status);
     return AdminPageScaffold(
       title: run.jobKey,
-      subtitle: 'Mock execution evidence only',
+      subtitle: '${run.provider} execution evidence',
       actions: [
         if (cancellable && AdminRbac.canRequestMockDevelopmentExecution(role))
           OutlinedButton.icon(
@@ -278,7 +281,26 @@ class _DevelopmentRunDetailPageState extends State<DevelopmentRunDetailPage> {
         const SizedBox(height: AppSpacing.lg),
         _ContentCard(
             title: 'Repository context',
-            content: '${run.repository}\nBase branch: ${run.baseBranch}'),
+            content: '${run.repository}\nBase branch: ${run.baseBranch}'
+                '${run.resolvedBaseSha == null ? '' : '\nPinned SHA: ${run.resolvedBaseSha}'}'),
+        if (run.changedPaths.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ContentCard(
+              title: 'Workspace change summary',
+              content: '${run.changedPaths.length} changed path(s)\n'
+                  '${run.changedPaths.join('\n')}'
+                  '${run.protectedPathChanged ? '\nProtected path warning recorded.' : ''}'),
+        ],
+        if (run.testsSummary?.isNotEmpty == true ||
+            run.analyzerSummary?.isNotEmpty == true) ...[
+          const SizedBox(height: AppSpacing.md),
+          _ContentCard(
+              title: 'Validation summary',
+              content: [run.testsSummary, run.analyzerSummary]
+                  .whereType<String>()
+                  .where((item) => item.isNotEmpty)
+                  .join('\n')),
+        ],
         if (store.selectedRunPolicy != null) ...[
           const SizedBox(height: AppSpacing.md),
           _ContentCard(
@@ -673,6 +695,26 @@ class _Meta extends StatelessWidget {
   Widget build(BuildContext context) => Chip(label: Text('$label: $value'));
 }
 
+class _CodexExecutionAction extends StatelessWidget {
+  const _CodexExecutionAction({required this.task});
+  final DevelopmentTask task;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+        future: context
+            .read<DevelopmentControlStore>()
+            .canRequestCodexExecution(task.id),
+        builder: (context, snapshot) {
+          if (snapshot.data != true) return const SizedBox.shrink();
+          return FilledButton.icon(
+              onPressed: () => _confirmCodexExecution(context, task),
+              icon: const Icon(Icons.security_outlined),
+              label: const Text('Request Codex run'));
+        });
+  }
+}
+
 Future<void> _showTaskForm(BuildContext context) async {
   final store = context.read<DevelopmentControlStore>();
   await showDialog<void>(
@@ -702,6 +744,41 @@ Future<void> _confirmMockExecution(
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
               'Mock execution request recorded. Review Runs for policy evidence.')));
+      context.go(AppRoutes.developmentRuns);
+    }
+  } on StateError catch (error) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.message)));
+    }
+  }
+}
+
+Future<void> _confirmCodexExecution(
+    BuildContext context, DevelopmentTask task) async {
+  final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+              title: const Text('Request Codex run?'),
+              content: Text(
+                  '${task.taskKey} will be evaluated against server-side repository, SHA, approval, and path policy. Any approved run uses an isolated workspace. Nothing will be pushed, merged, published as a pull request, or deployed.'),
+              actions: [
+                TextButton(
+                    onPressed: () => Navigator.pop(dialogContext, false),
+                    child: const Text('Cancel')),
+                FilledButton(
+                    onPressed: () => Navigator.pop(dialogContext, true),
+                    child: const Text('Request Codex run')),
+              ]));
+  if (confirmed != true || !context.mounted) return;
+  try {
+    await context
+        .read<DevelopmentControlStore>()
+        .requestCodexExecution(task.id);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+              'Codex execution request recorded. Review Runs for policy evidence.')));
       context.go(AppRoutes.developmentRuns);
     }
   } on StateError catch (error) {

@@ -16,7 +16,7 @@ The existing `admin_users` allow-list remains authoritative. Owner and Admin can
 
 Database audit triggers write actor, entity, action, and constrained state metadata to `admin_audit_log`; free-text requests and prompts are deliberately excluded. Task status is a workflow record only. `approved` always requires a recorded Owner approval; high/critical work also cannot become `completed` without that approval. Approval attribution is written by the database and becomes immutable.
 
-## Phase 2 dispatcher foundation
+## Phase 2 mock dispatcher
 
 Phase 2 adds a durable, policy-governed **mock-only** execution ledger. The browser submits a task ID only; PostgreSQL loads the task, hashes the stored execution prompt, evaluates recorded approval/review state, creates an idempotent `CVRUN-######` job, and records policy and lifecycle evidence. A server-managed database configuration row defaults to disabled. Authenticated roles have no read/write policy or direct grant for that switch; a future privileged deployment path must be separately designed and reviewed. Configuration changes are safely audited. No browser control exists.
 
@@ -24,9 +24,30 @@ The only provider and executor mode defined or accepted by the database are `moc
 
 Low-risk tasks may be mock-eligible in `ready`, `awaiting_review`, or `approved`. Medium tasks require `approved` plus Architecture review. High tasks require recorded Owner approval plus Architecture and Security review. Critical work returns `manual_review_required` and is not dispatched. Rejection, retry limit, cancellation, snapshot-change, and controlled mock-failure outcomes are all durable and auditable. Retries are explicit and bounded to three attempts; duplicate active requests return the same job.
 
-## Phase 1 limits
+## Phase 3 Codex provider architecture
 
-No Codex/OpenAI execution, GitHub write operation, CI rerun, shell execution, webhook, deployment, merge, or secret storage exists in this phase. GitHub fields are manually entered references only. A future real-provider integration requires a separately approved server-side dispatcher design, credential isolation, architecture review, security review, provider policy, and a dedicated migration; Phase 2 does not create that capability.
+Phase 3 adds a separate, disabled-by-default `codex` provider policy. A real
+request is server-derived from a task ID and is pinned to the sole allowed
+repository (`stevebattmanersby/curavult-app`) and a trusted base SHA. Mock and
+Codex configuration are independent; neither Owner nor Admin has browser/API
+table access to enable Codex. Codex jobs retain safe policy, pin, path, and
+validation evidence only. High-risk requests additionally require an explicit
+Owner-issued Codex authorization bound to the current task snapshot, repository,
+base branch, and provider policy version; stale authorizations are rejected.
+The private provider configuration contains the audited, allow-listed model ID;
+neither browser users nor tasks can select it. Critical requests remain unsupported.
+
+The provider transport is a trusted-worker contract, not a browser or Edge
+Function runner. Production enablement requires a separately hosted isolated
+workspace worker with provider/repository secrets, egress controls, cleanup,
+and monitoring. See [CODEX_PROVIDER_ARCHITECTURE.md](CODEX_PROVIDER_ARCHITECTURE.md).
+
+## Limits
+
+No browser-to-Codex call, GitHub write operation, CI rerun, raw shell endpoint,
+webhook runner, deployment, merge, or secret storage exists. GitHub fields are
+manually entered references only. Codex remains disabled until the documented
+trusted-worker enablement checklist is complete.
 
 ## Validation
 

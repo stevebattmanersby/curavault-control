@@ -172,7 +172,7 @@ class DevelopmentControlStore extends ChangeNotifier {
       final rows = await _client
           .from('admin_development_execution_jobs')
           .select(
-              'id,task_id,job_key,provider,executor_mode,status,attempt_number,repository,base_branch,created_at,updated_at,failure_code,failure_summary,result_summary')
+              'id,task_id,job_key,provider,executor_mode,status,attempt_number,repository,base_branch,resolved_base_sha,changed_paths,protected_path_changed,tests_summary,analyzer_summary,created_at,updated_at,failure_code,failure_summary,result_summary')
           .order('created_at', ascending: false)
           .limit(100);
       _runs = (rows as List)
@@ -234,6 +234,31 @@ class DevelopmentControlStore extends ChangeNotifier {
       await loadRuns();
     } catch (_) {
       throw StateError('The mock execution request could not be completed.');
+    }
+  }
+
+  /// This resolves only a server-derived boolean. Provider configuration,
+  /// worker state, and credential state stay private to trusted infrastructure.
+  Future<bool> canRequestCodexExecution(String taskId) async {
+    try {
+      final result = await _client.rpc('admin_codex_execution_available',
+          params: {'p_task_id': taskId});
+      return result == true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Browser input is limited to the task identifier. The server derives the
+  /// provider, repository allow-list, pinned SHA, and policy decision.
+  Future<void> requestCodexExecution(String taskId) async {
+    try {
+      await _client.rpc('admin_request_codex_development_execution', params: {
+        'p_task_id': taskId,
+      });
+      await loadRuns();
+    } catch (_) {
+      throw StateError('The Codex execution request could not be completed.');
     }
   }
 

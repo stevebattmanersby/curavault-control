@@ -234,3 +234,194 @@ assert_count 'support execution evidence visibility' 0 "set role authenticated; 
 expect_rejected 'anon mock execution request' "set role anon; select * from public.admin_request_mock_development_execution('11111111-1111-1111-1111-111111111111', false);"
 
 echo 'Development Control Phase 1 and Phase 2 migration validation passed.'
+
+run_sql -f supabase/migrations/20260831100000_development_codex_provider_phase_3.sql
+
+run_sql <<'SQL'
+do $$
+declare provider_values text[]; executor_values text[]; table_count integer; codex_default boolean; codex_model text;
+begin
+  select array_agg(enumlabel order by enumsortorder) into provider_values
+    from pg_enum where enumtypid = 'public.development_execution_provider'::regtype;
+  select array_agg(enumlabel order by enumsortorder) into executor_values
+    from pg_enum where enumtypid = 'public.development_executor_mode'::regtype;
+  select count(*) into table_count from pg_class where relnamespace = 'public'::regnamespace
+    and relname = any(array['admin_development_execution_provider_configuration','admin_development_repository_revisions','admin_development_codex_execution_authorizations']);
+  select is_enabled into codex_default from public.admin_development_execution_provider_configuration where provider = 'codex';
+  select model_id into codex_model from public.admin_development_execution_provider_configuration where provider = 'codex';
+  if provider_values <> array['mock','codex'] or executor_values <> array['mock','codex']
+    or table_count <> 3 or codex_default or codex_model <> 'gpt-5.3-codex' then
+    raise exception 'phase 3 provider configuration is incomplete or enabled by default';
+  end if;
+end $$;
+SQL
+
+expect_rejected 'owner direct Codex configuration read' "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); select * from public.admin_development_execution_provider_configuration;"
+expect_rejected 'owner direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'admin direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'compliance direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '33333333-3333-3333-3333-333333333333', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'readonly direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '44444444-4444-4444-4444-444444444444', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'support direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'billing direct Codex configuration enable' "set role authenticated; select set_config('request.jwt.claim.sub', '66666666-6666-6666-6666-666666666666', false); update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';"
+expect_rejected 'unsupported Codex model configuration' "update public.admin_development_execution_provider_configuration set model_id = 'unsupported-codex-model' where provider = 'codex';"
+expect_rejected 'owner direct Codex authorization insert' "set role authenticated; select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false); insert into public.admin_development_codex_execution_authorizations (task_id, task_snapshot_hash, provider_policy_version, repository, base_branch, authorized_by) values ('11111111-1111-1111-1111-111111111111', repeat('a', 64), 'phase_3_codex_v1', 'stevebattmanersby/curavult-app', 'main', '11111111-1111-1111-1111-111111111111');"
+expect_rejected 'admin Owner authorization RPC' "set role authenticated; select set_config('request.jwt.claim.sub', '22222222-2222-2222-2222-222222222222', false); select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'compliance Owner authorization RPC' "set role authenticated; select set_config('request.jwt.claim.sub', '33333333-3333-3333-3333-333333333333', false); select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'readonly Owner authorization RPC' "set role authenticated; select set_config('request.jwt.claim.sub', '44444444-4444-4444-4444-444444444444', false); select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'support Owner authorization RPC' "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'billing Owner authorization RPC' "set role authenticated; select set_config('request.jwt.claim.sub', '66666666-6666-6666-6666-666666666666', false); select public.admin_authorize_codex_execution('11111111-1111-1111-1111-111111111111');"
+
+run_sql <<'SQL'
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic Codex disabled task', 'Synthetic safe request', 'Synthetic safe Codex task', 'low', 'ready');
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic Codex disabled task'));
+reset role;
+do $$ begin
+  if (select failure_code from public.admin_development_execution_jobs where provider = 'codex' order by created_at desc limit 1) <> 'codex_execution_disabled' then
+    raise exception 'disabled Codex provider did not reject request';
+  end if;
+end $$;
+
+-- Privileged disposable setup only. It proves mock and Codex gates are separate.
+update public.admin_development_execution_configuration set is_enabled = true where provider = 'mock';
+update public.admin_development_execution_provider_configuration set is_enabled = true where provider = 'codex';
+insert into public.admin_development_repository_revisions (repository, base_branch, resolved_base_sha)
+values ('stevebattmanersby/curavult-app', 'main', repeat('a', 40));
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status, repository)
+values ('Synthetic blocked repository task', 'Synthetic safe request', 'Synthetic safe Codex task', 'low', 'ready', 'other/blocked');
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic blocked repository task'));
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic Critical Codex task', 'Synthetic safe request', 'Synthetic safe Codex task', 'critical', 'ready');
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic Critical Codex task'));
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic High Codex task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic High Codex task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic High Codex task'));
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic High Codex task'));
+reset role;
+
+-- Free the global test slot, then prove every authorization-relevant change
+-- becomes stale before it can queue another high-risk job.
+update public.admin_development_execution_jobs
+  set status = 'cancelled', cancelled_at = now(), updated_at = now()
+  where task_id = (select id from public.admin_development_tasks where title = 'Synthetic High Codex task')
+    and status = 'queued';
+
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic stale prompt task', 'Synthetic safe request', 'Original prompt', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic stale prompt task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale prompt task'));
+update public.admin_development_tasks set execution_prompt = 'Changed prompt' where title = 'Synthetic stale prompt task';
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale prompt task'));
+
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic stale repository task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic stale repository task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale repository task'));
+update public.admin_development_tasks set repository = 'other/blocked' where title = 'Synthetic stale repository task';
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale repository task'));
+
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic stale branch task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic stale branch task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale branch task'));
+update public.admin_development_tasks set base_branch = 'release' where title = 'Synthetic stale branch task';
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale branch task'));
+
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic stale effective risk task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic stale effective risk task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale effective risk task'));
+update public.admin_development_tasks set task_type = 'security' where title = 'Synthetic stale effective risk task';
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale effective risk task'));
+
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic stale policy task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic stale policy task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale policy task'));
+reset role;
+update public.admin_development_execution_provider_configuration set policy_version = 'phase_3_codex_v2' where provider = 'codex';
+set role authenticated;
+select set_config('request.jwt.claim.sub', '11111111-1111-1111-1111-111111111111', false);
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale policy task'));
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic stale policy task'));
+select job_status from public.admin_request_codex_development_execution((select id from public.admin_development_tasks where title = 'Synthetic stale policy task'));
+
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic protected Codex task', 'Synthetic safe request', 'Update supabase/migrations safely', 'low', 'ready');
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic protected Codex task'));
+insert into public.admin_development_tasks (title, original_product_request, execution_prompt, risk_level, status)
+values ('Synthetic concurrent Codex task', 'Synthetic safe request', 'Synthetic safe Codex task', 'high', 'awaiting_approval');
+update public.admin_development_tasks set architecture_review_status = 'approved', security_review_status = 'approved', human_approval_status = 'approved', status = 'approved'
+  where title = 'Synthetic concurrent Codex task';
+select public.admin_authorize_codex_execution((select id from public.admin_development_tasks where title = 'Synthetic concurrent Codex task'));
+select job_status from public.admin_request_codex_development_execution(
+  (select id from public.admin_development_tasks where title = 'Synthetic concurrent Codex task'));
+reset role;
+do $$
+begin
+  if not exists (select 1 from public.admin_development_execution_jobs where provider = 'codex' and failure_code = 'repository_not_allowed') then
+    raise exception 'repository allow-list did not reject';
+  end if;
+  if not exists (select 1 from public.admin_development_execution_jobs where provider = 'codex' and failure_code = 'critical_execution_not_supported') then
+    raise exception 'critical Codex request was not denied';
+  end if;
+  if not exists (select 1 from public.admin_development_execution_jobs where provider = 'codex' and status = 'queued' and resolved_base_sha = repeat('a', 40)) then
+    raise exception 'eligible high Codex request was not pinned and queued';
+  end if;
+  if (select count(*) from public.admin_development_execution_jobs where provider = 'codex' and failure_code = 'codex_execution_authorization_stale') <> 5 then
+    raise exception 'stale task, repository, branch, risk, or policy authorization was accepted';
+  end if;
+  if not exists (
+    select 1
+    from public.admin_development_codex_execution_authorizations a
+    join public.admin_development_tasks t on t.id = a.task_id
+    where t.title = 'Synthetic stale policy task'
+      and a.task_snapshot_hash = public.admin_development_execution_snapshot(t)
+      and a.provider_policy_version = 'phase_3_codex_v2'
+      and a.repository = t.repository and a.base_branch = t.base_branch
+  ) then
+    raise exception 'reauthorization did not bind the current task snapshot and policy';
+  end if;
+  if not exists (select 1 from public.admin_development_execution_policy_decisions where effective_risk_level = 'high' and task_id = (select id from public.admin_development_tasks where title = 'Synthetic protected Codex task')) then
+    raise exception 'protected scope did not escalate effective risk';
+  end if;
+  if not exists (select 1 from public.admin_development_execution_jobs where provider = 'codex' and failure_code = 'codex_concurrency_limit_reached') then
+    raise exception 'global Codex concurrency limit did not reject a second job';
+  end if;
+  if (select count(*) from public.admin_development_execution_configuration where provider = 'mock' and is_enabled) <> 1 then
+    raise exception 'Codex setup changed mock configuration';
+  end if;
+  if not exists (
+    select 1 from public.admin_audit_log
+    where action_type = 'development.codex.configuration.updated'
+      and next->>'policy_version' = 'phase_3_codex_v2'
+      and next->>'model_id' = 'gpt-5.3-codex'
+  ) then
+    raise exception 'Codex model and policy configuration change was not audited';
+  end if;
+end $$;
+SQL
+
+expect_rejected 'anon Codex execution request' "set role anon; select * from public.admin_request_codex_development_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'support Codex execution request' "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); select * from public.admin_request_codex_development_execution('11111111-1111-1111-1111-111111111111');"
+
+echo 'Development Control Phase 3 Codex provider validation passed.'
