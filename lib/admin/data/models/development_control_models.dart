@@ -214,6 +214,11 @@ class DevelopmentExecutionJob {
     this.failureCode,
     this.failureSummary,
     this.resultSummary,
+    this.resolvedBaseSha,
+    this.changedPaths = const [],
+    this.protectedPathChanged = false,
+    this.testsSummary,
+    this.analyzerSummary,
   });
 
   final String id;
@@ -230,6 +235,11 @@ class DevelopmentExecutionJob {
   final String? failureCode;
   final String? failureSummary;
   final String? resultSummary;
+  final String? resolvedBaseSha;
+  final List<String> changedPaths;
+  final bool protectedPathChanged;
+  final String? testsSummary;
+  final String? analyzerSummary;
 
   factory DevelopmentExecutionJob.fromMap(Map<String, dynamic> map) =>
       DevelopmentExecutionJob(
@@ -252,6 +262,14 @@ class DevelopmentExecutionJob {
         failureCode: map['failure_code'] as String?,
         failureSummary: map['failure_summary'] as String?,
         resultSummary: map['result_summary'] as String?,
+        resolvedBaseSha: map['resolved_base_sha'] as String?,
+        changedPaths: (map['changed_paths'] as List?)
+                ?.whereType<String>()
+                .toList(growable: false) ??
+            const [],
+        protectedPathChanged: map['protected_path_changed'] as bool? ?? false,
+        testsSummary: map['tests_summary'] as String?,
+        analyzerSummary: map['analyzer_summary'] as String?,
       );
 }
 
