@@ -24,6 +24,8 @@ create table if not exists public.admin_development_execution_provider_configura
   allow_provider_api_network boolean not null default true,
   allow_repository_network boolean not null default false,
   allow_workspace_write boolean not null default true,
+  model_id text not null default 'gpt-5.3-codex'
+    check (model_id in ('gpt-5.3-codex')),
   policy_version text not null default 'phase_3_codex_v1'
     check (char_length(policy_version) between 1 and 80),
   changed_by uuid references public.admin_users(admin_user_id) on delete restrict,
@@ -51,9 +53,12 @@ create table if not exists public.admin_development_repository_revisions (
 
 create table if not exists public.admin_development_codex_execution_authorizations (
   task_id uuid primary key references public.admin_development_tasks(id) on delete restrict,
+  task_snapshot_hash text not null check (task_snapshot_hash ~ '^[0-9a-f]{64}$'),
+  provider_policy_version text not null check (char_length(provider_policy_version) between 1 and 80),
+  repository text not null check (repository = 'stevebattmanersby/curavult-app'),
+  base_branch text not null check (base_branch = 'main'),
   authorized_by uuid not null references public.admin_users(admin_user_id) on delete restrict,
   authorized_at timestamptz not null default now(),
-  policy_version text not null default 'phase_3_codex_v1' check (char_length(policy_version) <= 80),
   revoked_at timestamptz,
   revoked_by uuid references public.admin_users(admin_user_id) on delete restrict,
   check ((revoked_at is null and revoked_by is null) or (revoked_at is not null and revoked_by is not null))
@@ -125,7 +130,8 @@ alter table public.admin_development_execution_jobs
       'repository_not_allowed', 'base_branch_not_allowed', 'base_sha_unresolved',
       'codex_execution_authorization_required', 'execution_output_policy_violation',
       'workspace_cleanup_failed', 'provider_timeout', 'provider_error',
-      'provider_malformed_response', 'codex_concurrency_limit_reached'
+      'provider_malformed_response', 'codex_concurrency_limit_reached',
+      'codex_execution_authorization_stale'
     )
   );
 
@@ -160,11 +166,23 @@ returns public.development_risk_level language sql stable security definer set s
   end
 $$;
 
+-- Phase 3 expands the existing trusted snapshot to include task_type because
+-- it can independently escalate the effective Codex execution risk.
+create or replace function public.admin_development_execution_snapshot(p_task public.admin_development_tasks)
+returns text language sql stable security definer set search_path = public as $$
+  select encode(digest(concat_ws('|', p_task.execution_prompt, p_task.repository,
+    p_task.base_branch, p_task.risk_level::text, p_task.task_type, p_task.status::text,
+    p_task.human_approval_status::text, p_task.architecture_review_status::text,
+    p_task.security_review_status::text, p_task.acceptance_notes), 'sha256'), 'hex')
+$$;
+
 create or replace function public.admin_audit_development_codex_configuration()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_admin_email text;
 begin
-  if new.is_enabled is distinct from old.is_enabled then
+  if new.is_enabled is distinct from old.is_enabled
+    or new.model_id is distinct from old.model_id
+    or new.policy_version is distinct from old.policy_version then
     select email into v_admin_email from public.admin_users where admin_user_id = auth.uid();
     insert into public.admin_audit_log (
       admin_user_id, admin_email, target_resource_type, target_resource_id,
@@ -172,7 +190,12 @@ begin
     ) values (
       auth.uid(), v_admin_email, 'admin_development_execution_provider_configuration', new.provider::text,
       'development.codex.configuration.updated', 'success',
-      jsonb_build_object('provider', new.provider, 'is_enabled', new.is_enabled)
+      jsonb_build_object(
+        'provider', new.provider,
+        'is_enabled', new.is_enabled,
+        'model_id', new.model_id,
+        'policy_version', new.policy_version
+      )
     );
   end if;
   return new;
@@ -186,16 +209,34 @@ create trigger admin_audit_development_codex_configuration
 
 create or replace function public.admin_authorize_codex_execution(p_task_id uuid)
 returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_task public.admin_development_tasks;
+  v_config public.admin_development_execution_provider_configuration;
+  v_snapshot text;
 begin
   if not public.is_active_admin() or public.current_admin_role() <> 'owner' then
     raise exception 'development_execution_not_authorized';
   end if;
-  if not exists (select 1 from public.admin_development_tasks where id = p_task_id) then
+  select * into v_task from public.admin_development_tasks where id = p_task_id for share;
+  if not found then
     raise exception 'task_not_found';
   end if;
-  insert into public.admin_development_codex_execution_authorizations (task_id, authorized_by)
-  values (p_task_id, auth.uid())
+  select * into v_config from public.admin_development_execution_provider_configuration
+    where provider = 'codex';
+  if not found then
+    raise exception 'codex_execution_configuration_not_found';
+  end if;
+  v_snapshot := public.admin_development_execution_snapshot(v_task);
+  insert into public.admin_development_codex_execution_authorizations (
+    task_id, task_snapshot_hash, provider_policy_version, repository, base_branch, authorized_by
+  ) values (
+    p_task_id, v_snapshot, v_config.policy_version, v_task.repository, v_task.base_branch, auth.uid()
+  )
   on conflict (task_id) do update set
+    task_snapshot_hash = excluded.task_snapshot_hash,
+    provider_policy_version = excluded.provider_policy_version,
+    repository = excluded.repository,
+    base_branch = excluded.base_branch,
     authorized_by = excluded.authorized_by,
     authorized_at = now(),
     revoked_at = null,
@@ -234,6 +275,7 @@ declare
   v_existing public.admin_development_execution_jobs;
   v_snapshot text; v_prompt_hash text; v_idempotency text; v_reasons jsonb := '[]'::jsonb;
   v_effective_risk public.development_risk_level;
+  v_authorization_stale boolean := false;
   v_decision public.development_execution_policy_decision := 'deny'; v_job public.admin_development_execution_jobs;
 begin
   if not public.is_active_admin() or public.current_admin_role() not in ('owner', 'admin') then
@@ -256,8 +298,16 @@ begin
   select * into v_authorization from public.admin_development_codex_execution_authorizations
     where task_id = p_task_id and revoked_at is null;
   v_snapshot := public.admin_development_execution_snapshot(v_task);
+  v_authorization_stale := v_effective_risk = 'high'
+    and v_authorization.task_id is not null
+    and (
+      v_authorization.task_snapshot_hash <> v_snapshot
+      or v_authorization.provider_policy_version <> v_config.policy_version
+      or v_authorization.repository <> v_task.repository
+      or v_authorization.base_branch <> v_task.base_branch
+    );
   v_prompt_hash := encode(digest(coalesce(v_task.execution_prompt, ''), 'sha256'), 'hex');
-  v_idempotency := encode(digest(concat_ws('|', p_task_id::text, v_snapshot, 'codex', coalesce(v_revision.resolved_base_sha, 'unresolved'), coalesce(v_config.policy_version, 'unconfigured')), 'sha256'), 'hex');
+  v_idempotency := encode(digest(concat_ws('|', p_task_id::text, v_snapshot, 'codex', coalesce(v_revision.resolved_base_sha, 'unresolved'), coalesce(v_config.policy_version, 'unconfigured'), coalesce(v_authorization.authorized_at::text, 'unauthorized')), 'sha256'), 'hex');
   insert into public.admin_development_execution_jobs (
     task_id, job_key, requested_by, approved_execution_by, idempotency_key, task_snapshot_hash,
     execution_prompt_hash, provider, executor_mode, repository, base_branch, requested_base_branch,
@@ -273,6 +323,8 @@ begin
   perform public.admin_record_development_execution_event(v_job.id, p_task_id, 'policy_check_started', 'requested', 'policy_check', 'dispatcher', auth.uid(), 'Codex execution policy evaluation started.');
   if v_config is null or not v_config.is_enabled then
     v_reasons := jsonb_build_array('codex_execution_disabled');
+  elsif v_effective_risk = 'high' and v_authorization_stale then
+    v_reasons := jsonb_build_array('codex_execution_authorization_stale');
   elsif v_task.repository <> v_config.allowed_repository then
     v_reasons := jsonb_build_array('repository_not_allowed');
   elsif v_task.base_branch !~ v_config.allowed_base_branch_pattern then

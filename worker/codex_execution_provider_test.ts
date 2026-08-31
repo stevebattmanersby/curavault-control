@@ -3,6 +3,8 @@ import {
   buildUntrustedTaskContent,
   CodexExecutionProvider,
   inspectWorkspaceResult,
+  OpenAiResponsesCodexTransport,
+  validateTrustedCodexProviderConfiguration,
 } from "./codex_execution_provider.ts";
 
 const request = {
@@ -51,4 +53,29 @@ Deno.test("fake transport covers success, timeout, cancellation and provider fai
   const failedProvider = new CodexExecutionProvider({ start: async () => { throw new Error("malformed response"); }, cancel: async () => {} });
   const failed = await failedProvider.start(request, { repositoryMatched: true, baseShaMatched: true, remoteUnchanged: true, cleanupSucceeded: true, changedPaths: [] });
   if (failed.status !== "failed") throw new Error("provider error was not normalized");
+});
+
+Deno.test("trusted worker configuration selects only an allow-listed Codex model", async () => {
+  const configuration = validateTrustedCodexProviderConfiguration({
+    modelId: "gpt-5.3-codex",
+    policyVersion: "phase_3_codex_v1",
+  });
+  if (configuration.modelId !== "gpt-5.3-codex") throw new Error("configured model was not retained");
+  let requestBody: Record<string, unknown> | undefined;
+  const transport = new OpenAiResponsesCodexTransport(
+    "test-key",
+    configuration,
+    async (_input, init) => {
+      requestBody = JSON.parse(String(init?.body));
+      return new Response(JSON.stringify({ id: "response-1", output_text: "ok" }), { status: 200 });
+    },
+  );
+  await transport.start({ trustedInstructions: "trusted", untrustedTaskContent: "untrusted", maxOutputTokens: 1 });
+  if (requestBody?.model !== "gpt-5.3-codex") throw new Error("transport did not use trusted configured model");
+  try {
+    validateTrustedCodexProviderConfiguration({ modelId: "gpt-5-codex", policyVersion: "phase_3_codex_v1" });
+    throw new Error("deprecated model was accepted");
+  } catch (error) {
+    if (!(error instanceof Error) || error.message !== "codex_model_not_allowed") throw error;
+  }
 });

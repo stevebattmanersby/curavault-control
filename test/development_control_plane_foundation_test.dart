@@ -335,6 +335,8 @@ void main() {
           sql, contains('admin_development_execution_provider_configuration'));
       expect(sql, contains("values ('codex', false)"));
       expect(sql, contains("check (provider = 'codex')"));
+      expect(sql, contains("model_id text not null default 'gpt-5.3-codex'"));
+      expect(sql, contains("check (model_id in ('gpt-5.3-codex'))"));
       expect(sql,
           contains("allowed_repository = 'stevebattmanersby/curavult-app'"));
       expect(
@@ -362,6 +364,13 @@ void main() {
       expect(sql, contains('resolved_base_sha'));
       expect(sql, contains('critical_execution_not_supported'));
       expect(sql, contains('codex_execution_authorization_required'));
+      expect(sql, contains('codex_execution_authorization_stale'));
+      expect(sql, contains('task_snapshot_hash text not null'));
+      expect(sql, contains('provider_policy_version text not null'));
+      expect(sql, contains('repository text not null'));
+      expect(sql, contains('base_branch text not null'));
+      expect(sql, contains('public.admin_development_execution_snapshot(v_task)'));
+      expect(sql, contains('p_task.task_type'));
       expect(sql, contains('admin_development_codex_effective_risk'));
       expect(sql, contains('codex_concurrency_limit_reached'));
       expect(sql, contains('admin_development_one_active_codex_execution_idx'));
@@ -379,6 +388,10 @@ void main() {
       expect(worker, contains('UNTRUSTED TASK CONTENT'));
       expect(worker, contains('execution_output_policy_violation'));
       expect(worker, contains('workspace_cleanup_failed'));
+      expect(worker, contains('supportedCodexModelIds'));
+      expect(worker, contains('gpt-5.3-codex'));
+      expect(worker, contains('codex_model_not_allowed'));
+      expect(worker, isNot(contains('gpt-5-codex')));
       expect(worker, contains('https://api.openai.com/v1/responses'));
       expect(worker, isNot(contains('github.com/api')));
       expect(worker, isNot(contains('child_process')));

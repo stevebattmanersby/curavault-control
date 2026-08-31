@@ -23,6 +23,31 @@ export const forbiddenPathPrefixes = [
 
 export type ProviderResultStatus = "succeeded" | "failed" | "cancelled" | "timed_out";
 
+// This allow-list mirrors the server-managed provider configuration. A future
+// privileged worker loads the configuration; browser and task input never do.
+export const supportedCodexModelIds = ["gpt-5.3-codex"] as const;
+export type SupportedCodexModelId = typeof supportedCodexModelIds[number];
+
+export interface TrustedCodexProviderConfiguration {
+  modelId: string;
+  policyVersion: string;
+}
+
+export function validateTrustedCodexProviderConfiguration(
+  configuration: TrustedCodexProviderConfiguration,
+): { modelId: SupportedCodexModelId; policyVersion: string } {
+  if (!supportedCodexModelIds.includes(configuration.modelId as SupportedCodexModelId)) {
+    throw new Error("codex_model_not_allowed");
+  }
+  if (!/^[-a-zA-Z0-9_.]{1,80}$/.test(configuration.policyVersion)) {
+    throw new Error("codex_policy_version_invalid");
+  }
+  return {
+    modelId: configuration.modelId as SupportedCodexModelId,
+    policyVersion: configuration.policyVersion,
+  };
+}
+
 export interface CodexExecutionRequest {
   jobId: string;
   repository: string;
@@ -194,14 +219,22 @@ export class CodexExecutionProvider {
 /// The production worker supplies OPENAI_API_KEY from its own secret manager.
 /// This transport is never constructed by browser code or CI.
 export class OpenAiResponsesCodexTransport implements CodexTransport {
-  constructor(private readonly apiKey: string, private readonly fetchFn = fetch) {}
+  private readonly configuration: { modelId: SupportedCodexModelId; policyVersion: string };
+
+  constructor(
+    private readonly apiKey: string,
+    configuration: TrustedCodexProviderConfiguration,
+    private readonly fetchFn = fetch,
+  ) {
+    this.configuration = validateTrustedCodexProviderConfiguration(configuration);
+  }
 
   async start(request: { trustedInstructions: string; untrustedTaskContent: string; maxOutputTokens: number }): Promise<CodexProviderResult> {
     const response = await this.fetchFn("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: { "content-type": "application/json", authorization: `Bearer ${this.apiKey}` },
       body: JSON.stringify({
-        model: "gpt-5-codex",
+        model: this.configuration.modelId,
         max_output_tokens: request.maxOutputTokens,
         input: [
           { role: "developer", content: [{ type: "input_text", text: request.trustedInstructions }] },

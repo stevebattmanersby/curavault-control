@@ -19,7 +19,10 @@ Provider configuration, repository revisions, and per-task high-risk Codex
 authorizations are RLS-protected and have no browser table grants. Enabling the
 Codex provider requires a separately provisioned privileged deployment/worker
 path; normal Owner/Admin users cannot change it. Configuration starts disabled,
-is auditable, and is independent of the Phase 2 mock switch.
+is auditable, and is independent of the Phase 2 mock switch. The configuration
+also contains an allow-listed model ID and policy version. A model or policy
+change is privileged, auditable, and invalidates existing High-risk Owner
+authorizations until they are renewed against the current task snapshot.
 
 ## Worker and credentials
 
@@ -29,7 +32,9 @@ Flutter, generated assets, the editable workspace, or CI. The worker constructs
 a trusted envelope and sends untrusted task content in a distinct delimited
 section. `worker/codex_execution_provider.ts` contains the typed transport and
 policy contract; the OpenAI transport uses the server-side Responses API only
-when the worker injects its own secret at runtime.
+when the worker injects its own secret at runtime. The worker loads and
+validates the model ID from the private provider configuration; no task or
+browser request can select a model.
 
 The current Supabase Edge Function environment is not used as a writable
 worktree host. It cannot provide the required durable job claim, isolated
@@ -63,7 +68,10 @@ area support requires a separate reviewed policy and stronger authorization.
 * Low: Owner/Admin request only; the stored task must otherwise be eligible.
 * Medium: approved task plus Architecture approval.
 * High: recorded Owner approval, Architecture and Security approvals, and a
-  separate Owner-issued Codex execution authorization.
+  separate Owner-issued Codex execution authorization bound to the current
+  canonical task snapshot, repository, base branch, and provider policy
+  version. A mismatch denies with `codex_execution_authorization_stale` until
+  the Owner reauthorizes the current state.
 * Critical: denied with `critical_execution_not_supported`.
 
 All jobs are bound to a task snapshot, approved repository allow-list, pinned

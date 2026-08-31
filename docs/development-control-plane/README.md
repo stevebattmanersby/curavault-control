@@ -32,7 +32,10 @@ repository (`stevebattmanersby/curavult-app`) and a trusted base SHA. Mock and
 Codex configuration are independent; neither Owner nor Admin has browser/API
 table access to enable Codex. Codex jobs retain safe policy, pin, path, and
 validation evidence only. High-risk requests additionally require an explicit
-Owner-issued Codex authorization; Critical requests remain unsupported.
+Owner-issued Codex authorization bound to the current task snapshot, repository,
+base branch, and provider policy version; stale authorizations are rejected.
+The private provider configuration contains the audited, allow-listed model ID;
+neither browser users nor tasks can select it. Critical requests remain unsupported.
 
 The provider transport is a trusted-worker contract, not a browser or Edge
 Function runner. Production enablement requires a separately hosted isolated
