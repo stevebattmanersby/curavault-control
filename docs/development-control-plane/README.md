@@ -38,9 +38,12 @@ The private provider configuration contains the audited, allow-listed model ID;
 neither browser users nor tasks can select it. Critical requests remain unsupported.
 
 The provider transport is a trusted-worker contract, not a browser or Edge
-Function runner. Production enablement requires a separately hosted isolated
-workspace worker with provider/repository secrets, egress controls, cleanup,
-and monitoring. See [CODEX_PROVIDER_ARCHITECTURE.md](CODEX_PROVIDER_ARCHITECTURE.md).
+Function runner. Phase 4 adds worker-only leases, safe readiness evidence, a
+non-root container package, and a deterministic fake-provider dry run. A
+separately hosted isolated workspace worker with provider/repository secrets,
+egress controls, cleanup, and monitoring is still required before live Codex
+can be enabled. See [CODEX_PROVIDER_ARCHITECTURE.md](CODEX_PROVIDER_ARCHITECTURE.md)
+and [TRUSTED_WORKER_OPERATIONS.md](TRUSTED_WORKER_OPERATIONS.md).
 
 ## Limits
 

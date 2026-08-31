@@ -398,4 +398,40 @@ void main() {
       expect(worker, isNot(contains('child_process')));
     });
   });
+
+  group('Trusted Codex worker architecture', () {
+    late final String sql;
+    late final String runtime;
+    setUpAll(() {
+      sql = File(
+              'supabase/migrations/20260831123621_development_trusted_codex_worker_phase_4.sql')
+          .readAsStringSync();
+      runtime = File('worker/runtime/worker_runtime.ts').readAsStringSync();
+    });
+
+    test('keeps worker identity and RPCs outside browser roles', () {
+      expect(sql,
+          contains('create role curavault_codex_worker nologin noinherit'));
+      expect(sql, contains('for update skip locked'));
+      expect(sql, contains('worker_lease_token_hash'));
+      expect(
+          sql,
+          contains(
+              'revoke all on function public.worker_claim_codex_execution'));
+      expect(sql, contains('to curavault_codex_worker'));
+      expect(
+          sql,
+          isNot(contains(
+              'grant execute on function public.worker_claim_codex_execution(text) to authenticated')));
+    });
+
+    test('keeps live execution disabled and fake execution isolated', () {
+      expect(sql,
+          contains('live_execution_enabled boolean not null default false'));
+      expect(sql,
+          contains('fake_execution_enabled boolean not null default false'));
+      expect(runtime, contains('FakeCodexTransport'));
+      expect(runtime, isNot(contains('OpenAiResponsesCodexTransport')));
+    });
+  });
 }

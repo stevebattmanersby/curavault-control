@@ -236,6 +236,7 @@ expect_rejected 'anon mock execution request' "set role anon; select * from publ
 echo 'Development Control Phase 1 and Phase 2 migration validation passed.'
 
 run_sql -f supabase/migrations/20260831100000_development_codex_provider_phase_3.sql
+run_sql -f supabase/migrations/20260831123621_development_trusted_codex_worker_phase_4.sql
 
 run_sql <<'SQL'
 do $$
@@ -423,5 +424,22 @@ SQL
 
 expect_rejected 'anon Codex execution request' "set role anon; select * from public.admin_request_codex_development_execution('11111111-1111-1111-1111-111111111111');"
 expect_rejected 'support Codex execution request' "set role authenticated; select set_config('request.jwt.claim.sub', '55555555-5555-5555-5555-555555555555', false); select * from public.admin_request_codex_development_execution('11111111-1111-1111-1111-111111111111');"
+expect_rejected 'anon worker claim' "set role anon; select * from public.worker_claim_codex_execution('synthetic-worker');"
+expect_rejected 'authenticated worker claim' "set role authenticated; select * from public.worker_claim_codex_execution('synthetic-worker');"
 
-echo 'Development Control Phase 3 Codex provider validation passed.'
+run_sql <<'SQL'
+do $$
+begin
+  if not exists (select 1 from pg_roles where rolname = 'curavault_codex_worker' and not rolcanlogin and not rolinherit) then
+    raise exception 'worker identity is not NOLOGIN/NOINHERIT';
+  end if;
+  if has_function_privilege('authenticated', 'public.worker_claim_codex_execution(text)', 'execute') then
+    raise exception 'browser role can claim worker jobs';
+  end if;
+  if (select live_execution_enabled from public.admin_development_codex_worker_configuration where singleton) then
+    raise exception 'worker live execution was enabled by default';
+  end if;
+end $$;
+SQL
+
+echo 'Development Control Phase 4 trusted worker validation passed.'

@@ -32,6 +32,32 @@ enum DevelopmentExecutionStatus {
 
 enum DevelopmentExecutionPolicyDecision { allow, deny, manualReviewRequired }
 
+/// Server-derived readiness only; browser code cannot change any gate.
+class CodexWorkerReadiness {
+  const CodexWorkerReadiness({
+    required this.providerEnabled,
+    required this.workerHealthy,
+    required this.repositoryRevisionFresh,
+    required this.liveWorkerGateEnabled,
+    required this.canExecute,
+  });
+
+  final bool providerEnabled;
+  final bool workerHealthy;
+  final bool repositoryRevisionFresh;
+  final bool liveWorkerGateEnabled;
+  final bool canExecute;
+
+  factory CodexWorkerReadiness.fromMap(Map<String, dynamic> map) =>
+      CodexWorkerReadiness(
+        providerEnabled: map['provider_enabled'] == true,
+        workerHealthy: map['worker_healthy'] == true,
+        repositoryRevisionFresh: map['repository_revision_fresh'] == true,
+        liveWorkerGateEnabled: map['live_worker_gate_enabled'] == true,
+        canExecute: map['can_execute'] == true,
+      );
+}
+
 String _wireName(Enum value) => value.name.replaceAllMapped(
     RegExp(r'[A-Z]'), (match) => '_${match.group(0)!.toLowerCase()}');
 
