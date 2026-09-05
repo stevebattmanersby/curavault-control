@@ -22,7 +22,13 @@ enum AdminDataSourceKey {
 
 @immutable
 class AdminDataSourceStatus {
-  const AdminDataSourceStatus({required this.kind, this.message, this.queryName, this.rowCount, this.lastRefreshedAt, this.safeErrorMessage});
+  const AdminDataSourceStatus(
+      {required this.kind,
+      this.message,
+      this.queryName,
+      this.rowCount,
+      this.lastRefreshedAt,
+      this.safeErrorMessage});
 
   final AdminDataSourceKind kind;
   final String? message;
@@ -39,15 +45,28 @@ class AdminDataSourceStatus {
   /// A privacy-safe error message intended for UI display.
   final String? safeErrorMessage;
 
-  AdminDataSourceStatus copyWith({AdminDataSourceKind? kind, String? message, String? queryName, int? rowCount, DateTime? lastRefreshedAt, String? safeErrorMessage}) =>
-      AdminDataSourceStatus(kind: kind ?? this.kind, message: message ?? this.message, queryName: queryName ?? this.queryName, rowCount: rowCount ?? this.rowCount, lastRefreshedAt: lastRefreshedAt ?? this.lastRefreshedAt, safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage);
+  AdminDataSourceStatus copyWith(
+          {AdminDataSourceKind? kind,
+          String? message,
+          String? queryName,
+          int? rowCount,
+          DateTime? lastRefreshedAt,
+          String? safeErrorMessage}) =>
+      AdminDataSourceStatus(
+          kind: kind ?? this.kind,
+          message: message ?? this.message,
+          queryName: queryName ?? this.queryName,
+          rowCount: rowCount ?? this.rowCount,
+          lastRefreshedAt: lastRefreshedAt ?? this.lastRefreshedAt,
+          safeErrorMessage: safeErrorMessage ?? this.safeErrorMessage);
 }
 
 /// Thrown when a backend view/RPC required by the Control Site is not deployed.
 ///
 /// In release, this should result in a clear empty/error state, never mock data.
 class AdminNotInstrumentedException implements Exception {
-  AdminNotInstrumentedException([this.message = 'This data source is not instrumented yet.']);
+  AdminNotInstrumentedException(
+      [this.message = 'This data source is not instrumented yet.']);
   final String message;
   @override
   String toString() => message;
@@ -62,7 +81,8 @@ class AdminDataSourceBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final reduceMotion = MediaQuery.of(context).disableAnimations || MediaQuery.of(context).accessibleNavigation;
+    final reduceMotion = MediaQuery.of(context).disableAnimations ||
+        MediaQuery.of(context).accessibleNavigation;
 
     Color bg;
     Color fg;
@@ -97,24 +117,43 @@ class AdminDataSourceBadge extends StatelessWidget {
     }
 
     final tooltipLines = <String>[];
-    if ((status.message ?? '').trim().isNotEmpty) tooltipLines.add(status.message!.trim());
-    if ((status.queryName ?? '').trim().isNotEmpty) tooltipLines.add('Query: ${status.queryName}');
+    if ((status.message ?? '').trim().isNotEmpty) {
+      tooltipLines.add(status.message!.trim());
+    }
+    if ((status.queryName ?? '').trim().isNotEmpty) {
+      tooltipLines.add('Query: ${status.queryName}');
+    }
     if (status.rowCount != null) tooltipLines.add('Rows: ${status.rowCount}');
-    if (status.lastRefreshedAt != null) tooltipLines.add('Refreshed: ${status.lastRefreshedAt!.toIso8601String()}');
-    if ((status.safeErrorMessage ?? '').trim().isNotEmpty) tooltipLines.add('Error: ${status.safeErrorMessage}');
+    if (status.lastRefreshedAt != null) {
+      tooltipLines
+          .add('Refreshed: ${status.lastRefreshedAt!.toIso8601String()}');
+    }
+    if ((status.safeErrorMessage ?? '').trim().isNotEmpty) {
+      tooltipLines.add('Error: ${status.safeErrorMessage}');
+    }
     final tooltip = tooltipLines.isEmpty ? null : tooltipLines.join('\n');
 
     final pill = AnimatedContainer(
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
+      duration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 180),
       curve: Curves.easeOut,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(width: 8, height: 8, decoration: BoxDecoration(color: dot, borderRadius: BorderRadius.circular(99))),
+          Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                  color: dot, borderRadius: BorderRadius.circular(99))),
           const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -140,10 +179,16 @@ class AdminNotInstrumentedPanel extends StatelessWidget {
           children: [
             Icon(Icons.construction, size: 44, color: cs.onSurfaceVariant),
             const SizedBox(height: 12),
-            Text('This data source is not instrumented yet.', style: Theme.of(context).textTheme.titleMedium),
+            Text('This data source is not instrumented yet.',
+                style: Theme.of(context).textTheme.titleMedium),
             if (details != null) ...[
               const SizedBox(height: 8),
-              Text(details!, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              Text(details!,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant)),
             ],
           ],
         ),

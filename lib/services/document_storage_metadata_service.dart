@@ -15,11 +15,16 @@ import 'package:flutter/foundation.dart';
 /// Best-effort: failures are swallowed and never break upload flows.
 class DocumentStorageMetadataService {
   DocumentStorageMetadataService._();
-  static final DocumentStorageMetadataService instance = DocumentStorageMetadataService._();
+  static final DocumentStorageMetadataService instance =
+      DocumentStorageMetadataService._();
 
   static const String _table = 'document_storage_metadata';
 
-  Future<void> recordUploadStarted({required String documentId, int? fileSizeBytes, int? storageSizeBytes, String? mimeTypeGroup}) async {
+  Future<void> recordUploadStarted(
+      {required String documentId,
+      int? fileSizeBytes,
+      int? storageSizeBytes,
+      String? mimeTypeGroup}) async {
     await _upsert(
       documentId: documentId,
       uploadStatus: 'started',
@@ -29,7 +34,11 @@ class DocumentStorageMetadataService {
     );
   }
 
-  Future<void> recordUploadCompleted({required String documentId, int? fileSizeBytes, int? storageSizeBytes, String? mimeTypeGroup}) async {
+  Future<void> recordUploadCompleted(
+      {required String documentId,
+      int? fileSizeBytes,
+      int? storageSizeBytes,
+      String? mimeTypeGroup}) async {
     await _upsert(
       documentId: documentId,
       uploadStatus: 'uploaded',
@@ -39,7 +48,12 @@ class DocumentStorageMetadataService {
     );
   }
 
-  Future<void> recordUploadFailed({required String documentId, String? errorCode, int? fileSizeBytes, int? storageSizeBytes, String? mimeTypeGroup}) async {
+  Future<void> recordUploadFailed(
+      {required String documentId,
+      String? errorCode,
+      int? fileSizeBytes,
+      int? storageSizeBytes,
+      String? mimeTypeGroup}) async {
     // Store a coarse failure code only in usage_events (properties). We do NOT
     // store free-form errors here.
     await _upsert(
@@ -52,7 +66,10 @@ class DocumentStorageMetadataService {
   }
 
   Future<void> recordDeleted({required String documentId}) async {
-    await _upsert(documentId: documentId, uploadStatus: 'deleted', deletedAt: DateTime.now().toUtc());
+    await _upsert(
+        documentId: documentId,
+        uploadStatus: 'deleted',
+        deletedAt: DateTime.now().toUtc());
   }
 
   Future<void> _upsert({
@@ -91,8 +108,10 @@ class DocumentStorageMetadataService {
       final payload = <String, Object?>{
         'document_id': documentId,
         'owner_user_id': userId,
-        if (fileSizeBytes != null && fileSizeBytes >= 0) 'file_size_bytes': fileSizeBytes,
-        if (storageSizeBytes != null && storageSizeBytes >= 0) 'storage_size_bytes': storageSizeBytes,
+        if (fileSizeBytes != null && fileSizeBytes >= 0)
+          'file_size_bytes': fileSizeBytes,
+        if (storageSizeBytes != null && storageSizeBytes >= 0)
+          'storage_size_bytes': storageSizeBytes,
         if (safeMime != null) 'mime_type_group': safeMime,
         'upload_status': uploadStatus,
         if (deletedAt != null) 'deleted_at': deletedAt.toIso8601String(),
@@ -102,7 +121,9 @@ class DocumentStorageMetadataService {
       // Upsert by primary key (document_id).
       await client.from(_table).upsert(payload, onConflict: 'document_id');
     } catch (e) {
-      if (kDebugMode) debugPrint('[document_storage_metadata] upsert failed: $e');
+      if (kDebugMode) {
+        debugPrint('[document_storage_metadata] upsert failed: $e');
+      }
     }
   }
 

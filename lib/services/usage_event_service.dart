@@ -178,31 +178,39 @@ class UsageEventService {
       final userId = client.auth.currentUser?.id;
       if (userId == null || userId.isEmpty) return;
 
-      String _cleanLabel(String v, String fallback) {
+      String cleanLabel(String v, String fallback) {
         final s = v.trim().toLowerCase();
         return s.isEmpty ? fallback : s;
       }
 
-      int? _nonNegInt(int? v) => (v == null) ? null : (v < 0 ? 0 : v);
-      double? _nonNegDouble(double? v) => (v == null) ? null : (v < 0 ? 0 : v);
+      int? nonNegInt(int? v) => (v == null) ? null : (v < 0 ? 0 : v);
+      double? nonNegDouble(double? v) => (v == null) ? null : (v < 0 ? 0 : v);
 
       final payload = <String, Object?>{
         'owner_user_id': userId,
-        'provider': _cleanLabel(provider, 'unknown'),
-        'service': _cleanLabel(service, 'unknown'),
-        if ((featureArea ?? '').trim().isNotEmpty) 'feature_area': featureArea!.trim(),
+        'provider': cleanLabel(provider, 'unknown'),
+        'service': cleanLabel(service, 'unknown'),
+        if ((featureArea ?? '').trim().isNotEmpty)
+          'feature_area': featureArea!.trim(),
         if ((model ?? '').trim().isNotEmpty) 'model': model!.trim(),
         'request_count': requestCount < 0 ? 0 : requestCount,
-        if (inputTokens != null) 'input_tokens': _nonNegInt(inputTokens),
-        if (outputTokens != null) 'output_tokens': _nonNegInt(outputTokens),
-        if (totalTokens != null) 'total_tokens': _nonNegInt(totalTokens),
-        if (pagesProcessed != null) 'pages_processed': _nonNegInt(pagesProcessed),
-        if (filesProcessed != null) 'files_processed': _nonNegInt(filesProcessed),
-        if (imagesProcessed != null) 'images_processed': _nonNegInt(imagesProcessed),
-        if (charactersProcessed != null) 'characters_processed': _nonNegInt(charactersProcessed),
-        if (estimatedCostUsd != null) 'estimated_cost_usd': _nonNegDouble(estimatedCostUsd),
-        'result': result.trim().isEmpty ? 'unknown' : result.trim().toLowerCase(),
-        if ((errorCode ?? '').trim().isNotEmpty) 'error_code': errorCode!.trim(),
+        if (inputTokens != null) 'input_tokens': nonNegInt(inputTokens),
+        if (outputTokens != null) 'output_tokens': nonNegInt(outputTokens),
+        if (totalTokens != null) 'total_tokens': nonNegInt(totalTokens),
+        if (pagesProcessed != null)
+          'pages_processed': nonNegInt(pagesProcessed),
+        if (filesProcessed != null)
+          'files_processed': nonNegInt(filesProcessed),
+        if (imagesProcessed != null)
+          'images_processed': nonNegInt(imagesProcessed),
+        if (charactersProcessed != null)
+          'characters_processed': nonNegInt(charactersProcessed),
+        if (estimatedCostUsd != null)
+          'estimated_cost_usd': nonNegDouble(estimatedCostUsd),
+        'result':
+            result.trim().isEmpty ? 'unknown' : result.trim().toLowerCase(),
+        if ((errorCode ?? '').trim().isNotEmpty)
+          'error_code': errorCode!.trim(),
         if ((source ?? '').trim().isNotEmpty) 'source': source!.trim(),
         if ((edgeFunctionName ?? '').trim().isNotEmpty)
           'edge_function_name': edgeFunctionName!.trim(),

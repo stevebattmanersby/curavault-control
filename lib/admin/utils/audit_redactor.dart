@@ -51,15 +51,23 @@ class AdminAuditRedactor {
 
   static dynamic _redactAny(String key, dynamic value) {
     final k = key.toLowerCase();
-    if (_sensitiveKeys.contains(k) || k.contains('health') || k.contains('prompt') || k.contains('response')) return redacted;
+    if (_sensitiveKeys.contains(k) ||
+        k.contains('health') ||
+        k.contains('prompt') ||
+        k.contains('response')) {
+      return redacted;
+    }
 
     if (value == null) return null;
     if (value is num || value is bool) return value;
     if (value is DateTime) return value.toIso8601String();
     if (value is String) return _sanitizeString(value);
-    if (value is List) return value.map((v) => _redactAny(key, v)).toList(growable: false);
+    if (value is List) {
+      return value.map((v) => _redactAny(key, v)).toList(growable: false);
+    }
     if (value is Map) {
-      return value.map((k2, v2) => MapEntry(k2.toString(), _redactAny(k2.toString(), v2)));
+      return value.map(
+          (k2, v2) => MapEntry(k2.toString(), _redactAny(k2.toString(), v2)));
     }
     return _sanitizeString(value.toString());
   }
@@ -69,7 +77,10 @@ class AdminAuditRedactor {
     if (s.isEmpty) return s;
     // If someone tries to stuff JSON with sensitive keys into a string, redact.
     if (s.length > 1000) return redacted;
-    if (s.toLowerCase().contains('diagnosis') || s.toLowerCase().contains('symptom')) return redacted;
+    if (s.toLowerCase().contains('diagnosis') ||
+        s.toLowerCase().contains('symptom')) {
+      return redacted;
+    }
     if (s.length > 200) return '${s.substring(0, 200)}…';
     return s;
   }

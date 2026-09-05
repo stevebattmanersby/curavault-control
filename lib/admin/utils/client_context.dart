@@ -12,8 +12,8 @@ class AdminClientContext {
   static String? get userAgent => getClientUserAgent();
 
   static Map<String, dynamic> asJson() => {
-    if (ipAddress != null) 'ip_address': ipAddress,
-    if (userAgent != null) 'user_agent': userAgent,
-    'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
-  };
+        if (ipAddress != null) 'ip_address': ipAddress,
+        if (userAgent != null) 'user_agent': userAgent,
+        'platform': kIsWeb ? 'web' : defaultTargetPlatform.name,
+      };
 }

@@ -19,18 +19,21 @@ class SupabaseConfig {
   /// In that case (debug-mode only), we allow providing the values via URL query
   /// params to unblock preview:
   /// - `?SUPABASE_URL=...&SUPABASE_ANON_KEY=...&CONTROL_SITE_BASE_URL=...`
-  static const String controlSiteBaseUrl = String.fromEnvironment('CONTROL_SITE_BASE_URL', defaultValue: '');
+  static const String controlSiteBaseUrl =
+      String.fromEnvironment('CONTROL_SITE_BASE_URL', defaultValue: '');
 
   /// The Auth Site URL configured in Supabase.
   ///
   /// This is used for email links (password reset / magic link redirects).
-  static String get authSiteUrl => _stripTrailingSlash(_resolveControlSiteBaseUrl());
+  static String get authSiteUrl =>
+      _stripTrailingSlash(_resolveControlSiteBaseUrl());
 
   /// Redirect URL used for password recovery.
   ///
   /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
   /// that includes the SPA hash fragment (/#/...).
-  static String get setPasswordRedirectUrl => '${_stripTrailingSlash(_resolveControlSiteBaseUrl())}/#/set-password';
+  static String get setPasswordRedirectUrl =>
+      '${_stripTrailingSlash(_resolveControlSiteBaseUrl())}/#/set-password';
 
   /// Supabase project URL.
   ///
@@ -54,7 +57,8 @@ class SupabaseConfig {
   );
 
   /// This should NEVER be set in a frontend build.
-  static const String serviceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
+  static const String serviceRoleKey =
+      String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
 
   /// Whether a service-role key was bundled into this client build.
   ///
@@ -92,7 +96,8 @@ class SupabaseConfig {
   }
 
   static bool get resolvedAnonKeyPresent => _resolveAnonKey().trim().isNotEmpty;
-  static bool get resolvedControlSiteBaseUrlPresent => _resolveControlSiteBaseUrl().trim().isNotEmpty;
+  static bool get resolvedControlSiteBaseUrlPresent =>
+      _resolveControlSiteBaseUrl().trim().isNotEmpty;
   static String get resolvedControlSiteBaseUrl => _resolveControlSiteBaseUrl();
 
   /// Whether runtime JSON was successfully loaded (even if it contained no usable values).
@@ -112,9 +117,15 @@ class SupabaseConfig {
 
     // If any runtime value exists, attribute to its last-known source.
     final sources = <String>{};
-    if ((_runtimeSupabaseUrl ?? '').trim().isNotEmpty) sources.add(_runtimeUrlSource ?? 'runtimeJson');
-    if ((_runtimeAnonKey ?? '').trim().isNotEmpty) sources.add(_runtimeAnonSource ?? 'runtimeJson');
-    if ((_runtimeControlSiteBaseUrl ?? '').trim().isNotEmpty) sources.add(_runtimeBaseUrlSource ?? 'runtimeJson');
+    if ((_runtimeSupabaseUrl ?? '').trim().isNotEmpty) {
+      sources.add(_runtimeUrlSource ?? 'runtimeJson');
+    }
+    if ((_runtimeAnonKey ?? '').trim().isNotEmpty) {
+      sources.add(_runtimeAnonSource ?? 'runtimeJson');
+    }
+    if ((_runtimeControlSiteBaseUrl ?? '').trim().isNotEmpty) {
+      sources.add(_runtimeBaseUrlSource ?? 'runtimeJson');
+    }
     if (sources.isEmpty) return 'missing';
     if (sources.length == 1) return sources.first;
     return sources.join('+');
@@ -169,23 +180,27 @@ class SupabaseConfig {
     final resolvedAnon = _resolveAnonKey();
 
     if (resolvedUrl.isEmpty || resolvedAnon.isEmpty) {
-      debugPrint('Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
+      debugPrint(
+          'Supabase not configured (missing SUPABASE_URL / SUPABASE_ANON_KEY).');
       return;
     }
 
     // Sanity check: Supabase.initialize expects the project root URL, not /rest/v1.
     if (kDebugMode && resolvedUrl.contains('/rest/v1')) {
-      debugPrint('CONFIG WARNING:  contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
+      debugPrint(
+          'CONFIG WARNING:  contains /rest/v1. It should be the project root like https://xxxx.supabase.co');
     }
 
     // This should NEVER be set in a frontend build.
     if (serviceRoleKey.isNotEmpty) {
-      debugPrint('SECURITY: SUPABASE_SERVICE_ROLE_KEY detected; refusing to initialize Supabase client.');
+      debugPrint(
+          'SECURITY: SUPABASE_SERVICE_ROLE_KEY detected; refusing to initialize Supabase client.');
       return;
     }
 
     try {
-      await Supabase.initialize(url: resolvedUrl, publishableKey: resolvedAnon, debug: kDebugMode);
+      await Supabase.initialize(
+          url: resolvedUrl, publishableKey: resolvedAnon, debug: kDebugMode);
       _initialized = true;
       debugPrintEnvStatus(source: 'SupabaseConfig.initialize(after)');
     } catch (e) {
@@ -206,10 +221,14 @@ class SupabaseConfig {
   // 2) Public runtime JSON asset
   // 3) Debug-only web query params
   // 4) Fail closed
-  static String _resolveSupabaseUrl() => supabaseUrl.trim().isNotEmpty ? supabaseUrl : (_runtimeSupabaseUrl ?? '');
-  static String _resolveAnonKey() => anonKey.trim().isNotEmpty ? anonKey : (_runtimeAnonKey ?? '');
+  static String _resolveSupabaseUrl() =>
+      supabaseUrl.trim().isNotEmpty ? supabaseUrl : (_runtimeSupabaseUrl ?? '');
+  static String _resolveAnonKey() =>
+      anonKey.trim().isNotEmpty ? anonKey : (_runtimeAnonKey ?? '');
   static String _resolveControlSiteBaseUrl() =>
-      controlSiteBaseUrl.trim().isNotEmpty ? controlSiteBaseUrl : (_runtimeControlSiteBaseUrl ?? '');
+      controlSiteBaseUrl.trim().isNotEmpty
+          ? controlSiteBaseUrl
+          : (_runtimeControlSiteBaseUrl ?? '');
 
   static Future<void> _primeRuntimeConfigFromAssetJsonIfNeeded() async {
     // Asset JSON is a release-safe way to supply public runtime configuration.
@@ -223,7 +242,8 @@ class SupabaseConfig {
     if (!needsUrl && !needsAnon && !needsBase) return;
 
     try {
-      final raw = await rootBundle.loadString('assets/config/control_site_config.json');
+      final raw =
+          await rootBundle.loadString('assets/config/control_site_config.json');
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return;
 
@@ -240,7 +260,10 @@ class SupabaseConfig {
         );
       }
 
-      if (needsUrl && url != null && _looksLikeHttpsUrl(url) && _looksLikeSupabaseProjectUrl(url)) {
+      if (needsUrl &&
+          url != null &&
+          _looksLikeHttpsUrl(url) &&
+          _looksLikeSupabaseProjectUrl(url)) {
         _runtimeSupabaseUrl = url;
         _runtimeUrlSource = 'runtimeJson';
       }
@@ -251,7 +274,12 @@ class SupabaseConfig {
       // - placeholders
       // - service role JWTs
       // - secret keys (sb_secret_...)
-      if (needsAnon && anon != null && anon.isNotEmpty && !anon.startsWith('<') && _looksLikePublicSupabaseKey(anon) && !_looksLikeServiceRoleJwt(anon)) {
+      if (needsAnon &&
+          anon != null &&
+          anon.isNotEmpty &&
+          !anon.startsWith('<') &&
+          _looksLikePublicSupabaseKey(anon) &&
+          !_looksLikeServiceRoleJwt(anon)) {
         _runtimeAnonKey = anon;
         _runtimeAnonSource = 'runtimeJson';
       }
@@ -283,20 +311,32 @@ class SupabaseConfig {
       final qpAnon = qp['SUPABASE_ANON_KEY']?.trim();
       final qpBase = qp['CONTROL_SITE_BASE_URL']?.trim();
 
-      if (needsUrl && qpUrl != null && qpUrl.isNotEmpty && _looksLikeHttpsUrl(qpUrl) && _looksLikeSupabaseProjectUrl(qpUrl)) {
+      if (needsUrl &&
+          qpUrl != null &&
+          qpUrl.isNotEmpty &&
+          _looksLikeHttpsUrl(qpUrl) &&
+          _looksLikeSupabaseProjectUrl(qpUrl)) {
         _runtimeSupabaseUrl = qpUrl;
         _runtimeUrlSource = 'debugQueryParams';
       }
-      if (needsAnon && qpAnon != null && qpAnon.isNotEmpty && _looksLikePublicSupabaseKey(qpAnon) && !_looksLikeServiceRoleJwt(qpAnon)) {
+      if (needsAnon &&
+          qpAnon != null &&
+          qpAnon.isNotEmpty &&
+          _looksLikePublicSupabaseKey(qpAnon) &&
+          !_looksLikeServiceRoleJwt(qpAnon)) {
         _runtimeAnonKey = qpAnon;
         _runtimeAnonSource = 'debugQueryParams';
       }
-      if (needsBase && qpBase != null && qpBase.isNotEmpty && _looksLikeHttpsUrl(qpBase)) {
+      if (needsBase &&
+          qpBase != null &&
+          qpBase.isNotEmpty &&
+          _looksLikeHttpsUrl(qpBase)) {
         _runtimeControlSiteBaseUrl = qpBase;
         _runtimeBaseUrlSource = 'debugQueryParams';
       }
     } catch (e) {
-      debugPrint('Failed to read runtime Supabase config from URL query params: $e');
+      debugPrint(
+          'Failed to read runtime Supabase config from URL query params: $e');
     }
   }
 

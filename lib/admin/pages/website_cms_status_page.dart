@@ -35,15 +35,23 @@ enum WebsiteCmsSection {
       };
 
   String get subtitle => switch (this) {
-        WebsiteCmsSection.status => 'Manage public website content. Public access is limited to published content only.',
-        WebsiteCmsSection.pages => 'Manage marketing pages. Unpublished drafts are never exposed publicly.',
-        WebsiteCmsSection.blog => 'Create and publish blog posts. Avoid unverified medical or compliance claims.',
-        WebsiteCmsSection.seo => 'Global SEO defaults, sitemap toggles, and schema settings.',
-        WebsiteCmsSection.pricing => 'Manage pricing plans shown on the public marketing website.',
-        WebsiteCmsSection.faqs => 'FAQ categories and entries for the marketing site.',
+        WebsiteCmsSection.status =>
+          'Manage public website content. Public access is limited to published content only.',
+        WebsiteCmsSection.pages =>
+          'Manage marketing pages. Unpublished drafts are never exposed publicly.',
+        WebsiteCmsSection.blog =>
+          'Create and publish blog posts. Avoid unverified medical or compliance claims.',
+        WebsiteCmsSection.seo =>
+          'Global SEO defaults, sitemap toggles, and schema settings.',
+        WebsiteCmsSection.pricing =>
+          'Manage pricing plans shown on the public marketing website.',
+        WebsiteCmsSection.faqs =>
+          'FAQ categories and entries for the marketing site.',
         WebsiteCmsSection.testimonials => 'Customer testimonials library.',
-        WebsiteCmsSection.campaigns => 'Create campaign landing overlays without code changes.',
-        WebsiteCmsSection.assets => 'Upload and manage public website media assets.',
+        WebsiteCmsSection.campaigns =>
+          'Create campaign landing overlays without code changes.',
+        WebsiteCmsSection.assets =>
+          'Upload and manage public website media assets.',
       };
 
   String get tableName => switch (this) {
@@ -60,7 +68,8 @@ enum WebsiteCmsSection {
 }
 
 class WebsiteCmsStatusPage extends StatelessWidget {
-  const WebsiteCmsStatusPage({super.key, this.section = WebsiteCmsSection.status});
+  const WebsiteCmsStatusPage(
+      {super.key, this.section = WebsiteCmsSection.status});
 
   final WebsiteCmsSection section;
 
@@ -90,7 +99,8 @@ class WebsiteCmsStatusPage extends StatelessWidget {
         ],
         if (section == WebsiteCmsSection.blog && canManage) ...[
           FilledButton.icon(
-            onPressed: () => _openBlogEditor(context, categories: cms?.categories ?? const []),
+            onPressed: () => _openBlogEditor(context,
+                categories: cms?.categories ?? const []),
             icon: const Icon(Icons.add),
             label: const Text('Create'),
           ),
@@ -129,7 +139,10 @@ class WebsiteCmsStatusPage extends StatelessWidget {
                   : cms == null || snap == null
                       ? const _EmptyWebsiteCmsState()
                       : _WebsiteCmsWorkspace(
-                          snapshot: snap, cms: cms, canManage: canManage, section: section),
+                          snapshot: snap,
+                          cms: cms,
+                          canManage: canManage,
+                          section: section),
     );
   }
 }
@@ -252,7 +265,8 @@ class _WebsiteCmsWorkspaceState extends State<_WebsiteCmsWorkspace> {
 }
 
 class _WebsiteSectionShell extends StatelessWidget {
-  const _WebsiteSectionShell({required this.section, required this.snapshot, required this.child});
+  const _WebsiteSectionShell(
+      {required this.section, required this.snapshot, required this.child});
 
   final WebsiteCmsSection section;
   final WebsiteCmsStatusSnapshot snapshot;
@@ -287,20 +301,42 @@ class _WebsiteSectionStatusCard extends StatelessWidget {
     return AdminCard(
       header: Row(
         children: [
-          Expanded(child: Text('${_marketingLabelForSection(section)} • Data source status', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+          Expanded(
+              child: Text(
+                  '${_marketingLabelForSection(section)} • Data source status',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800))),
           _TableStatusChip(status: status),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _StatusLine(label: 'data source', value: row?.exists == true ? 'live' : 'error'),
-          _StatusLine(label: 'table / query name', value: row?.tableName ?? section.tableName),
-          _StatusLine(label: 'row count', value: rowCount == null ? '-' : AdminFormatters.compactInt(rowCount)),
-          _StatusLine(label: 'last refreshed', value: refreshed == null ? '-' : AdminFormatters.dateTime(refreshed)),
+          _StatusLine(
+              label: 'data source',
+              value: row?.exists == true ? 'live' : 'error'),
+          _StatusLine(
+              label: 'table / query name',
+              value: row?.tableName ?? section.tableName),
+          _StatusLine(
+              label: 'row count',
+              value: rowCount == null
+                  ? '-'
+                  : AdminFormatters.compactInt(rowCount)),
+          _StatusLine(
+              label: 'last refreshed',
+              value: refreshed == null
+                  ? '-'
+                  : AdminFormatters.dateTime(refreshed)),
           if (err.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(err, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.error)),
+            Text(err,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.error)),
           ],
         ],
       ),
@@ -321,8 +357,17 @@ class _StatusLine extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         children: [
-          SizedBox(width: 160, child: Text(label, style: textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, fontWeight: FontWeight.w700))),
-          Expanded(child: Text(value, style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800), overflow: TextOverflow.ellipsis)),
+          SizedBox(
+              width: 160,
+              child: Text(label,
+                  style: textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700))),
+          Expanded(
+              child: Text(value,
+                  style: textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                  overflow: TextOverflow.ellipsis)),
         ],
       ),
     );
@@ -337,18 +382,21 @@ class _PlannedWebsiteSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final copy = _plannedCopyForSection(section);
-    return _EmptyPanel(icon: _iconForSection(section), title: copy.$1, body: copy.$2);
+    return _EmptyPanel(
+        icon: _iconForSection(section), title: copy.$1, body: copy.$2);
   }
 }
 
-WebsiteCmsTableStatusRow? _statusRowForSection(WebsiteCmsStatusSnapshot snapshot, WebsiteCmsSection section) {
+WebsiteCmsTableStatusRow? _statusRowForSection(
+    WebsiteCmsStatusSnapshot snapshot, WebsiteCmsSection section) {
   for (final row in snapshot.rows) {
     if (row.tableName == section.tableName) return row;
   }
   return null;
 }
 
-String _marketingLabelForSection(WebsiteCmsSection section) => switch (section) {
+String _marketingLabelForSection(WebsiteCmsSection section) =>
+    switch (section) {
       WebsiteCmsSection.pages => 'Marketing pages',
       WebsiteCmsSection.blog => 'Marketing blog posts',
       WebsiteCmsSection.seo => 'Global SEO settings',
@@ -372,18 +420,44 @@ IconData _iconForSection(WebsiteCmsSection section) => switch (section) {
       WebsiteCmsSection.status => Icons.web_outlined,
     };
 
-(String, String) _plannedCopyForSection(WebsiteCmsSection section) => switch (section) {
-      WebsiteCmsSection.seo => ('SEO settings ready', 'Global SEO defaults, sitemap settings, and schema controls are connected to the live CMS table.'),
-      WebsiteCmsSection.pricing => ('No pricing plans yet', 'Create plan copy for the marketing website when subscription messaging is ready.'),
-      WebsiteCmsSection.faqs => ('No FAQs yet', 'FAQ categories and entries can be managed here when content is ready.'),
-      WebsiteCmsSection.testimonials => ('No testimonials yet', 'Customer testimonials can be reviewed and published here without exposing medical content.'),
-      WebsiteCmsSection.campaigns => ('No campaigns yet', 'Create campaign landing overlays with UTM, schedule, and section controls.'),
-      WebsiteCmsSection.assets => ('No assets yet', 'Upload and manage public marketing images, icons, and media assets.'),
-      WebsiteCmsSection.pages || WebsiteCmsSection.blog || WebsiteCmsSection.status => ('No content yet', 'Create content from the page action when you are ready.'),
+(String, String) _plannedCopyForSection(WebsiteCmsSection section) =>
+    switch (section) {
+      WebsiteCmsSection.seo => (
+          'SEO settings ready',
+          'Global SEO defaults, sitemap settings, and schema controls are connected to the live CMS table.'
+        ),
+      WebsiteCmsSection.pricing => (
+          'No pricing plans yet',
+          'Create plan copy for the marketing website when subscription messaging is ready.'
+        ),
+      WebsiteCmsSection.faqs => (
+          'No FAQs yet',
+          'FAQ categories and entries can be managed here when content is ready.'
+        ),
+      WebsiteCmsSection.testimonials => (
+          'No testimonials yet',
+          'Customer testimonials can be reviewed and published here without exposing medical content.'
+        ),
+      WebsiteCmsSection.campaigns => (
+          'No campaigns yet',
+          'Create campaign landing overlays with UTM, schedule, and section controls.'
+        ),
+      WebsiteCmsSection.assets => (
+          'No assets yet',
+          'Upload and manage public marketing images, icons, and media assets.'
+        ),
+      WebsiteCmsSection.pages ||
+      WebsiteCmsSection.blog ||
+      WebsiteCmsSection.status =>
+        (
+          'No content yet',
+          'Create content from the page action when you are ready.'
+        ),
     };
 
 class _PagesTab extends StatelessWidget {
-  const _PagesTab({required this.cms, required this.canManage, this.compact = false});
+  const _PagesTab(
+      {required this.cms, required this.canManage, this.compact = false});
 
   final MarketingCmsSnapshot cms;
   final bool canManage;
@@ -438,7 +512,8 @@ class _PagesTab extends StatelessWidget {
 }
 
 class _BlogTab extends StatelessWidget {
-  const _BlogTab({required this.cms, required this.canManage, this.compact = false});
+  const _BlogTab(
+      {required this.cms, required this.canManage, this.compact = false});
 
   final MarketingCmsSnapshot cms;
   final bool canManage;
@@ -1232,7 +1307,7 @@ class _BlogEditorSheetState extends State<_BlogEditorSheet> {
                 onChanged: (value) => setState(() => _status = value)),
             const SizedBox(height: AppSpacing.sm),
             DropdownButtonFormField<String?>(
-              value: _categoryId,
+              initialValue: _categoryId,
               decoration: const InputDecoration(labelText: 'Category'),
               items: [
                 const DropdownMenuItem<String?>(
@@ -1400,7 +1475,7 @@ class _StatusField extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.md),
       child: DropdownButtonFormField<MarketingContentStatus>(
-        value: value,
+        initialValue: value,
         decoration: const InputDecoration(labelText: 'Status'),
         items: [
           for (final status in MarketingContentStatus.values)

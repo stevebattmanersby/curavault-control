@@ -3,7 +3,8 @@
 import 'dart:html' as html;
 import 'dart:convert';
 
-Future<void> saveTextFileWeb({required String filename, required String contents}) async {
+Future<void> saveTextFileWeb(
+    {required String filename, required String contents}) async {
   final bytes = const Utf8Encoder().convert(contents);
   final blob = html.Blob([bytes], 'text/csv;charset=utf-8');
   final url = html.Url.createObjectUrlFromBlob(blob);

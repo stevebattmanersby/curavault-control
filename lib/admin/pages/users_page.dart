@@ -23,7 +23,8 @@ class _UsersPageState extends State<UsersPage> {
   @override
   void initState() {
     super.initState();
-    _searchController = TextEditingController(text: context.read<AdminStore>().userQuery);
+    _searchController =
+        TextEditingController(text: context.read<AdminStore>().userQuery);
     _searchController.addListener(_onSearchChanged);
   }
 
@@ -50,14 +51,18 @@ class _UsersPageState extends State<UsersPage> {
 
     return AdminPageScaffold(
       title: 'Users',
-      subtitle: 'Account health and usage signals. Medical content is never shown here.',
+      subtitle:
+          'Account health and usage signals. Medical content is never shown here.',
       actions: [
-        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.users)),
+        AdminDataSourceBadge(
+            status: store.dataSource(AdminDataSourceKey.users)),
         const SizedBox(width: AppSpacing.sm),
         _UsersFilterButton(filters: filters),
         const SizedBox(width: AppSpacing.sm),
         IconButton(
-          onPressed: store.isLoading ? null : () => context.read<AdminStore>().refreshUsers(),
+          onPressed: store.isLoading
+              ? null
+              : () => context.read<AdminStore>().refreshUsers(),
           icon: Icon(Icons.refresh, color: cs.onSurface),
           tooltip: 'Refresh',
           splashColor: Colors.transparent,
@@ -74,8 +79,11 @@ class _UsersPageState extends State<UsersPage> {
               prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
               filled: true,
               fillColor: cs.surfaceContainerHighest,
-              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.circular(AppRadius.lg)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              border: OutlineInputBorder(
+                  borderSide: BorderSide.none,
+                  borderRadius: BorderRadius.circular(AppRadius.lg)),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.md),
             ),
           ),
         ),
@@ -83,15 +91,26 @@ class _UsersPageState extends State<UsersPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.users, title: 'Users'),
+          AdminOwnerDataSourcePanel(
+              store: store,
+              dataSourceKey: AdminDataSourceKey.users,
+              title: 'Users'),
           const SizedBox(height: AppSpacing.md),
           Expanded(
             child: Builder(
               builder: (context) {
                 final status = store.dataSource(AdminDataSourceKey.users);
-                if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
+                if (status.kind == AdminDataSourceKind.notInstrumented) {
+                  return const AdminNotInstrumentedPanel();
+                }
                 if (status.kind == AdminDataSourceKind.error) {
-                  return Center(child: Text(status.safeErrorMessage ?? 'Failed to load users.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+                  return Center(
+                      child: Text(
+                          status.safeErrorMessage ?? 'Failed to load users.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(color: cs.onSurfaceVariant)));
                 }
                 if (users.isEmpty) {
                   return Center(
@@ -100,11 +119,17 @@ class _UsersPageState extends State<UsersPage> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.people_alt_outlined, size: 44, color: cs.onSurfaceVariant),
+                          Icon(Icons.people_alt_outlined,
+                              size: 44, color: cs.onSurfaceVariant),
                           const SizedBox(height: AppSpacing.sm),
-                          Text('No user summary data yet.', style: Theme.of(context).textTheme.titleMedium),
+                          Text('No user summary data yet.',
+                              style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: AppSpacing.sm),
-                          Text('No data has been collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                          Text('No data has been collected yet.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: cs.onSurfaceVariant)),
                         ],
                       ),
                     ),
@@ -114,21 +139,35 @@ class _UsersPageState extends State<UsersPage> {
                 return AdminCard(
                   header: Row(
                     children: [
-                      Text('User summaries', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('User summaries',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
                       const Spacer(),
-                      Text('${users.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      Text('${users.length} results',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
-                      headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
+                      headingTextStyle: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w700),
                       dataTextStyle: Theme.of(context).textTheme.labelLarge,
                       columns: [
                         const DataColumn(label: Text('User ID')),
                         if (canEmail) const DataColumn(label: Text('Email')),
                         const DataColumn(label: Text('Last active')),
-                        const DataColumn(label: Text('Profiles'), numeric: true),
+                        const DataColumn(
+                            label: Text('Profiles'), numeric: true),
                         const DataColumn(label: Text('Records'), numeric: true),
                         const DataColumn(label: Text('Docs'), numeric: true),
                         const DataColumn(label: Text('Appts'), numeric: true),
@@ -138,17 +177,22 @@ class _UsersPageState extends State<UsersPage> {
                       rows: [
                         for (final u in users)
                           DataRow(
-                            onSelectChanged: (_) => context.go('/users/${u.userId}'),
+                            onSelectChanged: (_) =>
+                                context.go('/users/${u.userId}'),
                             cells: [
                               DataCell(SelectableText(u.userId)),
                               if (canEmail) DataCell(Text(u.email ?? '—')),
-                              DataCell(Text(formatDateTimeShort(u.lastActiveAt))),
+                              DataCell(
+                                  Text(formatDateTimeShort(u.lastActiveAt))),
                               DataCell(Text(formatCompactInt(u.profileCount))),
                               DataCell(Text(formatCompactInt(u.recordCount))),
                               DataCell(Text(formatCompactInt(u.documentCount))),
-                              DataCell(Text(formatCompactInt(u.appointmentCount))),
-                              DataCell(Text(formatCompactInt(u.medicationCount))),
-                              DataCell(Text(formatCompactInt(u.vaccinationCount))),
+                              DataCell(
+                                  Text(formatCompactInt(u.appointmentCount))),
+                              DataCell(
+                                  Text(formatCompactInt(u.medicationCount))),
+                              DataCell(
+                                  Text(formatCompactInt(u.vaccinationCount))),
                             ],
                           ),
                       ],
@@ -193,8 +237,10 @@ class _UsersFilterButton extends StatelessWidget {
       label: Text('Filters', style: TextStyle(color: cs.onSurface)),
       style: TextButton.styleFrom(
         backgroundColor: cs.surfaceContainerHighest,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.md),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
       ),
     );
   }
@@ -235,7 +281,11 @@ class _UsersFilterSheetState extends State<_UsersFilterSheet> {
           children: [
             Row(
               children: [
-                Text('User filters', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text('User filters',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -247,16 +297,28 @@ class _UsersFilterSheetState extends State<_UsersFilterSheet> {
               ],
             ),
             const SizedBox(height: 12),
-            Text('Filters are currently client-side only for the live RPC feed.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(
+                'Filters are currently client-side only for the live RPC feed.',
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
             Row(
               children: [
                 TextButton(
                   onPressed: () {
-                    context.read<AdminStore>().setUserFilters(const UserListFilters());
+                    context
+                        .read<AdminStore>()
+                        .setUserFilters(const UserListFilters());
                     if (context.mounted) Navigator.of(context).pop();
                   },
-                  style: TextButton.styleFrom(backgroundColor: cs.surfaceContainerHighest, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+                  style: TextButton.styleFrom(
+                      backgroundColor: cs.surfaceContainerHighest,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 12)),
                   child: Text('Clear', style: TextStyle(color: cs.onSurface)),
                 ),
                 const SizedBox(width: 12),
@@ -266,7 +328,11 @@ class _UsersFilterSheetState extends State<_UsersFilterSheet> {
                       context.read<AdminStore>().setUserFilters(_filters);
                       if (context.mounted) Navigator.of(context).pop();
                     },
-                    style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)), padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12)),
+                    style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppRadius.lg)),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 12)),
                     child: const Text('Apply'),
                   ),
                 ),

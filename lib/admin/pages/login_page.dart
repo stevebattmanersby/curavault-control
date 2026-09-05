@@ -36,11 +36,16 @@ class _LoginPageState extends State<LoginPage> {
       final frag = base.fragment;
       if (frag.isEmpty) return;
 
-      final hasAuthParams = frag.contains('access_token=') || frag.contains('code=') || frag.contains('type=invite') || frag.contains('type=recovery');
+      final hasAuthParams = frag.contains('access_token=') ||
+          frag.contains('code=') ||
+          frag.contains('type=invite') ||
+          frag.contains('type=recovery');
       if (!hasAuthParams) return;
 
       final qIndex = frag.indexOf('?');
-      final query = (qIndex >= 0 && qIndex < frag.length - 1) ? frag.substring(qIndex + 1) : null;
+      final query = (qIndex >= 0 && qIndex < frag.length - 1)
+          ? frag.substring(qIndex + 1)
+          : null;
       if (query == null || query.trim().isEmpty) return;
 
       context.go('${AppRoutes.setPassword}?$query');
@@ -67,7 +72,8 @@ class _LoginPageState extends State<LoginPage> {
     });
     if (!(_formKey.currentState?.validate() ?? false)) return;
     try {
-      await auth.signInWithPassword(email: _emailCtrl.text, password: _passwordCtrl.text);
+      await auth.signInWithPassword(
+          email: _emailCtrl.text, password: _passwordCtrl.text);
 
       // Post-login destination is handled by the router.
       if (mounted) context.go(AppRoutes.dashboard);
@@ -79,19 +85,23 @@ class _LoginPageState extends State<LoginPage> {
       } else if (e is AdminAuthNetworkException) {
         setState(() => _error = 'Network request to Supabase failed.');
       } else if (e is AdminAuthAllowListLookupException) {
-        setState(() => _error = 'Authenticated, but failed to check admin allow-list.');
+        setState(() =>
+            _error = 'Authenticated, but failed to check admin allow-list.');
       } else if (e is AdminAccessDeniedException) {
         final msg = e.message.toLowerCase();
         if (msg.contains('inactive')) {
           setState(() => _error = 'Admin user inactive.');
-        } else if (msg.contains('allow-listed') || msg.contains('allow list') || msg.contains('allowlist')) {
+        } else if (msg.contains('allow-listed') ||
+            msg.contains('allow list') ||
+            msg.contains('allowlist')) {
           setState(() => _error = 'Authenticated but not allow-listed.');
         } else {
           setState(() => _error = e.message);
         }
       } else {
         // Avoid showing “Authentication failed” unless Supabase Auth itself failed.
-        setState(() => _error = 'Authenticated, but an unexpected error occurred.');
+        setState(
+            () => _error = 'Authenticated, but an unexpected error occurred.');
       }
     }
   }
@@ -134,7 +144,8 @@ class _LoginPageState extends State<LoginPage> {
       _error = null;
       _info = null;
       _devSupabaseError = null;
-      _devRedirectTo = kDebugMode ? AdminAuthStore.passwordResetRedirectTo : null;
+      _devRedirectTo =
+          kDebugMode ? AdminAuthStore.passwordResetRedirectTo : null;
     });
   }
 
@@ -176,7 +187,8 @@ class _LoginPageState extends State<LoginPage> {
                       height: 44,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
+                        gradient:
+                            LinearGradient(colors: [cs.primary, cs.tertiary]),
                       ),
                       child: Icon(Icons.shield_outlined, color: cs.onPrimary),
                     ),
@@ -185,8 +197,16 @@ class _LoginPageState extends State<LoginPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('CuraVault Control Site', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
-                          Text('Secure admin access', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                          Text('CuraVault Control Site',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w900)),
+                          Text('Secure admin access',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: cs.onSurfaceVariant)),
                         ],
                       ),
                     ),
@@ -197,10 +217,15 @@ class _LoginPageState extends State<LoginPage> {
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                    decoration: BoxDecoration(
+                        color: cs.errorContainer,
+                        borderRadius: BorderRadius.circular(AppRadius.lg)),
                     child: Text(
                       auth.fatalConfigError!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer),
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: cs.onErrorContainer),
                     ),
                   )
                 else
@@ -211,71 +236,115 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         TextFormField(
                           controller: _emailCtrl,
-                          autofillHints: const [AutofillHints.username, AutofillHints.email],
+                          autofillHints: const [
+                            AutofillHints.username,
+                            AutofillHints.email
+                          ],
                           decoration: const InputDecoration(labelText: 'Email'),
-                          validator: (v) => _looksLikeEmail(v ?? '') ? null : 'Enter a valid email',
+                          validator: (v) => _looksLikeEmail(v ?? '')
+                              ? null
+                              : 'Enter a valid email',
                         ),
                         const SizedBox(height: AppSpacing.md),
-
                         if (!_forgotMode) ...[
                           TextFormField(
                             controller: _passwordCtrl,
                             autofillHints: const [AutofillHints.password],
                             obscureText: true,
-                            decoration: const InputDecoration(labelText: 'Password'),
-                            validator: (v) => (v ?? '').trim().length >= 8 ? null : 'Password must be at least 8 characters',
+                            decoration:
+                                const InputDecoration(labelText: 'Password'),
+                            validator: (v) => (v ?? '').trim().length >= 8
+                                ? null
+                                : 'Password must be at least 8 characters',
                             onFieldSubmitted: (_) => _submit(auth),
                           ),
                           const SizedBox(height: AppSpacing.lg),
                           if (_error != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: Text(_error!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.error)),
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Text(_error!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: cs.error)),
                             ),
                           if (_info != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: Text(_info!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Text(_info!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: cs.onSurfaceVariant)),
                             ),
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton.icon(
-                              onPressed: auth.isSigningIn ? null : () => _submit(auth),
+                              onPressed:
+                                  auth.isSigningIn ? null : () => _submit(auth),
                               icon: auth.isSigningIn
-                                  ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                                  ? SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2, color: cs.onPrimary))
                                   : Icon(Icons.login, color: cs.onPrimary),
                               label: Text(
                                 auth.isSigningIn ? 'Signing in…' : 'Sign in',
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                        color: cs.onPrimary,
+                                        fontWeight: FontWeight.w800),
                               ),
-                              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+                              style: FilledButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg))),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Align(
                             alignment: Alignment.centerRight,
                             child: TextButton.icon(
-                              onPressed: auth.isSigningIn ? null : _enterForgotMode,
+                              onPressed:
+                                  auth.isSigningIn ? null : _enterForgotMode,
                               icon: Icon(Icons.lock_reset, color: cs.primary),
                               label: Text(
                                 'Forgot password?',
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary, fontWeight: FontWeight.w800),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                        color: cs.primary,
+                                        fontWeight: FontWeight.w800),
                               ),
                             ),
                           ),
                           if (kDebugMode) ...[
                             const SizedBox(height: AppSpacing.sm),
-                            DevLoginStagePanel(diagnostics: auth.loginDiagnostics),
+                            DevLoginStagePanel(
+                                diagnostics: auth.loginDiagnostics),
                             const SizedBox(height: AppSpacing.sm),
                             Align(
                               alignment: Alignment.centerLeft,
                               child: TextButton.icon(
                                 // Requirement: navigate to exactly /supabase-connectivity-test
-                                onPressed: () => context.go(AppRoutes.supabaseConnectivityTest),
-                                icon: Icon(Icons.wifi, color: cs.onSurfaceVariant),
+                                onPressed: () => context
+                                    .go(AppRoutes.supabaseConnectivityTest),
+                                icon: Icon(Icons.wifi,
+                                    color: cs.onSurfaceVariant),
                                 label: Text(
                                   'Supabase connectivity test (dev)',
-                                  style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .labelLarge
+                                      ?.copyWith(
+                                          color: cs.onSurfaceVariant,
+                                          fontWeight: FontWeight.w800),
                                 ),
                               ),
                             ),
@@ -288,46 +357,75 @@ class _LoginPageState extends State<LoginPage> {
                               padding: const EdgeInsets.all(AppSpacing.md),
                               decoration: BoxDecoration(
                                 color: cs.surfaceContainerHighest,
-                                borderRadius: BorderRadius.circular(AppRadius.lg),
-                                border: Border.all(color: cs.outline.withValues(alpha: 0.18)),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadius.lg),
+                                border: Border.all(
+                                    color: cs.outline.withValues(alpha: 0.18)),
                               ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     'DEV: redirectTo sent to Supabase',
-                                    style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(fontWeight: FontWeight.w900),
                                   ),
                                   const SizedBox(height: AppSpacing.xs),
                                   SelectableText(
                                     _devRedirectTo!,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.3),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.copyWith(
+                                            color: cs.onSurface, height: 1.3),
                                   ),
                                 ],
                               ),
                             ),
-                          if (kDebugMode && _devRedirectTo != null) const SizedBox(height: AppSpacing.md),
+                          if (kDebugMode && _devRedirectTo != null)
+                            const SizedBox(height: AppSpacing.md),
                           if (_error != null)
                             Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: Text(_error!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.error)),
+                              padding:
+                                  const EdgeInsets.only(bottom: AppSpacing.md),
+                              child: Text(_error!,
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(color: cs.error)),
                             ),
                           if (_info != null)
                             Container(
                               width: double.infinity,
                               padding: const EdgeInsets.all(AppSpacing.md),
-                              decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                              decoration: BoxDecoration(
+                                  color: cs.primaryContainer,
+                                  borderRadius:
+                                      BorderRadius.circular(AppRadius.lg)),
                               child: Text(
                                 _info!,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onPrimaryContainer, height: 1.35),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                        color: cs.onPrimaryContainer,
+                                        height: 1.35),
                               ),
                             ),
                           if (kDebugMode && _devSupabaseError != null)
                             Padding(
-                              padding: const EdgeInsets.only(top: AppSpacing.md),
+                              padding:
+                                  const EdgeInsets.only(top: AppSpacing.md),
                               child: Text(
                                 _devSupabaseError!,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.copyWith(
+                                        color: cs.onSurfaceVariant,
+                                        height: 1.3),
                               ),
                             ),
                           const SizedBox(height: AppSpacing.md),
@@ -338,21 +436,39 @@ class _LoginPageState extends State<LoginPage> {
                               icon: Icon(Icons.send, color: cs.onPrimary),
                               label: Text(
                                 'Send reset link',
-                                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(
+                                        color: cs.onPrimary,
+                                        fontWeight: FontWeight.w800),
                               ),
-                              style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+                              style: FilledButton.styleFrom(
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius.circular(AppRadius.lg))),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.md),
                           TextButton.icon(
                             onPressed: _exitForgotMode,
                             icon: Icon(Icons.arrow_back, color: cs.primary),
-                            label: Text('Back to sign in', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary)),
+                            label: Text('Back to sign in',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelLarge
+                                    ?.copyWith(color: cs.primary)),
                           ),
                         ],
                         Text(
-                          kIsWeb ? 'Tip: Use an approved admin account. Access is allow-listed in admin_users.' : 'Use an approved admin account.',
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
+                          kIsWeb
+                              ? 'Tip: Use an approved admin account. Access is allow-listed in admin_users.'
+                              : 'Use an approved admin account.',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(
+                                  color: cs.onSurfaceVariant, height: 1.3),
                         ),
                       ],
                     ),
@@ -383,20 +499,26 @@ class DevLoginStagePanel extends StatelessWidget {
 
     final rows = <String>[
       'DEV: Login stages',
-      line('signInWithPassword attempted', diagnostics.signInAttempted ? 'yes' : 'no'),
-      line('signInWithPassword succeeded', diagnostics.signInSucceeded ? 'yes' : 'no'),
+      line('signInWithPassword attempted',
+          diagnostics.signInAttempted ? 'yes' : 'no'),
+      line('signInWithPassword succeeded',
+          diagnostics.signInSucceeded ? 'yes' : 'no'),
       line('auth.uid()', diagnostics.authUid),
       line('auth.email', diagnostics.authEmail),
-      line('admin_users lookup attempted', diagnostics.adminUsersLookupAttempted ? 'yes' : 'no'),
-      line('admin_users row found', diagnostics.adminUsersRowFound ? 'yes' : 'no'),
+      line('admin_users lookup attempted',
+          diagnostics.adminUsersLookupAttempted ? 'yes' : 'no'),
+      line('admin_users row found',
+          diagnostics.adminUsersRowFound ? 'yes' : 'no'),
       line('admin_users.admin_user_id', diagnostics.adminUsersAdminUserId),
       line('admin_users.email', diagnostics.adminUsersEmail),
       line('role', diagnostics.role),
       line('is_active', diagnostics.isActive),
       line('route target after login', diagnostics.routeTargetAfterLogin),
       '—',
-      line('login audit attempted', diagnostics.loginAuditAttempted ? 'yes' : 'no'),
-      line('login audit succeeded', diagnostics.loginAuditSucceeded ? 'yes' : 'no'),
+      line('login audit attempted',
+          diagnostics.loginAuditAttempted ? 'yes' : 'no'),
+      line('login audit succeeded',
+          diagnostics.loginAuditSucceeded ? 'yes' : 'no'),
       line('audit table', diagnostics.loginAuditTable),
       line('attempted action_type', diagnostics.loginAuditActionType),
       line('auth.uid present', diagnostics.loginAuditAuthUidPresent),
@@ -418,11 +540,18 @@ class DevLoginStagePanel extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(rows.first, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900)),
+          Text(rows.first,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: AppSpacing.xs),
           SelectableText(
             rows.skip(1).join('\n'),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurface, height: 1.35),
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: cs.onSurface, height: 1.35),
           ),
         ],
       ),

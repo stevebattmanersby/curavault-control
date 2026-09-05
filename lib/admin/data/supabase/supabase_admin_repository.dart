@@ -191,9 +191,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listUsers failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: 'admin_get_user_usage_summary');
+        }
         _setMock(AdminDataSourceKey.users,
             queryName: 'admin_get_user_usage_summary',
             message: 'Using mock fallback (debug only).');
@@ -217,9 +218,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getUserDetail failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: SupabaseAdminQueries.rpcUserAccountDetail);
+        }
         _setMock(AdminDataSourceKey.users,
             queryName: SupabaseAdminQueries.rpcUserAccountDetail,
             message: 'User detail is mocked (debug only).');
@@ -242,9 +244,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performUserAdminAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.users,
               queryName: SupabaseAdminQueries.rpcPerformUserAction);
+        }
         _setMock(AdminDataSourceKey.users,
             queryName: SupabaseAdminQueries.rpcPerformUserAction,
             message: 'User admin actions are mocked (debug only).');
@@ -270,9 +273,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listAuditLogs failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.auditLogs,
               queryName: 'admin_audit_log');
+        }
         _setMock(AdminDataSourceKey.auditLogs, queryName: 'admin_audit_log');
         return _fallback.listAuditLogs(query: query, limit: limit);
       }
@@ -302,9 +306,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAuditSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.auditLogs,
               queryName: 'admin_get_audit_summary');
+        }
         _setMock(AdminDataSourceKey.auditLogs,
             queryName: 'admin_get_audit_summary');
         return _fallback.getAuditSummary();
@@ -328,9 +333,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listSupportSessions failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: 'admin_support_sessions');
+        }
         _setMock(AdminDataSourceKey.support,
             queryName: 'admin_support_sessions');
         return _fallback.listSupportSessions(query: query, limit: limit);
@@ -363,9 +369,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSupportSummary failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: 'admin_get_support_summary');
+        }
         _setMock(AdminDataSourceKey.support,
             queryName: 'admin_get_support_summary');
         return _fallback.getSupportSummary();
@@ -389,9 +396,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSupportSessionDetail failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcSupportSessionDetail);
+        }
         _setMock(AdminDataSourceKey.support,
             queryName: SupabaseAdminQueries.rpcSupportSessionDetail,
             message: 'Support session detail is mocked (debug only).');
@@ -417,9 +425,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.runDiagnostics failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcRunUserDiagnostics);
+        }
         _setMock(AdminDataSourceKey.support,
             queryName: SupabaseAdminQueries.rpcRunUserDiagnostics,
             message: 'Diagnostics are mocked (debug only).');
@@ -442,9 +451,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performSupportAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.support,
               queryName: SupabaseAdminQueries.rpcPerformSupportAction);
+        }
         _setMock(AdminDataSourceKey.support,
             queryName: SupabaseAdminQueries.rpcPerformSupportAction,
             message: 'Support actions are mocked (debug only).');
@@ -469,9 +479,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getDashboardSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.dashboard,
               queryName: 'admin_get_dashboard_metrics');
+        }
         _setMock(AdminDataSourceKey.dashboard,
             queryName: 'admin_get_dashboard_metrics');
         return _fallback.getDashboardSnapshot(query: query);
@@ -517,9 +528,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listPlansOverview failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: 'admin_get_plan_permission_summary');
+        }
         _setMock(AdminDataSourceKey.plansPermissions,
             queryName: 'admin_get_plan_permission_summary');
         return _fallback.listPlansOverview(limit: limit);
@@ -561,9 +573,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getUserEntitlements failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: SupabaseAdminQueries.rpcUserAccountDetail);
+        }
         _setMock(AdminDataSourceKey.plansPermissions,
             queryName: SupabaseAdminQueries.rpcUserAccountDetail,
             message: 'User entitlements are mocked (debug only).');
@@ -587,9 +600,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.listFeatureFlags failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
               queryName: 'admin_feature_flags');
+        }
         _setMock(AdminDataSourceKey.plansPermissions,
             queryName: 'admin_feature_flags',
             message: 'Feature flags are mocked (debug only).');
@@ -604,9 +618,10 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<List<LimitOverrideRow>> listLimitOverrides(
       {required int limit}) async {
-    if (_mustFailClosed)
+    if (_mustFailClosed) {
       _throwNotInstrumented(AdminDataSourceKey.plansPermissions,
           queryName: 'limit_overrides');
+    }
     _setMock(AdminDataSourceKey.plansPermissions,
         queryName: 'limit_overrides',
         message: 'Limit overrides are mocked (debug only).');
@@ -628,9 +643,10 @@ class SupabaseAdminRepository implements AdminRepository {
       debugPrint(
           'SupabaseAdminRepository.getUsageAnalyticsSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.usageAnalytics,
               queryName: 'admin_get_usage_events_summary');
+        }
         _setMock(AdminDataSourceKey.usageAnalytics,
             queryName: 'admin_get_usage_events_summary');
         return _fallback.getUsageAnalyticsSnapshot(query: query);
@@ -652,9 +668,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getStorageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.storage,
               queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
+        }
         _setMock(AdminDataSourceKey.storage,
             queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
         return _fallback.getStorageSnapshot(query: query);
@@ -681,9 +698,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getAiUsageSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.aiUsage,
               queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
+        }
         _setMock(AdminDataSourceKey.aiUsage,
             queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
         return _fallback.getAiUsageSnapshot(query: query);
@@ -716,17 +734,23 @@ class SupabaseAdminRepository implements AdminRepository {
 
       _setLive(
         AdminDataSourceKey.billing,
-        queryName: diag?.summarySource ?? res.diagnostics?.summarySource ?? 'admin_get_billing_summary',
-        rowCount: (diag?.dataSources.isNotEmpty ?? false) ? diag!.dataSources.length : 1,
-        message: 'Billing diagnostics are privacy-safe; revenue is shown only when instrumented.',
+        queryName: diag?.summarySource ??
+            res.diagnostics?.summarySource ??
+            'admin_get_billing_summary',
+        rowCount: (diag?.dataSources.isNotEmpty ?? false)
+            ? diag!.dataSources.length
+            : 1,
+        message:
+            'Billing diagnostics are privacy-safe; revenue is shown only when instrumented.',
       );
       return withDiag;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getBillingSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.billing,
               queryName: 'admin_get_billing_summary');
+        }
         _setMock(AdminDataSourceKey.billing,
             queryName: 'admin_get_billing_summary');
         return _fallback.getBillingSnapshot(query: query);
@@ -746,9 +770,7 @@ class SupabaseAdminRepository implements AdminRepository {
     final out = <BillingDataSourceStatusRow>[];
 
     Future<void> addCount(String name, String table,
-        {String? note,
-        Map<String, dynamic>? eq,
-        int cap = 5000}) async {
+        {String? note, Map<String, dynamic>? eq, int cap = 5000}) async {
       try {
         dynamic q = client.from(table).select('id').limit(cap);
         if (eq != null) {
@@ -799,17 +821,19 @@ class SupabaseAdminRepository implements AdminRepository {
     await addCount('Entitlements (RevenueCat)', 'user_entitlements',
         eq: {'provider': 'revenuecat'}, cap: 5000);
     await addCount('Subscription events', 'subscription_events', cap: 5000);
-    await addCount('RevenueCat webhooks', 'revenuecat_webhook_events', cap: 5000);
+    await addCount('RevenueCat webhooks', 'revenuecat_webhook_events',
+        cap: 5000);
 
     // Stripe tables are not expected in this project; probe defensively.
     await addCount('Stripe events', 'stripe_webhook_events', cap: 2000);
 
-    if (base == null)
+    if (base == null) {
       return BillingDiagnostics(
           summarySource: 'admin_get_billing_summary',
           revenueSource: BillingRevenueSource.unknown,
           sections: const {},
           dataSources: out);
+    }
 
     return BillingDiagnostics(
       summarySource: base.summarySource,
@@ -833,9 +857,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getComplianceSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.compliance,
               queryName: 'admin_get_compliance_summary');
+        }
         _setMock(AdminDataSourceKey.compliance,
             queryName: 'admin_get_compliance_summary');
         return _fallback.getComplianceSnapshot(query: query);
@@ -858,9 +883,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.performComplianceAction failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.compliance,
               queryName: SupabaseAdminQueries.rpcPerformComplianceAction);
+        }
         _setMock(AdminDataSourceKey.compliance,
             queryName: SupabaseAdminQueries.rpcPerformComplianceAction,
             message: 'Compliance actions are mocked (debug only).');
@@ -949,9 +975,10 @@ class SupabaseAdminRepository implements AdminRepository {
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getSystemHealthSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed)
+        if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.systemHealth,
               queryName: SupabaseAdminQueries.rpcSystemHealthSummary);
+        }
         _setMock(AdminDataSourceKey.systemHealth,
             queryName: SupabaseAdminQueries.rpcSystemHealthSummary);
         return _fallback.getSystemHealthSnapshot(query: query);
@@ -965,7 +992,9 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<WebsiteCmsStatusSnapshot> getWebsiteCmsStatus() async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
 
     const uiConnectedByTable = <String, bool>{
       'marketing_pages': true,
@@ -1009,7 +1038,8 @@ class SupabaseAdminRepository implements AdminRepository {
             latestUpdatedAt = _tryParseDateTime(latest?['updated_at']);
           } catch (e) {
             // It's OK if `updated_at` doesn't exist or isn't accessible.
-            debugPrint('Website CMS status: failed to read latest updated_at for $table: $e');
+            debugPrint(
+                'Website CMS status: failed to read latest updated_at for $table: $e');
           }
 
           // RLS enabled is not reliably queryable via PostgREST from the client.
@@ -1064,12 +1094,15 @@ class SupabaseAdminRepository implements AdminRepository {
         }
       }
 
-      final snap = WebsiteCmsStatusSnapshot(rows: rows, generatedAt: DateTime.now().toUtc());
-      _setLive(AdminDataSourceKey.websiteCms, queryName: 'marketing tables probe', rowCount: rows.length);
+      final snap = WebsiteCmsStatusSnapshot(
+          rows: rows, generatedAt: DateTime.now().toUtc());
+      _setLive(AdminDataSourceKey.websiteCms,
+          queryName: 'marketing tables probe', rowCount: rows.length);
       return snap;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getWebsiteCmsStatus failed: $e');
-      _setError(AdminDataSourceKey.websiteCms, queryName: 'marketing tables probe', error: e);
+      _setError(AdminDataSourceKey.websiteCms,
+          queryName: 'marketing tables probe', error: e);
       rethrow;
     }
   }
@@ -1077,40 +1110,58 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<MarketingCmsSnapshot> getMarketingCmsSnapshot() async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
 
     try {
       final pageRows = await client
           .from('marketing_pages')
-          .select('id, slug, title, status, template, excerpt, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+          .select(
+              'id, slug, title, status, template, excerpt, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
           .order('updated_at', ascending: false);
       final sectionRows = await client
           .from('marketing_sections')
-          .select('id, page_id, section_key, section_type, sort_order, status, eyebrow, title, body, updated_at')
+          .select(
+              'id, page_id, section_key, section_type, sort_order, status, eyebrow, title, body, updated_at')
           .order('sort_order', ascending: true);
-      final categoryRows = await client.from('marketing_blog_categories').select('id, slug, name, description, is_active').order('sort_order', ascending: true);
+      final categoryRows = await client
+          .from('marketing_blog_categories')
+          .select('id, slug, name, description, is_active')
+          .order('sort_order', ascending: true);
       final postRows = await client
           .from('marketing_blog_posts')
-          .select('id, slug, title, status, excerpt, category_id, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+          .select(
+              'id, slug, title, status, excerpt, category_id, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
           .order('updated_at', ascending: false);
 
       final snapshot = MarketingCmsSnapshot(
         pages: _asList(pageRows).map(_marketingPageFromRow).toList(),
         sections: _asList(sectionRows).map(_marketingSectionFromRow).toList(),
-        categories: _asList(categoryRows).map(_marketingCategoryFromRow).toList(),
+        categories:
+            _asList(categoryRows).map(_marketingCategoryFromRow).toList(),
         blogPosts: _asList(postRows).map(_marketingBlogPostFromRow).toList(),
         generatedAt: DateTime.now().toUtc(),
       );
-      _setLive(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot', rowCount: snapshot.pages.length + snapshot.sections.length + snapshot.blogPosts.length);
+      _setLive(AdminDataSourceKey.websiteCms,
+          queryName: 'marketing CMS snapshot',
+          rowCount: snapshot.pages.length +
+              snapshot.sections.length +
+              snapshot.blogPosts.length);
       return snapshot;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getMarketingCmsSnapshot failed: $e');
       if (_isMissingRelationError(e)) {
-        if (_mustFailClosed) _throwNotInstrumented(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot');
-        _setMock(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot');
+        if (_mustFailClosed) {
+          _throwNotInstrumented(AdminDataSourceKey.websiteCms,
+              queryName: 'marketing CMS snapshot');
+        }
+        _setMock(AdminDataSourceKey.websiteCms,
+            queryName: 'marketing CMS snapshot');
         return _fallback.getMarketingCmsSnapshot();
       }
-      _setError(AdminDataSourceKey.websiteCms, queryName: 'marketing CMS snapshot', error: e);
+      _setError(AdminDataSourceKey.websiteCms,
+          queryName: 'marketing CMS snapshot', error: e);
       rethrow;
     }
   }
@@ -1118,7 +1169,9 @@ class SupabaseAdminRepository implements AdminRepository {
   @override
   Future<void> saveMarketingPage({required MarketingPageDraft draft}) async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
     final admin = await _admin();
     final isUpdate = draft.id != null;
     final row = <String, dynamic>{
@@ -1147,9 +1200,12 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> saveMarketingSection({required MarketingSectionDraft draft}) async {
+  Future<void> saveMarketingSection(
+      {required MarketingSectionDraft draft}) async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
     final admin = await _admin();
     final isUpdate = draft.id != null;
     final row = <String, dynamic>{
@@ -1173,14 +1229,21 @@ class SupabaseAdminRepository implements AdminRepository {
       actionType: isUpdate ? 'cms_section_updated' : 'cms_section_created',
       resourceType: 'marketing_section',
       resourceId: draft.id,
-      newValue: {'page_id': draft.pageId, 'section_key': draft.sectionKey, 'status': draft.status.value},
+      newValue: {
+        'page_id': draft.pageId,
+        'section_key': draft.sectionKey,
+        'status': draft.status.value
+      },
     );
   }
 
   @override
-  Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft}) async {
+  Future<void> saveMarketingBlogPost(
+      {required MarketingBlogPostDraft draft}) async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
     final admin = await _admin();
     final isUpdate = draft.id != null;
     final row = <String, dynamic>{
@@ -1210,15 +1273,21 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {
+  Future<void> updateMarketingContentStatus(
+      {required String resourceType,
+      required String resourceId,
+      required MarketingContentStatus status}) async {
     final client = _client;
-    if (client == null) throw StateError('Supabase not initialized/configured.');
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
     final admin = await _admin();
     final now = DateTime.now().toUtc().toIso8601String();
     final table = switch (resourceType) {
       'page' => 'marketing_pages',
       'blog_post' => 'marketing_blog_posts',
-      _ => throw ArgumentError.value(resourceType, 'resourceType', 'Unsupported CMS resource type'),
+      _ => throw ArgumentError.value(
+          resourceType, 'resourceType', 'Unsupported CMS resource type'),
     };
     final row = <String, dynamic>{
       'status': status.value,
@@ -1251,7 +1320,12 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   List<Map<String, dynamic>> _asList(dynamic rows) {
-    if (rows is List) return rows.whereType<Map>().map((row) => Map<String, dynamic>.from(row)).toList();
+    if (rows is List) {
+      return rows
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .toList();
+    }
     return const [];
   }
 
@@ -1261,9 +1335,12 @@ class SupabaseAdminRepository implements AdminRepository {
     return trimmed;
   }
 
-  DateTime _requiredDate(dynamic value) => _tryParseDateTime(value) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
+  DateTime _requiredDate(dynamic value) =>
+      _tryParseDateTime(value) ??
+      DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
-  MarketingPageRow _marketingPageFromRow(Map<String, dynamic> row) => MarketingPageRow(
+  MarketingPageRow _marketingPageFromRow(Map<String, dynamic> row) =>
+      MarketingPageRow(
         id: row['id']?.toString() ?? '',
         slug: row['slug']?.toString() ?? '',
         title: row['title']?.toString() ?? 'Untitled page',
@@ -1278,12 +1355,15 @@ class SupabaseAdminRepository implements AdminRepository {
         createdAt: _requiredDate(row['created_at']),
       );
 
-  MarketingPageSectionRow _marketingSectionFromRow(Map<String, dynamic> row) => MarketingPageSectionRow(
+  MarketingPageSectionRow _marketingSectionFromRow(Map<String, dynamic> row) =>
+      MarketingPageSectionRow(
         id: row['id']?.toString() ?? '',
         pageId: row['page_id']?.toString() ?? '',
         sectionKey: row['section_key']?.toString() ?? '',
         sectionType: row['section_type']?.toString() ?? 'content',
-        sortOrder: row['sort_order'] is int ? row['sort_order'] as int : int.tryParse(row['sort_order']?.toString() ?? '') ?? 0,
+        sortOrder: row['sort_order'] is int
+            ? row['sort_order'] as int
+            : int.tryParse(row['sort_order']?.toString() ?? '') ?? 0,
         status: MarketingContentStatus.parse(row['status']?.toString()),
         eyebrow: row['eyebrow']?.toString(),
         title: row['title']?.toString(),
@@ -1291,7 +1371,9 @@ class SupabaseAdminRepository implements AdminRepository {
         updatedAt: _requiredDate(row['updated_at']),
       );
 
-  MarketingBlogCategoryRow _marketingCategoryFromRow(Map<String, dynamic> row) => MarketingBlogCategoryRow(
+  MarketingBlogCategoryRow _marketingCategoryFromRow(
+          Map<String, dynamic> row) =>
+      MarketingBlogCategoryRow(
         id: row['id']?.toString() ?? '',
         slug: row['slug']?.toString() ?? '',
         name: row['name']?.toString() ?? 'Uncategorised',
@@ -1299,7 +1381,8 @@ class SupabaseAdminRepository implements AdminRepository {
         isActive: row['is_active'] == true,
       );
 
-  MarketingBlogPostRow _marketingBlogPostFromRow(Map<String, dynamic> row) => MarketingBlogPostRow(
+  MarketingBlogPostRow _marketingBlogPostFromRow(Map<String, dynamic> row) =>
+      MarketingBlogPostRow(
         id: row['id']?.toString() ?? '',
         slug: row['slug']?.toString() ?? '',
         title: row['title']?.toString() ?? 'Untitled post',
@@ -1314,7 +1397,11 @@ class SupabaseAdminRepository implements AdminRepository {
         createdAt: _requiredDate(row['created_at']),
       );
 
-  Future<void> _auditCmsAction({required String actionType, required String resourceType, String? resourceId, Map<String, dynamic>? newValue}) async {
+  Future<void> _auditCmsAction(
+      {required String actionType,
+      required String resourceType,
+      String? resourceId,
+      Map<String, dynamic>? newValue}) async {
     final admin = await _admin();
     await createAuditLog(
       entry: AdminAuditLogCreate(

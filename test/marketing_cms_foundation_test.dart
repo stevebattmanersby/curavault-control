@@ -183,8 +183,8 @@ void main() {
       nav = File('lib/nav.dart').readAsStringSync();
       sidebar =
           File('lib/admin/pages/widgets/admin_sidebar.dart').readAsStringSync();
-      page =
-          File('lib/admin/pages/website_cms_status_page.dart').readAsStringSync();
+      page = File('lib/admin/pages/website_cms_status_page.dart')
+          .readAsStringSync();
       repository = File(
         'lib/admin/data/supabase/supabase_admin_repository.dart',
       ).readAsStringSync();
@@ -213,9 +213,11 @@ void main() {
     });
 
     test('uses the canonical media assets table for Website assets', () {
-      expect(page, contains("WebsiteCmsSection.assets => 'marketing_media_assets'"));
+      expect(page,
+          contains("WebsiteCmsSection.assets => 'marketing_media_assets'"));
       expect(repository, contains("'marketing_media_assets'"));
-      expect(page, isNot(contains("WebsiteCmsSection.assets => 'marketing_assets'")));
+      expect(page,
+          isNot(contains("WebsiteCmsSection.assets => 'marketing_assets'")));
       expect(repository, isNot(contains("'marketing_assets'")));
     });
   });

@@ -64,10 +64,15 @@ String formatAdminSafeError(Object error, {int maxLen = 240}) {
   var s = error.toString();
 
   // Redact obvious secret/token-like substrings.
-  s = s.replaceAll(RegExp(r'Bearer\s+[A-Za-z0-9\-\._=]+', caseSensitive: false), 'Bearer ***');
+  s = s.replaceAll(RegExp(r'Bearer\s+[A-Za-z0-9\-\._=]+', caseSensitive: false),
+      'Bearer ***');
   s = s.replaceAll(RegExp(r'(?<=apikey=)[^&\s]+', caseSensitive: false), '***');
-  s = s.replaceAll(RegExp(r'sb_[A-Za-z0-9_\-]{12,}', caseSensitive: false), 'sb_***');
-  s = s.replaceAll(RegExp(r'eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}'), 'jwt_***');
+  s = s.replaceAll(
+      RegExp(r'sb_[A-Za-z0-9_\-]{12,}', caseSensitive: false), 'sb_***');
+  s = s.replaceAll(
+      RegExp(
+          r'eyJ[A-Za-z0-9_\-]{20,}\.[A-Za-z0-9_\-]{10,}\.[A-Za-z0-9_\-]{10,}'),
+      'jwt_***');
 
   s = s.trim();
   if (s.length > maxLen) s = '${s.substring(0, maxLen)}…';

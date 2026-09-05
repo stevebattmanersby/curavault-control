@@ -39,17 +39,22 @@ class DashboardPage extends StatelessWidget {
       title: 'Dashboard',
       subtitle: 'Executive overview (privacy-safe summaries only).',
       actions: [
-        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.dashboard)),
+        AdminDataSourceBadge(
+            status: store.dataSource(AdminDataSourceKey.dashboard)),
         const SizedBox(width: AppSpacing.sm),
-        _DashboardFiltersBar(query: store.dashboardQuery, onChanged: store.setDashboardQuery),
+        _DashboardFiltersBar(
+            query: store.dashboardQuery, onChanged: store.setDashboardQuery),
         IconButton(
           onPressed: () {
             context.read<AdminStore>().bootstrap();
           },
-          icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(Icons.refresh,
+              color: Theme.of(context).colorScheme.onSurface),
           splashColor: Colors.transparent,
-          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-          hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          highlightColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          hoverColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
           tooltip: 'Refresh',
         ),
       ],
@@ -59,11 +64,16 @@ class DashboardPage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.dashboard, title: 'Dashboard'),
+                  AdminOwnerDataSourcePanel(
+                      store: store,
+                      dataSourceKey: AdminDataSourceKey.dashboard,
+                      title: 'Dashboard'),
                   const SizedBox(height: AppSpacing.md),
                   _DataSourceStatusPanel(store: store),
                   const SizedBox(height: AppSpacing.lg),
-                  if (store.dataSource(AdminDataSourceKey.dashboard).kind == AdminDataSourceKind.notInstrumented) const AdminNotInstrumentedPanel(),
+                  if (store.dataSource(AdminDataSourceKey.dashboard).kind ==
+                      AdminDataSourceKind.notInstrumented)
+                    const AdminNotInstrumentedPanel(),
                   if (store.dashboardLoad.hasError)
                     AdminCard(
                       child: Row(
@@ -75,29 +85,53 @@ class DashboardPage extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Dashboard query failed', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                                Text('Dashboard query failed',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(
+                                            fontWeight: FontWeight.w800)),
                                 const SizedBox(height: 6),
-                                Text('Query: ${store.dashboardLoad.queryName ?? 'unknown'}', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                                Text(
+                                    'Query: ${store.dashboardLoad.queryName ?? 'unknown'}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelLarge
+                                        ?.copyWith(color: cs.onSurfaceVariant)),
                                 const SizedBox(height: 6),
-                                Text(store.dashboardLoad.error ?? 'Unknown error', style: Theme.of(context).textTheme.bodyMedium),
+                                Text(
+                                    store.dashboardLoad.error ??
+                                        'Unknown error',
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium),
                               ],
                             ),
                           ),
                         ],
                       ),
                     ),
-                  if (dash == null && !store.dashboardLoad.hasError && store.dataSource(AdminDataSourceKey.dashboard).kind != AdminDataSourceKind.notInstrumented)
+                  if (dash == null &&
+                      !store.dashboardLoad.hasError &&
+                      store.dataSource(AdminDataSourceKey.dashboard).kind !=
+                          AdminDataSourceKind.notInstrumented)
                     Center(
                       child: Padding(
                         padding: const EdgeInsets.only(top: 56),
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.query_stats, size: 44, color: cs.onSurfaceVariant),
+                            Icon(Icons.query_stats,
+                                size: 44, color: cs.onSurfaceVariant),
                             const SizedBox(height: AppSpacing.sm),
-                            Text('No data collected yet.', style: Theme.of(context).textTheme.titleMedium),
+                            Text('No data collected yet.',
+                                style: Theme.of(context).textTheme.titleMedium),
                             const SizedBox(height: AppSpacing.sm),
-                            Text('Once aggregates are available, metrics will appear here.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                            Text(
+                                'Once aggregates are available, metrics will appear here.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: cs.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -119,9 +153,25 @@ class _DataSourceStatusPanel extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     Widget row({required String label, required AdminDataLoadStatus status}) {
       final ok = status.isOk;
-      final icon = ok ? Icons.check_circle_outline : status.hasError ? Icons.error_outline : status.attempted ? Icons.hourglass_empty : Icons.help_outline;
-      final iconColor = ok ? cs.primary : status.hasError ? cs.error : cs.onSurfaceVariant;
-      final value = ok ? 'Yes' : status.hasError ? 'No (error)' : status.attempted ? 'No (loading/empty)' : 'No';
+      final icon = ok
+          ? Icons.check_circle_outline
+          : status.hasError
+              ? Icons.error_outline
+              : status.attempted
+                  ? Icons.hourglass_empty
+                  : Icons.help_outline;
+      final iconColor = ok
+          ? cs.primary
+          : status.hasError
+              ? cs.error
+              : cs.onSurfaceVariant;
+      final value = ok
+          ? 'Yes'
+          : status.hasError
+              ? 'No (error)'
+              : status.attempted
+                  ? 'No (loading/empty)'
+                  : 'No';
 
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 6),
@@ -129,8 +179,13 @@ class _DataSourceStatusPanel extends StatelessWidget {
           children: [
             Icon(icon, size: 18, color: iconColor),
             const SizedBox(width: 10),
-            Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge)),
-            Text(value, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: ok ? cs.primary : cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+            Expanded(
+                child:
+                    Text(label, style: Theme.of(context).textTheme.labelLarge)),
+            Text(value,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: ok ? cs.primary : cs.onSurfaceVariant,
+                    fontWeight: FontWeight.w700)),
           ],
         ),
       );
@@ -139,9 +194,17 @@ class _DataSourceStatusPanel extends StatelessWidget {
     return AdminCard(
       header: Row(
         children: [
-          Text('Data source status', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text('Data source status',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
           const Spacer(),
-          Text('Admin-safe RPCs only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text('Admin-safe RPCs only',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
       child: Column(
@@ -150,17 +213,32 @@ class _DataSourceStatusPanel extends StatelessWidget {
           row(label: 'User summary loaded', status: store.userSummaryLoad),
           row(label: 'Usage events loaded', status: store.usageEventsLoad),
           row(label: 'Billing summary loaded', status: store.billingLoad),
-          if (store.userSummaryLoad.hasError || store.usageEventsLoad.hasError || store.billingLoad.hasError)
+          if (store.userSummaryLoad.hasError ||
+              store.usageEventsLoad.hasError ||
+              store.billingLoad.hasError)
             Padding(
               padding: const EdgeInsets.only(top: AppSpacing.sm),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Errors', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+                  Text('Errors',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w800)),
                   const SizedBox(height: 6),
-                  if (store.userSummaryLoad.hasError) _StatusErrorLine(name: store.userSummaryLoad.queryName, message: store.userSummaryLoad.error),
-                  if (store.usageEventsLoad.hasError) _StatusErrorLine(name: store.usageEventsLoad.queryName, message: store.usageEventsLoad.error),
-                  if (store.billingLoad.hasError) _StatusErrorLine(name: store.billingLoad.queryName, message: store.billingLoad.error),
+                  if (store.userSummaryLoad.hasError)
+                    _StatusErrorLine(
+                        name: store.userSummaryLoad.queryName,
+                        message: store.userSummaryLoad.error),
+                  if (store.usageEventsLoad.hasError)
+                    _StatusErrorLine(
+                        name: store.usageEventsLoad.queryName,
+                        message: store.usageEventsLoad.error),
+                  if (store.billingLoad.hasError)
+                    _StatusErrorLine(
+                        name: store.billingLoad.queryName,
+                        message: store.billingLoad.error),
                 ],
               ),
             ),
@@ -185,7 +263,12 @@ class _StatusErrorLine extends StatelessWidget {
         children: [
           Icon(Icons.error_outline, size: 16, color: cs.error),
           const SizedBox(width: 8),
-          Expanded(child: Text('${name ?? 'unknown'}: ${message ?? 'Unknown error'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
+          Expanded(
+              child: Text('${name ?? 'unknown'}: ${message ?? 'Unknown error'}',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant))),
         ],
       ),
     );
@@ -203,95 +286,236 @@ class _DashboardBody extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'Data totals', subtitle: 'Counts only. No names, values, or content.'),
+          _SectionTitle(
+              title: 'Data totals',
+              subtitle: 'Counts only. No names, values, or content.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              MetricTile(label: 'Total users', value: formatCompactInt(dash.totalRegisteredUsers), icon: Icons.people_alt_outlined),
-              MetricTile(label: 'User profiles', value: formatCompactInt(dash.featureUsage['User profiles'] ?? 0), icon: Icons.badge_outlined),
-              MetricTile(label: 'Family members', value: formatCompactInt(dash.featureUsage['Family members'] ?? 0), icon: Icons.group_outlined),
-              MetricTile(label: 'Medical records', value: formatCompactInt(dash.featureUsage['Medical records'] ?? 0), icon: Icons.folder_open_outlined),
-              MetricTile(label: 'Appointments', value: formatCompactInt(dash.featureUsage['Appointments'] ?? 0), icon: Icons.event_outlined),
-              MetricTile(label: 'Medications', value: formatCompactInt(dash.featureUsage['Medications'] ?? 0), icon: Icons.medication_outlined),
-              MetricTile(label: 'Vaccinations', value: formatCompactInt(dash.featureUsage['Vaccinations'] ?? 0), icon: Icons.vaccines_outlined),
-              MetricTile(label: 'Blood pressure entries', value: formatCompactInt(dash.featureUsage['Blood pressure entries'] ?? 0), icon: Icons.monitor_heart_outlined),
-              MetricTile(label: 'Documents', value: formatCompactInt(dash.featureUsage['Documents'] ?? 0), icon: Icons.description_outlined),
-              MetricTile(label: 'Insurance cards', value: formatCompactInt(dash.featureUsage['Insurance cards'] ?? 0), icon: Icons.credit_card_outlined),
-              MetricTile(label: 'Usage events', value: formatCompactInt(dash.featureUsage['Usage events'] ?? 0), icon: Icons.query_stats_outlined),
-              MetricTile(label: 'Audit events', value: formatCompactInt(dash.featureUsage['Audit events'] ?? 0), icon: Icons.policy_outlined),
-              MetricTile(label: 'Support sessions', value: formatCompactInt(dash.featureUsage['Support sessions'] ?? 0), icon: Icons.support_agent_outlined),
-              MetricTile(label: 'Compliance requests', value: formatCompactInt(dash.featureUsage['Compliance requests'] ?? 0), icon: Icons.gavel_outlined),
+              MetricTile(
+                  label: 'Total users',
+                  value: formatCompactInt(dash.totalRegisteredUsers),
+                  icon: Icons.people_alt_outlined),
+              MetricTile(
+                  label: 'User profiles',
+                  value:
+                      formatCompactInt(dash.featureUsage['User profiles'] ?? 0),
+                  icon: Icons.badge_outlined),
+              MetricTile(
+                  label: 'Family members',
+                  value: formatCompactInt(
+                      dash.featureUsage['Family members'] ?? 0),
+                  icon: Icons.group_outlined),
+              MetricTile(
+                  label: 'Medical records',
+                  value: formatCompactInt(
+                      dash.featureUsage['Medical records'] ?? 0),
+                  icon: Icons.folder_open_outlined),
+              MetricTile(
+                  label: 'Appointments',
+                  value:
+                      formatCompactInt(dash.featureUsage['Appointments'] ?? 0),
+                  icon: Icons.event_outlined),
+              MetricTile(
+                  label: 'Medications',
+                  value:
+                      formatCompactInt(dash.featureUsage['Medications'] ?? 0),
+                  icon: Icons.medication_outlined),
+              MetricTile(
+                  label: 'Vaccinations',
+                  value:
+                      formatCompactInt(dash.featureUsage['Vaccinations'] ?? 0),
+                  icon: Icons.vaccines_outlined),
+              MetricTile(
+                  label: 'Blood pressure entries',
+                  value: formatCompactInt(
+                      dash.featureUsage['Blood pressure entries'] ?? 0),
+                  icon: Icons.monitor_heart_outlined),
+              MetricTile(
+                  label: 'Documents',
+                  value: formatCompactInt(dash.featureUsage['Documents'] ?? 0),
+                  icon: Icons.description_outlined),
+              MetricTile(
+                  label: 'Insurance cards',
+                  value: formatCompactInt(
+                      dash.featureUsage['Insurance cards'] ?? 0),
+                  icon: Icons.credit_card_outlined),
+              MetricTile(
+                  label: 'Usage events',
+                  value:
+                      formatCompactInt(dash.featureUsage['Usage events'] ?? 0),
+                  icon: Icons.query_stats_outlined),
+              MetricTile(
+                  label: 'Audit events',
+                  value:
+                      formatCompactInt(dash.featureUsage['Audit events'] ?? 0),
+                  icon: Icons.policy_outlined),
+              MetricTile(
+                  label: 'Support sessions',
+                  value: formatCompactInt(
+                      dash.featureUsage['Support sessions'] ?? 0),
+                  icon: Icons.support_agent_outlined),
+              MetricTile(
+                  label: 'Compliance requests',
+                  value: formatCompactInt(
+                      dash.featureUsage['Compliance requests'] ?? 0),
+                  icon: Icons.gavel_outlined),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'User Growth', subtitle: 'Acquisition and engagement signals for the selected range.'),
+          _SectionTitle(
+              title: 'User Growth',
+              subtitle:
+                  'Acquisition and engagement signals for the selected range.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              MetricTile(label: 'Total registered users', value: formatCompactInt(dash.totalRegisteredUsers), icon: Icons.people_alt_outlined),
-              MetricTile(label: 'New users this week', value: formatCompactInt(dash.newUsersThisWeek), icon: Icons.person_add_alt_1_outlined),
-              MetricTile(label: 'New users this month', value: formatCompactInt(dash.newUsersThisMonth), icon: Icons.person_add_outlined),
-              MetricTile(label: 'Daily active users', value: formatCompactInt(dash.dailyActiveUsers), icon: Icons.today_outlined),
-              MetricTile(label: 'Weekly active users', value: formatCompactInt(dash.weeklyActiveUsers), icon: Icons.calendar_view_week_outlined),
-              MetricTile(label: 'Monthly active users', value: formatCompactInt(dash.monthlyActiveUsers), icon: Icons.date_range_outlined),
+              MetricTile(
+                  label: 'Total registered users',
+                  value: formatCompactInt(dash.totalRegisteredUsers),
+                  icon: Icons.people_alt_outlined),
+              MetricTile(
+                  label: 'New users this week',
+                  value: formatCompactInt(dash.newUsersThisWeek),
+                  icon: Icons.person_add_alt_1_outlined),
+              MetricTile(
+                  label: 'New users this month',
+                  value: formatCompactInt(dash.newUsersThisMonth),
+                  icon: Icons.person_add_outlined),
+              MetricTile(
+                  label: 'Daily active users',
+                  value: formatCompactInt(dash.dailyActiveUsers),
+                  icon: Icons.today_outlined),
+              MetricTile(
+                  label: 'Weekly active users',
+                  value: formatCompactInt(dash.weeklyActiveUsers),
+                  icon: Icons.calendar_view_week_outlined),
+              MetricTile(
+                  label: 'Monthly active users',
+                  value: formatCompactInt(dash.monthlyActiveUsers),
+                  icon: Icons.date_range_outlined),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           AdminCard(
             header: Row(
               children: [
-                Text('Registered users over time', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Registered users over time',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Text('Generated ${formatDateTimeShort(dash.generatedAt)}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text('Generated ${formatDateTimeShort(dash.generatedAt)}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
-            child: SizedBox(height: 260, child: _UserGrowthLineChart(series: dash.userGrowth)),
+            child: SizedBox(
+                height: 260,
+                child: _UserGrowthLineChart(series: dash.userGrowth)),
           ),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Usage', subtitle: 'Storage and AI usage totals only. No content or prompts.'),
+          _SectionTitle(
+              title: 'Usage',
+              subtitle:
+                  'Storage and AI usage totals only. No content or prompts.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              MetricTile(label: 'Total storage used', value: formatBytes(dash.totalStorageUsedBytes), icon: Icons.storage_outlined),
-              MetricTile(label: 'Avg storage per user', value: formatBytes(dash.averageStoragePerUserBytes), icon: Icons.stacked_bar_chart_outlined),
-              MetricTile(label: 'Users near storage limit', value: formatCompactInt(dash.usersNearStorageLimit), icon: Icons.warning_amber_outlined),
-              MetricTile(label: 'AI tokens used (month)', value: formatCompactInt(dash.aiTokensUsedThisMonth), icon: Icons.auto_awesome_outlined),
-              MetricTile(label: 'AI est. cost (month)', value: '\$${dash.aiEstimatedCostThisMonthUsd.toStringAsFixed(2)}', icon: Icons.payments_outlined),
-              MetricTile(label: 'Users near AI limit', value: formatCompactInt(dash.usersNearAiLimit), icon: Icons.shield_outlined),
+              MetricTile(
+                  label: 'Total storage used',
+                  value: formatBytes(dash.totalStorageUsedBytes),
+                  icon: Icons.storage_outlined),
+              MetricTile(
+                  label: 'Avg storage per user',
+                  value: formatBytes(dash.averageStoragePerUserBytes),
+                  icon: Icons.stacked_bar_chart_outlined),
+              MetricTile(
+                  label: 'Users near storage limit',
+                  value: formatCompactInt(dash.usersNearStorageLimit),
+                  icon: Icons.warning_amber_outlined),
+              MetricTile(
+                  label: 'AI tokens used (month)',
+                  value: formatCompactInt(dash.aiTokensUsedThisMonth),
+                  icon: Icons.auto_awesome_outlined),
+              MetricTile(
+                  label: 'AI est. cost (month)',
+                  value:
+                      '\$${dash.aiEstimatedCostThisMonthUsd.toStringAsFixed(2)}',
+                  icon: Icons.payments_outlined),
+              MetricTile(
+                  label: 'Users near AI limit',
+                  value: formatCompactInt(dash.usersNearAiLimit),
+                  icon: Icons.shield_outlined),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Plans', subtitle: 'Distribution by plan category.'),
+          _SectionTitle(
+              title: 'Plans', subtitle: 'Distribution by plan category.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              MetricTile(label: 'Free users', value: formatCompactInt(dash.freeUsers), icon: Icons.savings_outlined),
-              MetricTile(label: 'Trial users', value: formatCompactInt(dash.trialUsers), icon: Icons.timelapse_outlined),
-              MetricTile(label: 'Paid users', value: formatCompactInt(dash.paidUsers), icon: Icons.workspace_premium_outlined),
-              MetricTile(label: 'Cancelled users', value: formatCompactInt(dash.cancelledUsers), icon: Icons.cancel_outlined),
-              MetricTile(label: 'Failed payments', value: formatCompactInt(dash.failedPayments), icon: Icons.report_gmailerrorred_outlined),
+              MetricTile(
+                  label: 'Free users',
+                  value: formatCompactInt(dash.freeUsers),
+                  icon: Icons.savings_outlined),
+              MetricTile(
+                  label: 'Trial users',
+                  value: formatCompactInt(dash.trialUsers),
+                  icon: Icons.timelapse_outlined),
+              MetricTile(
+                  label: 'Paid users',
+                  value: formatCompactInt(dash.paidUsers),
+                  icon: Icons.workspace_premium_outlined),
+              MetricTile(
+                  label: 'Cancelled users',
+                  value: formatCompactInt(dash.cancelledUsers),
+                  icon: Icons.cancel_outlined),
+              MetricTile(
+                  label: 'Failed payments',
+                  value: formatCompactInt(dash.failedPayments),
+                  icon: Icons.report_gmailerrorred_outlined),
             ],
           ),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Country Usage', subtitle: 'Countries with <10 users are grouped into “Other”.'),
+          _SectionTitle(
+              title: 'Country Usage',
+              subtitle: 'Countries with <10 users are grouped into “Other”.'),
           const SizedBox(height: AppSpacing.md),
           _CountryUsageTable(rows: dash.countryUsage),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Platform Usage', subtitle: 'Account distribution by platform.'),
+          _SectionTitle(
+              title: 'Platform Usage',
+              subtitle: 'Account distribution by platform.'),
           const SizedBox(height: AppSpacing.md),
-          AdminCard(child: SizedBox(height: 240, child: _PlatformPieChart(platformUsage: dash.platformUsage))),
+          AdminCard(
+              child: SizedBox(
+                  height: 240,
+                  child: _PlatformPieChart(platformUsage: dash.platformUsage))),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Feature Usage', subtitle: 'Event totals only. No user content.'),
+          _SectionTitle(
+              title: 'Feature Usage',
+              subtitle: 'Event totals only. No user content.'),
           const SizedBox(height: AppSpacing.md),
-          AdminCard(child: SizedBox(height: 280, child: _FeatureBarChart(featureUsage: dash.featureUsage))),
+          AdminCard(
+              child: SizedBox(
+                  height: 280,
+                  child: _FeatureBarChart(featureUsage: dash.featureUsage))),
           const SizedBox(height: AppSpacing.xl),
-          _SectionTitle(title: 'Alerts', subtitle: 'Operational issues that require attention.'),
+          _SectionTitle(
+              title: 'Alerts',
+              subtitle: 'Operational issues that require attention.'),
           const SizedBox(height: AppSpacing.md),
           _AlertsTable(rows: dash.alerts),
           const SizedBox(height: AppSpacing.xl),
           _SectionTitle(
             title: 'System Status',
-            subtitle: kReleaseMode ? 'High-level service health' : 'High-level service health (mock until live wiring).',
+            subtitle: kReleaseMode
+                ? 'High-level service health'
+                : 'High-level service health (mock until live wiring).',
           ),
           const SizedBox(height: AppSpacing.md),
           _SystemStatusGrid(items: dash.systemStatus),
@@ -327,8 +551,12 @@ class _DashboardFiltersBar extends StatelessWidget {
               child: DropdownButton<AdminDateRangePreset>(
                 value: query.range,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                icon: Icon(Icons.expand_more, color: cs.onSurfaceVariant, size: 18),
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface),
+                icon: Icon(Icons.expand_more,
+                    color: cs.onSurfaceVariant, size: 18),
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(color: cs.onSurface),
                 items: [
                   for (final r in AdminDateRangePreset.values)
                     DropdownMenuItem(value: r, child: Text(r.label)),
@@ -354,7 +582,8 @@ class _DashboardFiltersBar extends StatelessWidget {
     );
   }
 
-  Future<void> _showFiltersSheet(BuildContext context, DashboardQuery query) async {
+  Future<void> _showFiltersSheet(
+      BuildContext context, DashboardQuery query) async {
     final result = await showModalBottomSheet<DashboardQuery>(
       context: context,
       isScrollControlled: true,
@@ -391,17 +620,23 @@ class _DashboardFiltersSheetState extends State<_DashboardFiltersSheet> {
       child: Container(
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
           border: Border.all(color: cs.outline.withValues(alpha: 0.25)),
         ),
-        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Text('Filters', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Filters',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const Spacer(),
                 IconButton(
                   onPressed: () => Navigator.of(context).pop(),
@@ -417,34 +652,47 @@ class _DashboardFiltersSheetState extends State<_DashboardFiltersSheet> {
               title: 'Country',
               value: _q.country,
               options: const ['US', 'CA', 'GB', 'DE', 'AU', 'SG'],
-              onChanged: (v) => setState(() => _q = v == null ? _q.copyWith(clearCountry: true) : _q.copyWith(country: v)),
+              onChanged: (v) => setState(() => _q = v == null
+                  ? _q.copyWith(clearCountry: true)
+                  : _q.copyWith(country: v)),
             ),
             const SizedBox(height: AppSpacing.md),
             _FilterChips(
               title: 'Platform',
               value: _q.platform,
               options: const ['iOS', 'Android', 'Web'],
-              onChanged: (v) => setState(() => _q = v == null ? _q.copyWith(clearPlatform: true) : _q.copyWith(platform: v)),
+              onChanged: (v) => setState(() => _q = v == null
+                  ? _q.copyWith(clearPlatform: true)
+                  : _q.copyWith(platform: v)),
             ),
             const SizedBox(height: AppSpacing.md),
             _FilterChips(
               title: 'Plan',
               value: _q.plan,
               options: const ['Free', 'Trial', 'Paid', 'Cancelled'],
-              onChanged: (v) => setState(() => _q = v == null ? _q.copyWith(clearPlan: true) : _q.copyWith(plan: v)),
+              onChanged: (v) => setState(() => _q = v == null
+                  ? _q.copyWith(clearPlan: true)
+                  : _q.copyWith(plan: v)),
             ),
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => setState(() => _q = DashboardQuery(range: _q.range)),
+                    onPressed: () =>
+                        setState(() => _q = DashboardQuery(range: _q.range)),
                     icon: Icon(Icons.restart_alt, color: cs.onSurface),
-                    label: Text('Reset', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+                    label: Text('Reset',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(color: cs.onSurface)),
                     style: OutlinedButton.styleFrom(
                       splashFactory: NoSplash.splashFactory,
-                      side: BorderSide(color: cs.outline.withValues(alpha: 0.35)),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      side:
+                          BorderSide(color: cs.outline.withValues(alpha: 0.35)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
@@ -454,10 +702,15 @@ class _DashboardFiltersSheetState extends State<_DashboardFiltersSheet> {
                   child: FilledButton.icon(
                     onPressed: () => Navigator.of(context).pop(_q),
                     icon: Icon(Icons.check, color: cs.onPrimary),
-                    label: Text('Apply', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary)),
+                    label: Text('Apply',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelLarge
+                            ?.copyWith(color: cs.onPrimary)),
                     style: FilledButton.styleFrom(
                       splashFactory: NoSplash.splashFactory,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
                   ),
@@ -472,7 +725,11 @@ class _DashboardFiltersSheetState extends State<_DashboardFiltersSheet> {
 }
 
 class _FilterChips extends StatelessWidget {
-  const _FilterChips({required this.title, required this.value, required this.options, required this.onChanged});
+  const _FilterChips(
+      {required this.title,
+      required this.value,
+      required this.options,
+      required this.onChanged});
 
   final String title;
   final String? value;
@@ -485,7 +742,11 @@ class _FilterChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+        Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: cs.onSurfaceVariant)),
         const SizedBox(height: AppSpacing.sm),
         Wrap(
           spacing: AppSpacing.sm,
@@ -494,11 +755,14 @@ class _FilterChips extends StatelessWidget {
             ChoiceChip(
               label: const Text('All'),
               selected: value == null,
-              labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: value == null ? cs.onPrimaryContainer : cs.onSurface),
+              labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: value == null ? cs.onPrimaryContainer : cs.onSurface),
               selectedColor: cs.primaryContainer,
-              backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+              backgroundColor:
+                  cs.surfaceContainerHighest.withValues(alpha: 0.5),
               side: BorderSide(color: cs.outline.withValues(alpha: 0.25)),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg)),
               showCheckmark: false,
               onSelected: (_) => onChanged(null),
             ),
@@ -506,11 +770,14 @@ class _FilterChips extends StatelessWidget {
               ChoiceChip(
                 label: Text(o),
                 selected: value == o,
-                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: value == o ? cs.onPrimaryContainer : cs.onSurface),
+                labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: value == o ? cs.onPrimaryContainer : cs.onSurface),
                 selectedColor: cs.primaryContainer,
-                backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                backgroundColor:
+                    cs.surfaceContainerHighest.withValues(alpha: 0.5),
                 side: BorderSide(color: cs.outline.withValues(alpha: 0.25)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg)),
                 showCheckmark: false,
                 onSelected: (_) => onChanged(o),
               ),
@@ -532,9 +799,17 @@ class _SectionTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),
-        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        Text(subtitle,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant)),
       ],
     );
   }
@@ -576,35 +851,68 @@ class _UserGrowthLineChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (series.isEmpty) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+    if (series.isEmpty) {
+      return Center(
+          child: Text('No data collected yet.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)));
+    }
 
     final spots = <FlSpot>[];
     for (int i = 0; i < series.length; i++) {
       spots.add(FlSpot(i.toDouble(), series[i].value.toDouble()));
     }
 
-    final maxY = series.map((e) => e.value).fold<int>(0, (a, b) => a > b ? a : b).toDouble();
+    final maxY = series
+        .map((e) => e.value)
+        .fold<int>(0, (a, b) => a > b ? a : b)
+        .toDouble();
 
     return LineChart(
       LineChartData(
         minY: 0,
         maxY: (maxY * 1.12).clamp(1, double.infinity),
-        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 44, getTitlesWidget: (v, meta) => Text(formatCompactInt(v.round()), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)))),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 44,
+                  getTitlesWidget: (v, meta) => Text(
+                      formatCompactInt(v.round()),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant)))),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 28,
-              interval: (series.length / 4).clamp(1, double.infinity).toDouble(),
+              interval:
+                  (series.length / 4).clamp(1, double.infinity).toDouble(),
               getTitlesWidget: (v, meta) {
                 final i = v.round().clamp(0, series.length - 1);
                 final d = series[i].date;
-                final label = series.length <= 7 ? '${d.month}/${d.day}' : '${d.month}/${d.day}';
-                return Padding(padding: const EdgeInsets.only(top: 8), child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)));
+                final label = series.length <= 7
+                    ? '${d.month}/${d.day}'
+                    : '${d.month}/${d.day}';
+                return Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(label,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: cs.onSurfaceVariant)));
               },
             ),
           ),
@@ -617,7 +925,12 @@ class _UserGrowthLineChart extends StatelessWidget {
               return items.map((it) {
                 final i = it.x.round().clamp(0, series.length - 1);
                 final d = series[i].date;
-                return LineTooltipItem('${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}\n${formatCompactInt(it.y.round())} users', Theme.of(context).textTheme.labelMedium!.copyWith(color: cs.onSurface));
+                return LineTooltipItem(
+                    '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}\n${formatCompactInt(it.y.round())} users',
+                    Theme.of(context)
+                        .textTheme
+                        .labelMedium!
+                        .copyWith(color: cs.onSurface));
               }).toList();
             },
           ),
@@ -629,7 +942,8 @@ class _UserGrowthLineChart extends StatelessWidget {
             color: cs.primary,
             barWidth: 3,
             dotData: FlDotData(show: series.length <= 14),
-            belowBarData: BarAreaData(show: true, color: cs.primary.withValues(alpha: 0.10)),
+            belowBarData: BarAreaData(
+                show: true, color: cs.primary.withValues(alpha: 0.10)),
           ),
         ],
       ),
@@ -647,7 +961,14 @@ class _PlatformPieChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final total = platformUsage.values.fold<int>(0, (a, b) => a + b);
-    if (total == 0) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+    if (total == 0) {
+      return Center(
+          child: Text('No data collected yet.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)));
+    }
 
     final colors = <String, Color>{
       'iOS': cs.primary,
@@ -662,7 +983,10 @@ class _PlatformPieChart extends StatelessWidget {
         value: value,
         title: pct < 8 ? '' : '${pct.toStringAsFixed(0)}%',
         radius: 70,
-        titleStyle: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
+        titleStyle: Theme.of(context)
+            .textTheme
+            .labelMedium
+            ?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700),
         color: colors[e.key] ?? cs.primary,
       );
     }).toList();
@@ -694,10 +1018,21 @@ class _PlatformPieChart extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 6),
                   child: Row(
                     children: [
-                      Container(width: 10, height: 10, decoration: BoxDecoration(color: colors[e.key] ?? cs.primary, borderRadius: BorderRadius.circular(3))),
+                      Container(
+                          width: 10,
+                          height: 10,
+                          decoration: BoxDecoration(
+                              color: colors[e.key] ?? cs.primary,
+                              borderRadius: BorderRadius.circular(3))),
                       const SizedBox(width: 10),
-                      Expanded(child: Text(e.key, style: Theme.of(context).textTheme.labelLarge)),
-                      Text(formatCompactInt(e.value), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                      Expanded(
+                          child: Text(e.key,
+                              style: Theme.of(context).textTheme.labelLarge)),
+                      Text(formatCompactInt(e.value),
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -716,10 +1051,21 @@ class _FeatureBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (featureUsage.isEmpty) return Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+    if (featureUsage.isEmpty) {
+      return Center(
+          child: Text('No data collected yet.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)));
+    }
 
-    final entries = featureUsage.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final maxY = entries.map((e) => e.value).fold<int>(1, (a, b) => a > b ? a : b).toDouble();
+    final entries = featureUsage.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final maxY = entries
+        .map((e) => e.value)
+        .fold<int>(1, (a, b) => a > b ? a : b)
+        .toDouble();
 
     final groups = <BarChartGroupData>[];
     for (int i = 0; i < entries.length; i++) {
@@ -732,7 +1078,10 @@ class _FeatureBarChart extends StatelessWidget {
               width: 14,
               borderRadius: BorderRadius.circular(6),
               color: cs.primary,
-              backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxY, color: cs.primary.withValues(alpha: 0.08)),
+              backDrawRodData: BackgroundBarChartRodData(
+                  show: true,
+                  toY: maxY,
+                  color: cs.primary.withValues(alpha: 0.08)),
             ),
           ],
         ),
@@ -742,7 +1091,10 @@ class _FeatureBarChart extends StatelessWidget {
     return BarChart(
       BarChartData(
         maxY: maxY * 1.12,
-        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
         borderData: FlBorderData(show: false),
         barTouchData: BarTouchData(
           handleBuiltInTouches: true,
@@ -750,27 +1102,52 @@ class _FeatureBarChart extends StatelessWidget {
             getTooltipColor: (_) => cs.surface,
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final name = entries[group.x.toInt()].key;
-              return BarTooltipItem('$name\n${formatCompactInt(rod.toY.round())}', Theme.of(context).textTheme.labelMedium!.copyWith(color: cs.onSurface));
+              return BarTooltipItem(
+                  '$name\n${formatCompactInt(rod.toY.round())}',
+                  Theme.of(context)
+                      .textTheme
+                      .labelMedium!
+                      .copyWith(color: cs.onSurface));
             },
           ),
         ),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 44, getTitlesWidget: (v, meta) => Text(formatCompactInt(v.round()), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)))),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 44,
+                  getTitlesWidget: (v, meta) => Text(
+                      formatCompactInt(v.round()),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant)))),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               reservedSize: 60,
               getTitlesWidget: (v, meta) {
                 final i = v.round();
-                if (i < 0 || i >= entries.length) return const SizedBox.shrink();
+                if (i < 0 || i >= entries.length) {
+                  return const SizedBox.shrink();
+                }
                 final label = entries[i].key;
                 return Padding(
                   padding: const EdgeInsets.only(top: 10),
                   child: SizedBox(
                     width: 62,
-                    child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                    child: Text(label,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelSmall
+                            ?.copyWith(color: cs.onSurfaceVariant)),
                   ),
                 );
               },
@@ -795,15 +1172,28 @@ class _CountryUsageTable extends StatelessWidget {
     return AdminCard(
       header: Row(
         children: [
-          Text('Country breakdown', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+          Text('Country breakdown',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w700)),
           const Spacer(),
-          Text('Counts only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text('Counts only',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
       child: rows.isEmpty
           ? Padding(
               padding: const EdgeInsets.symmetric(vertical: 28),
-              child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+              child: Center(
+                  child: Text('No data collected yet.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant))),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -846,16 +1236,21 @@ class _AlertsTable extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     Color severityColor(String s) => switch (s) {
-      'high' => cs.error,
-      'medium' => cs.tertiary,
-      _ => cs.onSurfaceVariant,
-    };
+          'high' => cs.error,
+          'medium' => cs.tertiary,
+          _ => cs.onSurfaceVariant,
+        };
 
     return AdminCard(
       child: rows.isEmpty
           ? Padding(
               padding: const EdgeInsets.symmetric(vertical: 28),
-              child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+              child: Center(
+                  child: Text('No data collected yet.',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: cs.onSurfaceVariant))),
             )
           : SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -875,9 +1270,20 @@ class _AlertsTable extends StatelessWidget {
                       cells: [
                         DataCell(Text(r.type)),
                         DataCell(Text(formatCompactInt(r.count))),
-                        DataCell(Text(r.severity.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: severityColor(r.severity), fontWeight: FontWeight.w800))),
+                        DataCell(Text(r.severity.toUpperCase(),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                    color: severityColor(r.severity),
+                                    fontWeight: FontWeight.w800))),
                         // PRIVACY: avoid rendering free-text notes (could include user content).
-                        DataCell(SizedBox(width: 380, child: Text(r.note.trim().isEmpty ? '—' : 'Redacted', maxLines: 1, overflow: TextOverflow.ellipsis))),
+                        DataCell(SizedBox(
+                            width: 380,
+                            child: Text(
+                                r.note.trim().isEmpty ? '—' : 'Redacted',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis))),
                       ],
                     ),
                 ],
@@ -898,15 +1304,20 @@ class _SystemStatusGrid extends StatelessWidget {
       return AdminCard(
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 28),
-          child: Center(child: Text('No data collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))),
+          child: Center(
+              child: Text('No data collected yet.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant))),
         ),
       );
     }
     Color statusColor(String s) => switch (s.toLowerCase()) {
-      'down' => cs.error,
-      'warn' => cs.tertiary,
-      _ => cs.primary,
-    };
+          'down' => cs.error,
+          'warn' => cs.tertiary,
+          _ => cs.primary,
+        };
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -932,7 +1343,9 @@ class _SystemStatusGrid extends StatelessWidget {
                       Container(
                         width: 12,
                         height: 12,
-                        decoration: BoxDecoration(color: statusColor(it.status), borderRadius: BorderRadius.circular(4)),
+                        decoration: BoxDecoration(
+                            color: statusColor(it.status),
+                            borderRadius: BorderRadius.circular(4)),
                       ),
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
@@ -941,15 +1354,35 @@ class _SystemStatusGrid extends StatelessWidget {
                           children: [
                             Row(
                               children: [
-                                Expanded(child: Text(it.label, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700))),
+                                Expanded(
+                                    child: Text(it.label,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .labelLarge
+                                            ?.copyWith(
+                                                fontWeight: FontWeight.w700))),
                                 const SizedBox(width: AppSpacing.sm),
-                                Text(it.status.toUpperCase(), style: Theme.of(context).textTheme.labelMedium?.copyWith(color: statusColor(it.status), fontWeight: FontWeight.w800)),
+                                Text(it.status.toUpperCase(),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                            color: statusColor(it.status),
+                                            fontWeight: FontWeight.w800)),
                               ],
                             ),
                             const SizedBox(height: 6),
-                            Text(it.detail, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                            Text(it.detail,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(color: cs.onSurfaceVariant)),
                             const SizedBox(height: 6),
-                            Text('Updated ${formatDateTimeShort(it.updatedAt)}', style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                            Text('Updated ${formatDateTimeShort(it.updatedAt)}',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(color: cs.onSurfaceVariant)),
                           ],
                         ),
                       ),

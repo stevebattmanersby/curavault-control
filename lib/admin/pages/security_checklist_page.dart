@@ -22,18 +22,24 @@ class SecurityChecklistPage extends StatelessWidget {
     final anonKey = SupabaseConfig.anonKey;
     final roleClaim = JwtInspector.tryGetRoleClaim(anonKey);
     final noServiceRoleKeyDetected =
-        AdminAuthStore.supabaseServiceRoleKey.isEmpty && (roleClaim == null || roleClaim.toLowerCase() != 'service_role');
+        AdminAuthStore.supabaseServiceRoleKey.isEmpty &&
+            (roleClaim == null || roleClaim.toLowerCase() != 'service_role');
 
     return AdminPageScaffold(
       title: 'Security Checklist',
-      subtitle: 'Defense-in-depth signals for privacy, RLS, and audit logging (best-effort, no PHI).',
+      subtitle:
+          'Defense-in-depth signals for privacy, RLS, and audit logging (best-effort, no PHI).',
       actions: [
         IconButton(
-          onPressed: () => context.read<AdminStore>().refreshSecurityChecklist(),
-          icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
+          onPressed: () =>
+              context.read<AdminStore>().refreshSecurityChecklist(),
+          icon: Icon(Icons.refresh,
+              color: Theme.of(context).colorScheme.onSurface),
           splashColor: Colors.transparent,
-          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-          hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          highlightColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          hoverColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
           tooltip: 'Refresh',
         ),
       ],
@@ -54,7 +60,8 @@ class SecurityChecklistPage extends StatelessWidget {
 }
 
 class _SecurityChecklistEmptyState extends StatelessWidget {
-  const _SecurityChecklistEmptyState({required this.noServiceRoleKeyDetected, required this.auth});
+  const _SecurityChecklistEmptyState(
+      {required this.noServiceRoleKeyDetected, required this.auth});
   final bool noServiceRoleKeyDetected;
   final AdminAuthStore auth;
 
@@ -69,20 +76,35 @@ class _SecurityChecklistEmptyState extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.security_outlined, size: 44, color: cs.onSurfaceVariant),
+              Icon(Icons.security_outlined,
+                  size: 44, color: cs.onSurfaceVariant),
               const SizedBox(height: AppSpacing.sm),
-              Text('No checklist data yet.', style: Theme.of(context).textTheme.titleMedium),
+              Text('No checklist data yet.',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Refresh to load security posture signals. The control site never reads medical content or document names.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.lg),
               _ChecklistGrid(
                 items: [
-                  _ChecklistItem(title: 'Admin auth enabled', ok: auth.isAuthorized, detail: auth.isAuthorized ? 'Authenticated + allow-listed + active + known role' : (auth.accessDeniedReason ?? 'Not authorized')),
-                  _ChecklistItem(title: 'No service role key in frontend', ok: noServiceRoleKeyDetected, detail: noServiceRoleKeyDetected ? 'OK (client build does not include service role key)' : 'BLOCKED: service role key detected'),
+                  _ChecklistItem(
+                      title: 'Admin auth enabled',
+                      ok: auth.isAuthorized,
+                      detail: auth.isAuthorized
+                          ? 'Authenticated + allow-listed + active + known role'
+                          : (auth.accessDeniedReason ?? 'Not authorized')),
+                  _ChecklistItem(
+                      title: 'No service role key in frontend',
+                      ok: noServiceRoleKeyDetected,
+                      detail: noServiceRoleKeyDetected
+                          ? 'OK (client build does not include service role key)'
+                          : 'BLOCKED: service role key detected'),
                 ],
               ),
             ],
@@ -94,7 +116,10 @@ class _SecurityChecklistEmptyState extends StatelessWidget {
 }
 
 class _SecurityChecklistBody extends StatelessWidget {
-  const _SecurityChecklistBody({required this.snapshot, required this.auth, required this.noServiceRoleKeyDetected});
+  const _SecurityChecklistBody(
+      {required this.snapshot,
+      required this.auth,
+      required this.noServiceRoleKeyDetected});
 
   final SecurityChecklistSnapshot snapshot;
   final AdminAuthStore auth;
@@ -125,22 +150,30 @@ class _SecurityChecklistBody extends StatelessWidget {
       _ChecklistItem(
         title: 'Admin auth enabled',
         ok: auth.isAuthorized,
-        detail: auth.isAuthorized ? 'Authenticated + allow-listed + active + known role' : (auth.accessDeniedReason ?? 'Not authorized'),
+        detail: auth.isAuthorized
+            ? 'Authenticated + allow-listed + active + known role'
+            : (auth.accessDeniedReason ?? 'Not authorized'),
       ),
       _ChecklistItem(
         title: 'Audit logging enabled',
         ok: snapshot.auditLoggingEnabled,
-        detail: snapshot.auditLoggingEnabled ? 'Audit insert probe succeeded (best-effort)' : 'FAIL: audit insert probe failed',
+        detail: snapshot.auditLoggingEnabled
+            ? 'Audit insert probe succeeded (best-effort)'
+            : 'FAIL: audit insert probe failed',
       ),
       _ChecklistItem(
         title: 'No service role key detected in frontend',
         ok: noServiceRoleKeyDetected,
-        detail: noServiceRoleKeyDetected ? 'OK (client build)' : 'BLOCKED: service role key detected',
+        detail: noServiceRoleKeyDetected
+            ? 'OK (client build)'
+            : 'BLOCKED: service role key detected',
       ),
       _ChecklistItem(
         title: 'No raw health table access from frontend',
         ok: snapshot.noRawHealthTableAccessDetected,
-        detail: snapshot.noRawHealthTableAccessDetected ? 'OK (codebase uses privacy-safe models only)' : 'FAIL: potential raw table access detected',
+        detail: snapshot.noRawHealthTableAccessDetected
+            ? 'OK (codebase uses privacy-safe models only)'
+            : 'FAIL: potential raw table access detected',
       ),
     ];
 
@@ -154,31 +187,49 @@ class _SecurityChecklistBody extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Operational signals', style: Theme.of(context).textTheme.titleMedium),
+              Text('Operational signals',
+                  style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: AppSpacing.md),
               Wrap(
                 spacing: AppSpacing.lg,
                 runSpacing: AppSpacing.sm,
                 children: [
-                  _MetricPill(label: 'Last admin login', value: _fmtDate(snapshot.lastAdminLoginAt)),
-                  _MetricPill(label: 'Last audit event', value: _fmtDate(snapshot.lastAuditEventAt)),
-                  _MetricPill(label: 'Active support sessions', value: snapshot.activeSupportSessions.toString()),
-                  _MetricPill(label: 'Expired support sessions', value: snapshot.expiredSupportSessions.toString()),
+                  _MetricPill(
+                      label: 'Last admin login',
+                      value: _fmtDate(snapshot.lastAdminLoginAt)),
+                  _MetricPill(
+                      label: 'Last audit event',
+                      value: _fmtDate(snapshot.lastAuditEventAt)),
+                  _MetricPill(
+                      label: 'Active support sessions',
+                      value: snapshot.activeSupportSessions.toString()),
+                  _MetricPill(
+                      label: 'Expired support sessions',
+                      value: snapshot.expiredSupportSessions.toString()),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
                 'Notes: this page is intentionally conservative. If a signal is “unknown”, validate server-side (RLS policies, grants, and views).',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
               ),
               if (kDebugMode) ...[
                 const SizedBox(height: AppSpacing.md),
-                Text('Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(SupabaseConfig.anonKey) ?? 'n/a'}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                Text(
+                    'Debug: anon JWT role claim = ${JwtInspector.tryGetRoleClaim(SupabaseConfig.anonKey) ?? 'n/a'}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ],
           ),
@@ -196,7 +247,11 @@ class _ChecklistGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth >= 1100 ? 3 : c.maxWidth >= 760 ? 2 : 1;
+        final cols = c.maxWidth >= 1100
+            ? 3
+            : c.maxWidth >= 760
+                ? 2
+                : 1;
         return GridView.count(
           crossAxisCount: cols,
           mainAxisSpacing: AppSpacing.md,
@@ -204,7 +259,8 @@ class _ChecklistGrid extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           childAspectRatio: cols == 1 ? 2.8 : 2.6,
-          children: items.map((i) => _ChecklistCard(item: i)).toList(growable: false),
+          children:
+              items.map((i) => _ChecklistCard(item: i)).toList(growable: false),
         );
       },
     );
@@ -212,7 +268,8 @@ class _ChecklistGrid extends StatelessWidget {
 }
 
 class _ChecklistItem {
-  const _ChecklistItem({required this.title, required this.ok, required this.detail});
+  const _ChecklistItem(
+      {required this.title, required this.ok, required this.detail});
   final String title;
   final bool? ok;
   final String detail;
@@ -259,13 +316,24 @@ class _ChecklistCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text(item.title, style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+                    Expanded(
+                        child: Text(item.title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleSmall
+                                ?.copyWith(fontWeight: FontWeight.w700))),
                     const SizedBox(width: AppSpacing.sm),
-                    Text(status, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: statusColor, fontWeight: FontWeight.w800)),
+                    Text(status,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: statusColor, fontWeight: FontWeight.w800)),
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text(item.detail, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
+                Text(item.detail,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
               ],
             ),
           ),
@@ -284,7 +352,8 @@ class _MetricPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: cs.surface,
         borderRadius: BorderRadius.circular(999),
@@ -293,9 +362,17 @@ class _MetricPill extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelMedium
+                  ?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(width: AppSpacing.sm),
-          Text(value, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w700)),
         ],
       ),
     );

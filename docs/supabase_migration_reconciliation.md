@@ -31,9 +31,11 @@ The canonical remote migration SQL was recovered read-only using:
 npx.cmd --yes supabase migration fetch --linked
 ```
 
-The recovered SQL was left in the disposable workspace listed above. The repository migration directory was then restored to contain exact byte-for-byte copies of those 21 canonical files plus the newer local-only CMS reconciliation delta.
+The recovered SQL was left in the disposable workspace listed above. The repository migration directory was initially restored to contain exact byte-for-byte copies of those 21 canonical files plus the newer local-only CMS reconciliation delta.
 
 The recovered source scan found no connection strings, project ref, Supabase URLs, JWTs, passwords, API keys, generated local credentials, or link metadata in the SQL. One recovered canonical migration contains synthetic sample/test rows; those are part of the canonical migration SQL and are not copied production data.
+
+For the PR-safe main reconciliation branch, the recovered sample-data file `20260716144804_dreamflow_generated.sql` is not kept in `supabase/migrations`. It is archived under `docs/archive/dreamflow/` for historical reference because it writes demo profile, entitlement, family, medical, appointment, medication, vaccination, insurance, vital, and document rows for existing `auth.users`.
 
 ## Canonical Migration Inventory
 
@@ -131,7 +133,8 @@ The constraints are recreated as `not valid` so existing rows are preserved whil
 
 - Canonical source contains exactly 21 recovered remote migrations from `20260612230013` through `20260809233305`.
 - Repository copies of all 21 canonical migrations matched the recovered source SHA-256 checksums after copying.
-- The migration directory contains the 21 canonical files plus only `20260810003557_reconcile_existing_marketing_cms.sql` as the newer local-only delta.
+- The PR-safe migration directory intentionally excludes `20260716144804_dreamflow_generated.sql` because it is demo/sample seed data. It remains archived under `docs/archive/dreamflow/` and must not be applied automatically.
+- The active migration directory contains the non-sample canonical files plus `20260810003557_reconcile_existing_marketing_cms.sql` as the newer local-only delta.
 - The previous shortened duplicate historical migrations are no longer present.
 - `supabase/.temp/` remains intentionally ignored and must not be staged.
 
@@ -139,8 +142,8 @@ The constraints are recreated as `not valid` so existing rows are preserved whil
 
 Production remains unchanged. Before any production operation is considered, validate that:
 
-- `supabase migration list --linked` shows the 21 canonical versions aligned between local and remote.
-- Only `20260810003557` appears as local-only.
+- `supabase migration list --linked` confirms whether the archived `20260716144804` sample-data version already exists in remote history and is intentionally absent from the PR-safe active migration path.
+- Only expected local-only versions appear, and `20260716144804` is not reintroduced as an active data-seeding migration.
 - A disposable local reset either completes successfully or records any missing baseline dependencies without modifying canonical migrations.
 - Focused CMS status, RLS, grants, and privileged-code checks pass locally.
 - Flutter tests and analysis pass.

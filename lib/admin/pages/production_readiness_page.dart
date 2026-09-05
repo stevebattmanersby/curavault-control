@@ -26,7 +26,8 @@ class ProductionReadinessPage extends StatefulWidget {
   const ProductionReadinessPage({super.key});
 
   @override
-  State<ProductionReadinessPage> createState() => _ProductionReadinessPageState();
+  State<ProductionReadinessPage> createState() =>
+      _ProductionReadinessPageState();
 }
 
 class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
@@ -99,7 +100,10 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
 
     try {
       final client = ControlSupabaseClient.tryGet();
-      if (client == null) throw StateError('Supabase client unavailable (not initialized or blocked by security guard).');
+      if (client == null) {
+        throw StateError(
+            'Supabase client unavailable (not initialized or blocked by security guard).');
+      }
 
       // Check: public.is_active_admin() (boolean).
       try {
@@ -109,7 +113,9 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
         if (!mounted) return;
         setState(() {
           _isActiveAdmin = res is bool ? res : null;
-          _isActiveAdminError = (res is bool) ? null : 'Unexpected response type (${res.runtimeType}) after ${durMs}ms';
+          _isActiveAdminError = (res is bool)
+              ? null
+              : 'Unexpected response type (${res.runtimeType}) after ${durMs}ms';
         });
       } catch (e) {
         debugPrint('ProductionReadiness: is_active_admin() failed: $e');
@@ -153,12 +159,14 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
     // 1) Webhook edge function deployed check (GET is privacy-safe).
     try {
       final base = SupabaseConfig.resolvedSupabaseProjectUrl;
-      final url = Uri.parse(base).replace(path: '/functions/v1/revenuecat_webhook');
+      final url =
+          Uri.parse(base).replace(path: '/functions/v1/revenuecat_webhook');
       final res = await httpProbe(url, method: 'GET');
       if (!mounted) return;
       setState(() {
         _revenueCatWebhookProbe = res;
-        _revenueCatWebhookProbeError = res.ok ? null : (res.message ?? res.exceptionType);
+        _revenueCatWebhookProbeError =
+            res.ok ? null : (res.message ?? res.exceptionType);
       });
     } catch (e) {
       debugPrint('ProductionReadiness: RevenueCat webhook probe failed: $e');
@@ -171,14 +179,16 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
 
     // 2) Aggregate-only sync health view.
     try {
-      final row = await client.from('revenuecat_sync_health_v1').select().maybeSingle();
+      final row =
+          await client.from('revenuecat_sync_health_v1').select().maybeSingle();
       if (!mounted) return;
       setState(() {
         _revenueCatHealthRow = row;
         _revenueCatHealthError = null;
       });
     } catch (e) {
-      debugPrint('ProductionReadiness: revenuecat_sync_health_v1 unavailable: $e');
+      debugPrint(
+          'ProductionReadiness: revenuecat_sync_health_v1 unavailable: $e');
       if (!mounted) return;
       setState(() {
         _revenueCatHealthRow = null;
@@ -187,7 +197,8 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
     }
   }
 
-  Future<_RpcProbeResult> _callRpc(SupabaseClient client, String functionName) async {
+  Future<_RpcProbeResult> _callRpc(
+      SupabaseClient client, String functionName) async {
     final started = DateTime.now();
     try {
       final res = await client.rpc(functionName);
@@ -214,11 +225,15 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
   }
 
   List<String> _safePayloadKeys(Object? result) {
-    if (result is Map) return result.keys.map((k) => k.toString()).toList()..sort();
+    if (result is Map) {
+      return result.keys.map((k) => k.toString()).toList()..sort();
+    }
     if (result is List) {
       if (result.isEmpty) return const <String>[];
       final first = result.first;
-      if (first is Map) return first.keys.map((k) => k.toString()).toList()..sort();
+      if (first is Map) {
+        return first.keys.map((k) => k.toString()).toList()..sort();
+      }
     }
     return const <String>[];
   }
@@ -267,51 +282,101 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
       return AdminPageScaffold(
         title: 'Production Readiness',
         subtitle: 'Access denied.',
-        child: AdminCard(child: Text('Owner access required.', style: Theme.of(context).textTheme.bodyMedium)),
+        child: AdminCard(
+            child: Text('Owner access required.',
+                style: Theme.of(context).textTheme.bodyMedium)),
       );
     }
 
     final clientAvailable = ControlSupabaseClient.tryGet() != null;
     final url = SupabaseConfig.resolvedSupabaseProjectUrl;
     final urlHost = SupabaseConfig.resolvedSupabaseHost;
-    final urlHasRestSuffix = url.contains('/rest/v1') || url.endsWith('/rest/v1');
+    final urlHasRestSuffix =
+        url.contains('/rest/v1') || url.endsWith('/rest/v1');
 
     final configSource = SupabaseConfig.configSourceSummary;
-    final serviceRoleDetected = SupabaseConfig.serviceRoleDetected || AdminAuthStore.supabaseServiceRoleKey.isNotEmpty;
+    final serviceRoleDetected = SupabaseConfig.serviceRoleDetected ||
+        AdminAuthStore.supabaseServiceRoleKey.isNotEmpty;
 
     final dataSources = <_PageSourceRowData>[
-      _PageSourceRowData(label: 'Dashboard', route: AppRoutes.dashboard, key: AdminDataSourceKey.dashboard),
-      _PageSourceRowData(label: 'Users', route: AppRoutes.users, key: AdminDataSourceKey.users),
-      _PageSourceRowData(label: 'Usage Analytics', route: AppRoutes.usageAnalytics, key: AdminDataSourceKey.usageAnalytics),
-      _PageSourceRowData(label: 'Storage', route: AppRoutes.storage, key: AdminDataSourceKey.storage),
-      _PageSourceRowData(label: 'AI Usage', route: AppRoutes.aiUsage, key: AdminDataSourceKey.aiUsage),
-      _PageSourceRowData(label: 'Billing', route: AppRoutes.billing, key: AdminDataSourceKey.billing),
-      _PageSourceRowData(label: 'Support', route: AppRoutes.support, key: AdminDataSourceKey.support),
-      _PageSourceRowData(label: 'Compliance', route: AppRoutes.compliance, key: AdminDataSourceKey.compliance),
-      _PageSourceRowData(label: 'System Health', route: AppRoutes.systemHealth, key: AdminDataSourceKey.systemHealth),
-      _PageSourceRowData(label: 'Audit Logs', route: AppRoutes.auditLogs, key: AdminDataSourceKey.auditLogs),
-      _PageSourceRowData(label: 'Plans & Permissions', route: AppRoutes.plansPermissions, key: AdminDataSourceKey.plansPermissions),
-      _PageSourceRowData(label: 'Website/CMS Status', route: AppRoutes.websiteStatus, key: AdminDataSourceKey.websiteCms),
+      _PageSourceRowData(
+          label: 'Dashboard',
+          route: AppRoutes.dashboard,
+          key: AdminDataSourceKey.dashboard),
+      _PageSourceRowData(
+          label: 'Users',
+          route: AppRoutes.users,
+          key: AdminDataSourceKey.users),
+      _PageSourceRowData(
+          label: 'Usage Analytics',
+          route: AppRoutes.usageAnalytics,
+          key: AdminDataSourceKey.usageAnalytics),
+      _PageSourceRowData(
+          label: 'Storage',
+          route: AppRoutes.storage,
+          key: AdminDataSourceKey.storage),
+      _PageSourceRowData(
+          label: 'AI Usage',
+          route: AppRoutes.aiUsage,
+          key: AdminDataSourceKey.aiUsage),
+      _PageSourceRowData(
+          label: 'Billing',
+          route: AppRoutes.billing,
+          key: AdminDataSourceKey.billing),
+      _PageSourceRowData(
+          label: 'Support',
+          route: AppRoutes.support,
+          key: AdminDataSourceKey.support),
+      _PageSourceRowData(
+          label: 'Compliance',
+          route: AppRoutes.compliance,
+          key: AdminDataSourceKey.compliance),
+      _PageSourceRowData(
+          label: 'System Health',
+          route: AppRoutes.systemHealth,
+          key: AdminDataSourceKey.systemHealth),
+      _PageSourceRowData(
+          label: 'Audit Logs',
+          route: AppRoutes.auditLogs,
+          key: AdminDataSourceKey.auditLogs),
+      _PageSourceRowData(
+          label: 'Plans & Permissions',
+          route: AppRoutes.plansPermissions,
+          key: AdminDataSourceKey.plansPermissions),
+      _PageSourceRowData(
+          label: 'Website/CMS Status',
+          route: AppRoutes.websiteStatus,
+          key: AdminDataSourceKey.websiteCms),
     ];
 
-    final anyMock = dataSources.any((r) => store.dataSource(r.key).kind == AdminDataSourceKind.mock);
-    final anyNotInstrumented = dataSources.any((r) => store.dataSource(r.key).kind == AdminDataSourceKind.notInstrumented);
-    final anyError = dataSources.any((r) => store.dataSource(r.key).kind == AdminDataSourceKind.error);
+    final anyMock = dataSources
+        .any((r) => store.dataSource(r.key).kind == AdminDataSourceKind.mock);
+    final anyNotInstrumented = dataSources.any((r) =>
+        store.dataSource(r.key).kind == AdminDataSourceKind.notInstrumented);
+    final anyError = dataSources
+        .any((r) => store.dataSource(r.key).kind == AdminDataSourceKind.error);
 
-    final rbacPass = AdminRbac.canAccessRoute(auth.role!, AppRoutes.productionReadiness);
+    final rbacPass =
+        AdminRbac.canAccessRoute(auth.role!, AppRoutes.productionReadiness);
 
     return AdminPageScaffold(
       title: 'Production Readiness',
-      subtitle: 'Owner-only release-safe checks (no raw payloads; aggregates only).',
+      subtitle:
+          'Owner-only release-safe checks (no raw payloads; aggregates only).',
       actions: [
         FilledButton.icon(
           onPressed: _isRunning ? null : _runAll,
           icon: Icon(Icons.play_arrow_rounded, color: cs.onPrimary),
           label: Text(
             _isRunning ? 'Running…' : 'Run checks',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
           ),
-          style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+          style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg))),
         ),
       ],
       child: ListView(
@@ -321,7 +386,11 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
               children: [
                 Icon(Icons.webhook_rounded, color: cs.primary),
                 const SizedBox(width: 10),
-                Text('RevenueCat readiness', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                Text('RevenueCat readiness',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w900)),
               ],
             ),
             child: Column(
@@ -329,7 +398,10 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
               children: [
                 Text(
                   'Privacy-safe verification: function deployment probe + aggregate webhook/entitlement counters. No raw payloads are shown.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -340,39 +412,60 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                       label: 'Webhook function',
                       value: _revenueCatWebhookProbe == null
                           ? '—'
-                          : (_revenueCatWebhookProbe!.ok ? 'Reachable' : 'Unreachable'),
+                          : (_revenueCatWebhookProbe!.ok
+                              ? 'Reachable'
+                              : 'Unreachable'),
                       icon: Icons.http,
                       tone: _revenueCatWebhookProbe == null
                           ? _MiniKpiTone.neutral
-                          : (_revenueCatWebhookProbe!.ok ? _MiniKpiTone.good : _MiniKpiTone.bad),
+                          : (_revenueCatWebhookProbe!.ok
+                              ? _MiniKpiTone.good
+                              : _MiniKpiTone.bad),
                       hint: _revenueCatWebhookProbe == null
                           ? null
-                          : 'HTTP ${_revenueCatWebhookProbe!.statusCode ?? '-'} ${_revenueCatWebhookProbeError ?? ''}'.trim(),
+                          : 'HTTP ${_revenueCatWebhookProbe!.statusCode ?? '-'} ${_revenueCatWebhookProbeError ?? ''}'
+                              .trim(),
                     ),
                     _MiniKpi(
                       label: 'Webhook rows',
-                      value: _readHealthInt('webhook_event_rows')?.toString() ?? '—',
+                      value: _readHealthInt('webhook_event_rows')?.toString() ??
+                          '—',
                       icon: Icons.table_rows_outlined,
                     ),
                     _MiniKpi(
                       label: 'Failed webhooks',
-                      value: _readHealthInt('webhook_failed_rows')?.toString() ?? '—',
+                      value:
+                          _readHealthInt('webhook_failed_rows')?.toString() ??
+                              '—',
                       icon: Icons.error_outline_rounded,
-                      tone: (_readHealthInt('webhook_failed_rows') ?? 0) > 0 ? _MiniKpiTone.bad : _MiniKpiTone.neutral,
+                      tone: (_readHealthInt('webhook_failed_rows') ?? 0) > 0
+                          ? _MiniKpiTone.bad
+                          : _MiniKpiTone.neutral,
                     ),
                     _MiniKpi(
                       label: 'Unmapped app_user_id',
-                      value: _readHealthInt('webhook_unmapped_app_user_id_rows')?.toString() ?? '—',
+                      value: _readHealthInt('webhook_unmapped_app_user_id_rows')
+                              ?.toString() ??
+                          '—',
                       icon: Icons.link_off_rounded,
-                      tone: (_readHealthInt('webhook_unmapped_app_user_id_rows') ?? 0) > 0 ? _MiniKpiTone.warn : _MiniKpiTone.neutral,
+                      tone: (_readHealthInt(
+                                      'webhook_unmapped_app_user_id_rows') ??
+                                  0) >
+                              0
+                          ? _MiniKpiTone.warn
+                          : _MiniKpiTone.neutral,
                     ),
                   ],
                 ),
-                if (_revenueCatHealthError != null || _revenueCatWebhookProbeError != null) ...[
+                if (_revenueCatHealthError != null ||
+                    _revenueCatWebhookProbeError != null) ...[
                   const SizedBox(height: 10),
                   Text(
                     'Notes: ${(_revenueCatHealthError ?? '').isNotEmpty ? 'healthView=$_revenueCatHealthError ' : ''}${(_revenueCatWebhookProbeError ?? '').isNotEmpty ? 'webhookProbe=$_revenueCatWebhookProbeError' : ''}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant),
                   ),
                 ],
               ],
@@ -381,7 +474,8 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
           const SizedBox(height: 14),
           if (anyMock || kReleaseMode)
             _WarningBanner(
-              severity: anyMock ? _WarningSeverity.danger : _WarningSeverity.info,
+              severity:
+                  anyMock ? _WarningSeverity.danger : _WarningSeverity.info,
               title: anyMock ? 'Mock data detected' : 'Release verification',
               message: anyMock
                   ? 'One or more pages are reporting a Mock data source. This must never happen in production.'
@@ -391,7 +485,8 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
             _WarningBanner(
               severity: _WarningSeverity.danger,
               title: 'SECURITY: Service role key detected',
-              message: 'A SUPABASE_SERVICE_ROLE_KEY appears present in the client build. The app should fail closed. Remove it immediately.',
+              message:
+                  'A SUPABASE_SERVICE_ROLE_KEY appears present in the client build. The app should fail closed. Remove it immediately.',
             ),
           if (_fatalError != null)
             _WarningBanner(
@@ -405,11 +500,19 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.lg), gradient: LinearGradient(colors: [cs.primary, cs.tertiary])),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      gradient:
+                          LinearGradient(colors: [cs.primary, cs.tertiary])),
                   child: Icon(Icons.tune_rounded, color: cs.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text('A) Config checks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('A) Config checks',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
               ],
             ),
             child: Column(
@@ -417,23 +520,49 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
               children: [
                 _InfoRow(label: 'config source used', value: configSource),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'Supabase host', value: urlHost.isEmpty ? '—' : urlHost),
+                _InfoRow(
+                    label: 'Supabase host',
+                    value: urlHost.isEmpty ? '—' : urlHost),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'anon/publishable key present', value: SupabaseConfig.resolvedAnonKeyPresent ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'anon/publishable key present',
+                    value:
+                        SupabaseConfig.resolvedAnonKeyPresent ? 'yes' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'service role key detected', value: serviceRoleDetected ? 'yes (BLOCKER)' : 'no'),
+                _InfoRow(
+                    label: 'service role key detected',
+                    value: serviceRoleDetected ? 'yes (BLOCKER)' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'CONTROL_SITE_BASE_URL present', value: SupabaseConfig.resolvedControlSiteBaseUrlPresent ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'CONTROL_SITE_BASE_URL present',
+                    value: SupabaseConfig.resolvedControlSiteBaseUrlPresent
+                        ? 'yes'
+                        : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'Supabase initialized', value: (SupabaseConfig.isInitialized && clientAvailable) ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'Supabase initialized',
+                    value: (SupabaseConfig.isInitialized && clientAvailable)
+                        ? 'yes'
+                        : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'old wrong Supabase URL absent', value: urlHasRestSuffix ? 'no (BLOCKER)' : 'yes'),
+                _InfoRow(
+                    label: 'old wrong Supabase URL absent',
+                    value: urlHasRestSuffix ? 'no (BLOCKER)' : 'yes'),
                 if (SupabaseConfig.runtimeJsonLoadAttempted) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  _InfoRow(label: 'runtimeJson load', value: SupabaseConfig.runtimeJsonLoadError == null ? 'ok' : 'error'),
+                  _InfoRow(
+                      label: 'runtimeJson load',
+                      value: SupabaseConfig.runtimeJsonLoadError == null
+                          ? 'ok'
+                          : 'error'),
                   if (SupabaseConfig.runtimeJsonLoadError != null) ...[
                     const SizedBox(height: 6),
-                    Text('runtimeJson error: ${SupabaseConfig.runtimeJsonLoadError}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    Text(
+                        'runtimeJson error: ${SupabaseConfig.runtimeJsonLoadError}',
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ],
               ],
@@ -446,29 +575,52 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.lg), gradient: LinearGradient(colors: [cs.secondary, cs.primary])),
-                  child: Icon(Icons.verified_user_outlined, color: cs.onPrimary),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      gradient:
+                          LinearGradient(colors: [cs.secondary, cs.primary])),
+                  child:
+                      Icon(Icons.verified_user_outlined, color: cs.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text('B) Auth / admin checks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('B) Auth / admin checks',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoRow(label: 'signed in', value: auth.isSignedIn ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'signed in', value: auth.isSignedIn ? 'yes' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'auth.uid present', value: (auth.authUid ?? '').isNotEmpty ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'auth.uid present',
+                    value: (auth.authUid ?? '').isNotEmpty ? 'yes' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'admin_users row found', value: auth.loginDiagnostics.adminUsersRowFound ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'admin_users row found',
+                    value: auth.loginDiagnostics.adminUsersRowFound
+                        ? 'yes'
+                        : 'no'),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'role', value: auth.role?.name ?? '—'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'is_active', value: auth.isActive == true ? 'true' : 'false'),
+                _InfoRow(
+                    label: 'is_active',
+                    value: auth.isActive == true ? 'true' : 'false'),
                 const SizedBox(height: AppSpacing.sm),
                 Row(
                   children: [
-                    Expanded(child: Text('is_active_admin() result', style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700))),
+                    Expanded(
+                        child: Text('is_active_admin() result',
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w700))),
                     _StatusPill(
                       kind: (_isActiveAdminError != null)
                           ? _PillKind.error
@@ -477,16 +629,28 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                               : (_isActiveAdmin == false)
                                   ? _PillKind.warn
                                   : _PillKind.neutral,
-                      label: _isActiveAdminError != null ? 'error' : (_isActiveAdmin == null ? 'not run' : _isActiveAdmin == true ? 'true' : 'false'),
+                      label: _isActiveAdminError != null
+                          ? 'error'
+                          : (_isActiveAdmin == null
+                              ? 'not run'
+                              : _isActiveAdmin == true
+                                  ? 'true'
+                                  : 'false'),
                     ),
                   ],
                 ),
                 if (_isActiveAdminError != null) ...[
                   const SizedBox(height: 6),
-                  Text(_isActiveAdminError!, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Text(_isActiveAdminError!,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ],
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'route RBAC check', value: rbacPass ? 'pass' : 'fail'),
+                _InfoRow(
+                    label: 'route RBAC check',
+                    value: rbacPass ? 'pass' : 'fail'),
               ],
             ),
           ),
@@ -497,15 +661,25 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.lg), gradient: LinearGradient(colors: [cs.tertiary, cs.secondary])),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      gradient:
+                          LinearGradient(colors: [cs.tertiary, cs.secondary])),
                   child: Icon(Icons.api_rounded, color: cs.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text('C) RPC checks (admin session)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('C) RPC checks (admin session)',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
                 if (_lastRunAt != null)
                   Padding(
                     padding: const EdgeInsets.only(left: AppSpacing.sm),
-                    child: _StatusPill(kind: _PillKind.neutral, label: 'Last: ${AdminFormatters.dateTime(_lastRunAt)}'),
+                    child: _StatusPill(
+                        kind: _PillKind.neutral,
+                        label: 'Last: ${AdminFormatters.dateTime(_lastRunAt)}'),
                   ),
               ],
             ),
@@ -518,15 +692,21 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
               ],
             ),
           ),
-          if (_dashboardAllowListedAggregates != null && _dashboardAllowListedAggregates!.isNotEmpty) ...[
+          if (_dashboardAllowListedAggregates != null &&
+              _dashboardAllowListedAggregates!.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.lg),
             AdminCard(
-              header: Text('Allow-listed dashboard aggregates', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+              header: Text('Allow-listed dashboard aggregates',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 children: _dashboardAllowListedAggregates!.entries
-                    .map((e) => _MetricChip(label: e.key, value: e.value.toString()))
+                    .map((e) =>
+                        _MetricChip(label: e.key, value: e.value.toString()))
                     .toList(),
               ),
             ),
@@ -538,11 +718,19 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                 Container(
                   width: 40,
                   height: 40,
-                  decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.lg), gradient: LinearGradient(colors: [cs.primary, cs.secondary])),
+                  decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      gradient:
+                          LinearGradient(colors: [cs.primary, cs.secondary])),
                   child: Icon(Icons.table_chart_outlined, color: cs.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text('D) Page data-source checks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('D) Page data-source checks',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
               ],
             ),
             child: Column(
@@ -550,22 +738,28 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                 if (anyMock)
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _StatusPill(kind: _PillKind.error, label: 'Mock detected (BLOCKER)'),
+                    child: _StatusPill(
+                        kind: _PillKind.error,
+                        label: 'Mock detected (BLOCKER)'),
                   )
                 else if (anyError)
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _StatusPill(kind: _PillKind.warn, label: 'Some data sources error'),
+                    child: _StatusPill(
+                        kind: _PillKind.warn, label: 'Some data sources error'),
                   )
                 else if (anyNotInstrumented)
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _StatusPill(kind: _PillKind.warn, label: 'Some sources not instrumented'),
+                    child: _StatusPill(
+                        kind: _PillKind.warn,
+                        label: 'Some sources not instrumented'),
                   )
                 else
                   Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: _StatusPill(kind: _PillKind.ok, label: 'All sources Live'),
+                    child: _StatusPill(
+                        kind: _PillKind.ok, label: 'All sources Live'),
                   ),
                 SizedBox(
                   height: 460,
@@ -577,10 +771,19 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                         width: 980,
                         child: ListView.separated(
                           itemCount: dataSources.length + 1,
-                          separatorBuilder: (_, __) => Divider(height: 1, color: cs.outlineVariant.withValues(alpha: 0.5)),
+                          separatorBuilder: (_, __) => Divider(
+                              height: 1,
+                              color: cs.outlineVariant.withValues(alpha: 0.5)),
                           itemBuilder: (context, index) {
                             if (index == 0) {
-                              return _TableHeaderRow(columns: const <String>['Page', 'Data source kind', 'Query/RPC', 'Row count', 'Last refreshed', 'Safe error']);
+                              return _TableHeaderRow(columns: const <String>[
+                                'Page',
+                                'Data source kind',
+                                'Query/RPC',
+                                'Row count',
+                                'Last refreshed',
+                                'Safe error'
+                              ]);
                             }
                             final row = dataSources[index - 1];
                             final st = store.dataSource(row.key);
@@ -589,7 +792,8 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
                               kind: st.kind.name,
                               query: st.queryName ?? '—',
                               rowCount: st.rowCount?.toString() ?? '—',
-                              refreshed: AdminFormatters.dateTime(st.lastRefreshedAt),
+                              refreshed:
+                                  AdminFormatters.dateTime(st.lastRefreshedAt),
                               error: st.safeErrorMessage ?? st.message ?? '—',
                               onTap: () => context.go(row.route),
                             );
@@ -604,44 +808,85 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
           ),
           const SizedBox(height: AppSpacing.lg),
           AdminCard(
-            header: Text('E) Known-count verification (aggregates only)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            header: Text('E) Known-count verification (aggregates only)',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'This section only displays allow-listed aggregate counts when available. If a count is missing, it will show “not provided”.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                _KnownCountRow(label: 'auth users', value: _dashboardAllowListedAggregates?['total_users']),
-                _KnownCountRow(label: 'family members', value: _dashboardAllowListedAggregates?['family_members']),
-                _KnownCountRow(label: 'appointments', value: _dashboardAllowListedAggregates?['appointments']),
-                _KnownCountRow(label: 'medications', value: _dashboardAllowListedAggregates?['medications']),
-                _KnownCountRow(label: 'vaccinations', value: _dashboardAllowListedAggregates?['vaccinations']),
-                _KnownCountRow(label: 'documents', value: _dashboardAllowListedAggregates?['documents_30d']),
-                _KnownCountRow(label: 'usage events', value: _dashboardAllowListedAggregates?['usage_events_30d']),
-                _KnownCountRow(label: 'entitlements', value: _dashboardAllowListedAggregates?['entitlements']),
-                _KnownCountRow(label: 'audit events', value: _dashboardAllowListedAggregates?['audit_events_30d']),
+                _KnownCountRow(
+                    label: 'auth users',
+                    value: _dashboardAllowListedAggregates?['total_users']),
+                _KnownCountRow(
+                    label: 'family members',
+                    value: _dashboardAllowListedAggregates?['family_members']),
+                _KnownCountRow(
+                    label: 'appointments',
+                    value: _dashboardAllowListedAggregates?['appointments']),
+                _KnownCountRow(
+                    label: 'medications',
+                    value: _dashboardAllowListedAggregates?['medications']),
+                _KnownCountRow(
+                    label: 'vaccinations',
+                    value: _dashboardAllowListedAggregates?['vaccinations']),
+                _KnownCountRow(
+                    label: 'documents',
+                    value: _dashboardAllowListedAggregates?['documents_30d']),
+                _KnownCountRow(
+                    label: 'usage events',
+                    value:
+                        _dashboardAllowListedAggregates?['usage_events_30d']),
+                _KnownCountRow(
+                    label: 'entitlements',
+                    value: _dashboardAllowListedAggregates?['entitlements']),
+                _KnownCountRow(
+                    label: 'audit events',
+                    value:
+                        _dashboardAllowListedAggregates?['audit_events_30d']),
               ],
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
           AdminCard(
-            header: Text('F) Mock detection', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            header: Text('F) Mock detection',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoRow(label: 'release mode', value: kReleaseMode ? 'yes' : 'no'),
+                _InfoRow(
+                    label: 'release mode', value: kReleaseMode ? 'yes' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'any data source = Mock', value: anyMock ? 'yes (BLOCKER)' : 'no'),
+                _InfoRow(
+                    label: 'any data source = Mock',
+                    value: anyMock ? 'yes (BLOCKER)' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'any data source = Not instrumented', value: anyNotInstrumented ? 'yes (warning)' : 'no'),
+                _InfoRow(
+                    label: 'any data source = Not instrumented',
+                    value: anyNotInstrumented ? 'yes (warning)' : 'no'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'any data source = Error', value: anyError ? 'yes (warning)' : 'no'),
+                _InfoRow(
+                    label: 'any data source = Error',
+                    value: anyError ? 'yes (warning)' : 'no'),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'If you ever see Mock in release, check build flags (CURAVAULT_ALLOW_MOCK_FALLBACK) and whether backend RPCs/views are deployed.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ],
             ),
@@ -653,7 +898,8 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
 }
 
 class _PageSourceRowData {
-  const _PageSourceRowData({required this.label, required this.route, required this.key});
+  const _PageSourceRowData(
+      {required this.label, required this.route, required this.key});
   final String label;
   final String route;
   final AdminDataSourceKey key;
@@ -661,7 +907,13 @@ class _PageSourceRowData {
 
 @immutable
 class _RpcProbeResult {
-  const _RpcProbeResult._({required this.ok, required this.rowCount, required this.payloadKeys, required this.durationMs, this.safeErrorMessage, this.rawResult});
+  const _RpcProbeResult._(
+      {required this.ok,
+      required this.rowCount,
+      required this.payloadKeys,
+      required this.durationMs,
+      this.safeErrorMessage,
+      this.rawResult});
   final bool ok;
   final int rowCount;
   final List<String> payloadKeys;
@@ -669,11 +921,26 @@ class _RpcProbeResult {
   final String? safeErrorMessage;
   final Object? rawResult;
 
-  factory _RpcProbeResult.ok({required Object? rawResult, required int rowCount, required List<String> payloadKeys, required int durationMs}) =>
-      _RpcProbeResult._(ok: true, rowCount: rowCount, payloadKeys: payloadKeys, durationMs: durationMs, rawResult: rawResult);
+  factory _RpcProbeResult.ok(
+          {required Object? rawResult,
+          required int rowCount,
+          required List<String> payloadKeys,
+          required int durationMs}) =>
+      _RpcProbeResult._(
+          ok: true,
+          rowCount: rowCount,
+          payloadKeys: payloadKeys,
+          durationMs: durationMs,
+          rawResult: rawResult);
 
-  factory _RpcProbeResult.err({required String safeErrorMessage, required int durationMs}) =>
-      _RpcProbeResult._(ok: false, rowCount: 0, payloadKeys: const <String>[], durationMs: durationMs, safeErrorMessage: safeErrorMessage);
+  factory _RpcProbeResult.err(
+          {required String safeErrorMessage, required int durationMs}) =>
+      _RpcProbeResult._(
+          ok: false,
+          rowCount: 0,
+          payloadKeys: const <String>[],
+          durationMs: durationMs,
+          safeErrorMessage: safeErrorMessage);
 }
 
 class _InfoRow extends StatelessWidget {
@@ -686,11 +953,19 @@ class _InfoRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700))),
+        Expanded(
+            child: Text(label,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: cs.onSurfaceVariant, fontWeight: FontWeight.w700))),
         const SizedBox(width: AppSpacing.md),
         ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 360),
-          child: Text(value, textAlign: TextAlign.right, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+          child: Text(value,
+              textAlign: TextAlign.right,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w800)),
         ),
       ],
     );
@@ -735,13 +1010,18 @@ class _StatusPill extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16, color: fg),
           const SizedBox(width: 8),
-          Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w800)),
+          Text(label,
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: fg, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -773,18 +1053,25 @@ class _RpcRow extends StatelessWidget {
                 : 'Live';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5), width: 1),
+        border: Border.all(
+            color: cs.outlineVariant.withValues(alpha: 0.5), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900))),
+              Expanded(
+                  child: Text(label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(fontWeight: FontWeight.w900))),
               pill,
             ],
           ),
@@ -793,15 +1080,30 @@ class _RpcRow extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _MetricChip(label: 'row count', value: r == null ? '—' : '${r.rowCount}'),
-              _MetricChip(label: 'fields', value: r == null ? '—' : (r.payloadKeys.isEmpty ? '—' : r.payloadKeys.join(', '))),
-              _MetricChip(label: 'duration', value: r == null ? '—' : '${r.durationMs}ms'),
+              _MetricChip(
+                  label: 'row count', value: r == null ? '—' : '${r.rowCount}'),
+              _MetricChip(
+                  label: 'fields',
+                  value: r == null
+                      ? '—'
+                      : (r.payloadKeys.isEmpty
+                          ? '—'
+                          : r.payloadKeys.join(', '))),
+              _MetricChip(
+                  label: 'duration',
+                  value: r == null ? '—' : '${r.durationMs}ms'),
               _MetricChip(label: 'status', value: sourceStatus),
             ],
           ),
-          if (r != null && !r.ok && (r.safeErrorMessage ?? '').trim().isNotEmpty) ...[
+          if (r != null &&
+              !r.ok &&
+              (r.safeErrorMessage ?? '').trim().isNotEmpty) ...[
             const SizedBox(height: 10),
-            Text(r.safeErrorMessage!, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(r.safeErrorMessage!,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(color: cs.onSurfaceVariant)),
           ],
         ],
       ),
@@ -812,7 +1114,12 @@ class _RpcRow extends StatelessWidget {
 enum _MiniKpiTone { neutral, good, warn, bad }
 
 class _MiniKpi extends StatelessWidget {
-  const _MiniKpi({required this.label, required this.value, required this.icon, this.tone = _MiniKpiTone.neutral, this.hint});
+  const _MiniKpi(
+      {required this.label,
+      required this.value,
+      required this.icon,
+      this.tone = _MiniKpiTone.neutral,
+      this.hint});
   final String label;
   final String value;
   final IconData icon;
@@ -843,7 +1150,10 @@ class _MiniKpi extends StatelessWidget {
 
     final content = Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.lg), border: Border.all(color: border)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: border)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -853,9 +1163,17 @@ class _MiniKpi extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              Text(label,
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: cs.onSurfaceVariant)),
               const SizedBox(height: 2),
-              Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+              Text(value,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w900)),
             ],
           ),
         ],
@@ -877,15 +1195,25 @@ class _MetricChip extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(color: cs.surfaceContainerHighest.withValues(alpha: 0.55), borderRadius: BorderRadius.circular(999), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
+      decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest.withValues(alpha: 0.55),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.5))),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
           const SizedBox(width: 8),
           ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
-            child: Text(value, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelMedium?.copyWith(fontWeight: FontWeight.w900)),
+            child: Text(value,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(fontWeight: FontWeight.w900)),
           ),
         ],
       ),
@@ -896,7 +1224,8 @@ class _MetricChip extends StatelessWidget {
 enum _WarningSeverity { info, danger }
 
 class _WarningBanner extends StatelessWidget {
-  const _WarningBanner({required this.severity, required this.title, required this.message});
+  const _WarningBanner(
+      {required this.severity, required this.title, required this.message});
   final _WarningSeverity severity;
   final String title;
   final String message;
@@ -904,15 +1233,25 @@ class _WarningBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final bg = severity == _WarningSeverity.danger ? cs.errorContainer : cs.surfaceContainerHighest;
-    final fg = severity == _WarningSeverity.danger ? cs.onErrorContainer : cs.onSurface;
-    final icon = severity == _WarningSeverity.danger ? Icons.warning_amber_rounded : Icons.info_outline;
+    final bg = severity == _WarningSeverity.danger
+        ? cs.errorContainer
+        : cs.surfaceContainerHighest;
+    final fg = severity == _WarningSeverity.danger
+        ? cs.onErrorContainer
+        : cs.onSurface;
+    final icon = severity == _WarningSeverity.danger
+        ? Icons.warning_amber_rounded
+        : Icons.info_outline;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(AppRadius.xl), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6))),
+        decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(AppRadius.xl),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.6))),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -922,9 +1261,17 @@ class _WarningBanner extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: fg, fontWeight: FontWeight.w900)),
+                  Text(title,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(color: fg, fontWeight: FontWeight.w900)),
                   const SizedBox(height: 6),
-                  Text(message, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: fg, height: 1.35)),
+                  Text(message,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.copyWith(color: fg, height: 1.35)),
                 ],
               ),
             ),
@@ -944,12 +1291,16 @@ class _TableHeaderRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Container(
       color: cs.surfaceContainerHighest.withValues(alpha: 0.65),
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       child: Row(
         children: columns
             .map(
               (c) => Expanded(
-                child: Text(c, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w900)),
+                child: Text(c,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: cs.onSurfaceVariant,
+                        fontWeight: FontWeight.w900)),
               ),
             )
             .toList(),
@@ -959,7 +1310,14 @@ class _TableHeaderRow extends StatelessWidget {
 }
 
 class _TableDataRow extends StatelessWidget {
-  const _TableDataRow({required this.pageLabel, required this.kind, required this.query, required this.rowCount, required this.refreshed, required this.error, required this.onTap});
+  const _TableDataRow(
+      {required this.pageLabel,
+      required this.kind,
+      required this.query,
+      required this.rowCount,
+      required this.refreshed,
+      required this.error,
+      required this.onTap});
 
   final String pageLabel;
   final String kind;
@@ -978,15 +1336,36 @@ class _TableDataRow extends StatelessWidget {
       highlightColor: cs.primary.withValues(alpha: 0.06),
       hoverColor: cs.primary.withValues(alpha: 0.06),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm),
         child: Row(
           children: [
-            Expanded(child: Text(pageLabel, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800))),
-            Expanded(child: Text(kind, style: Theme.of(context).textTheme.labelLarge)),
-            Expanded(child: Text(query, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge)),
-            Expanded(child: Text(rowCount, style: Theme.of(context).textTheme.labelLarge)),
-            Expanded(child: Text(refreshed, style: Theme.of(context).textTheme.labelLarge)),
-            Expanded(child: Text(error, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+            Expanded(
+                child: Text(pageLabel,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(fontWeight: FontWeight.w800))),
+            Expanded(
+                child:
+                    Text(kind, style: Theme.of(context).textTheme.labelLarge)),
+            Expanded(
+                child: Text(query,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.labelLarge)),
+            Expanded(
+                child: Text(rowCount,
+                    style: Theme.of(context).textTheme.labelLarge)),
+            Expanded(
+                child: Text(refreshed,
+                    style: Theme.of(context).textTheme.labelLarge)),
+            Expanded(
+                child: Text(error,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant))),
           ],
         ),
       ),
@@ -1006,8 +1385,16 @@ class _KnownCountRow extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700))),
-          Text(value == null ? 'not provided' : value.toString(), style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w900)),
+          Expanded(
+              child: Text(label,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w700))),
+          Text(value == null ? 'not provided' : value.toString(),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(fontWeight: FontWeight.w900)),
         ],
       ),
     );

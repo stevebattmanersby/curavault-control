@@ -41,7 +41,8 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
   Future<void> _run() async {
     final id = _userId.text.trim();
     if (id.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Enter a user ID.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Enter a user ID.')));
       return;
     }
     setState(() {
@@ -55,7 +56,8 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
     } catch (e) {
       debugPrint('DiagnosticsCheckerPage run failed: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Diagnostics failed.')));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('Diagnostics failed.')));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -70,7 +72,8 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
 
     return AdminPageScaffold(
       title: 'Diagnostics checker',
-      subtitle: 'Run privacy-safe checks (account, plan, sync, limits, blocks).',
+      subtitle:
+          'Run privacy-safe checks (account, plan, sync, limits, blocks).',
       actions: [
         TextButton.icon(
           onPressed: () => context.go('/support'),
@@ -78,15 +81,21 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
           label: Text('Queue', style: TextStyle(color: cs.onSurface)),
           style: TextButton.styleFrom(
             backgroundColor: cs.surfaceContainerHighest,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.md),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg)),
           ),
         ),
       ],
       child: ListView(
         children: [
           AdminCard(
-            header: Text('Run checks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+            header: Text('Run checks',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800)),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -100,7 +109,9 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
                           hintText: 'e.g. usr_100012',
                           filled: true,
                           fillColor: cs.surfaceContainerHighest,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide.none),
+                          border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
+                              borderSide: BorderSide.none),
                         ),
                         onSubmitted: (_) => _run(),
                       ),
@@ -109,14 +120,18 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
                     FilledButton.icon(
                       onPressed: _loading ? null : _run,
                       icon: Icon(Icons.play_arrow, color: cs.onPrimary),
-                      label: Text(_loading ? 'Running…' : 'Run', style: TextStyle(color: cs.onPrimary)),
+                      label: Text(_loading ? 'Running…' : 'Run',
+                          style: TextStyle(color: cs.onPrimary)),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   'These checks are generated only from safe summary tables/views. No health content is queried or shown.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
                 ),
               ],
             ),
@@ -124,15 +139,32 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
           const SizedBox(height: AppSpacing.md),
           if (rep == null)
             AdminCard(
-              header: Text('Results', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
-              child: Text('Run a user ID to see results.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+              header: Text('Results',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              child: Text('Run a user ID to see results.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant)),
             )
           else ...[
             AdminCard(
               header: Row(
                 children: [
-                  Expanded(child: Text('Results for ${rep.userId}', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
-                  Text('Generated ${formatDateTimeShort(rep.generatedAt)}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Expanded(
+                      child: Text('Results for ${rep.userId}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800))),
+                  Text('Generated ${formatDateTimeShort(rep.generatedAt)}',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
               child: Column(
@@ -143,7 +175,11 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
             ),
             const SizedBox(height: AppSpacing.md),
             AdminCard(
-              header: Text('Recommended actions', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+              header: Text('Recommended actions',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
               child: Wrap(
                 spacing: AppSpacing.md,
                 runSpacing: AppSpacing.md,
@@ -152,7 +188,8 @@ class _DiagnosticsCheckerPageState extends State<DiagnosticsCheckerPage> {
                     if (a != SupportAction.closeSupportSession)
                       _SupportActionChip(
                         action: a,
-                        enabled: role != null && AdminRbac.canPerformSupportAction(role, a),
+                        enabled: role != null &&
+                            AdminRbac.canPerformSupportAction(role, a),
                         userIdController: _userId,
                       ),
                 ],
@@ -196,14 +233,31 @@ class _DiagnosticRow extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text(check.title, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800))),
-                    Text(check.status.label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                    Expanded(
+                        child: Text(check.title,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w800))),
+                    Text(check.status.label,
+                        style: Theme.of(context)
+                            .textTheme
+                            .labelMedium
+                            ?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(check.explanation, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
+                Text(check.explanation,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
                 const SizedBox(height: 6),
-                Text('Suggested: ${check.suggestedAction}', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
+                Text('Suggested: ${check.suggestedAction}',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant, height: 1.4)),
               ],
             ),
           ),
@@ -214,7 +268,10 @@ class _DiagnosticRow extends StatelessWidget {
 }
 
 class _SupportActionChip extends StatelessWidget {
-  const _SupportActionChip({required this.action, required this.enabled, required this.userIdController});
+  const _SupportActionChip(
+      {required this.action,
+      required this.enabled,
+      required this.userIdController});
   final SupportAction action;
   final bool enabled;
   final TextEditingController userIdController;
@@ -249,13 +306,20 @@ class _SupportActionChip extends StatelessWidget {
       highlightColor: cs.primary.withValues(alpha: 0.06),
       hoverColor: cs.primary.withValues(alpha: 0.06),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
         decoration: BoxDecoration(
-          color: enabled ? cs.surfaceContainerHighest : cs.surfaceContainerHighest.withValues(alpha: 0.5),
+          color: enabled
+              ? cs.surfaceContainerHighest
+              : cs.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.6)),
         ),
-        child: Text(action.label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: enabled ? cs.onSurfaceVariant : cs.onSurfaceVariant.withValues(alpha: 0.6))),
+        child: Text(action.label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: enabled
+                    ? cs.onSurfaceVariant
+                    : cs.onSurfaceVariant.withValues(alpha: 0.6))),
       ),
     );
   }

@@ -36,22 +36,37 @@ class AdminStore extends ChangeNotifier {
 
   final AdminRepository _repository;
 
-  final Map<AdminDataSourceKey, AdminDataSourceStatus> _dataSources = <AdminDataSourceKey, AdminDataSourceStatus>{
-    AdminDataSourceKey.dashboard: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.users: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.auditLogs: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.support: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.plansPermissions: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.usageAnalytics: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.storage: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.aiUsage: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.billing: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.compliance: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.systemHealth: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
-    AdminDataSourceKey.websiteCms: const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+  final Map<AdminDataSourceKey, AdminDataSourceStatus> _dataSources =
+      <AdminDataSourceKey, AdminDataSourceStatus>{
+    AdminDataSourceKey.dashboard:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.users:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.auditLogs:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.support:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.plansPermissions:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.usageAnalytics:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.storage:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.aiUsage:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.billing:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.compliance:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.systemHealth:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
+    AdminDataSourceKey.websiteCms:
+        const AdminDataSourceStatus(kind: AdminDataSourceKind.live),
   };
 
-  AdminDataSourceStatus dataSource(AdminDataSourceKey key) => _dataSources[key] ?? const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
+  AdminDataSourceStatus dataSource(AdminDataSourceKey key) =>
+      _dataSources[key] ??
+      const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
 
   void _setDataSource(AdminDataSourceKey key, AdminDataSourceStatus status) {
     _dataSources[key] = status;
@@ -65,9 +80,17 @@ class AdminStore extends ChangeNotifier {
     }
     if (repo is MockAdminRepository) {
       if (kReleaseMode) {
-        _setDataSource(key, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            key,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(key, const AdminDataSourceStatus(kind: AdminDataSourceKind.mock, message: 'Using mock repository (debug only).'));
+        _setDataSource(
+            key,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.mock,
+                message: 'Using mock repository (debug only).'));
       }
     }
   }
@@ -106,7 +129,8 @@ class AdminStore extends ChangeNotifier {
       _marketingCms = null;
 
       for (final k in _dataSources.keys) {
-        _dataSources[k] = const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
+        _dataSources[k] =
+            const AdminDataSourceStatus(kind: AdminDataSourceKind.live);
       }
       notifyListeners();
     }
@@ -180,7 +204,8 @@ class AdminStore extends ChangeNotifier {
   List<LimitOverrideRow> _limitOverrides = const [];
   List<LimitOverrideRow> get limitOverrides => _limitOverrides;
 
-  DashboardQuery _dashboardQuery = const DashboardQuery(range: AdminDateRangePreset.days30);
+  DashboardQuery _dashboardQuery =
+      const DashboardQuery(range: AdminDateRangePreset.days30);
   DashboardQuery get dashboardQuery => _dashboardQuery;
 
   DashboardSnapshot? _dashboard;
@@ -190,7 +215,8 @@ class AdminStore extends ChangeNotifier {
   bool get isDashboardLoading => _isDashboardLoading;
 
   // Usage analytics
-  UsageAnalyticsQuery _usageAnalyticsQuery = const UsageAnalyticsQuery(range: AdminDateRangePreset.days30);
+  UsageAnalyticsQuery _usageAnalyticsQuery =
+      const UsageAnalyticsQuery(range: AdminDateRangePreset.days30);
   UsageAnalyticsQuery get usageAnalyticsQuery => _usageAnalyticsQuery;
 
   UsageAnalyticsSnapshot? _usageAnalytics;
@@ -200,7 +226,8 @@ class AdminStore extends ChangeNotifier {
   bool get isUsageAnalyticsLoading => _isUsageAnalyticsLoading;
 
   // Storage
-  StorageQuery _storageQuery = const StorageQuery(range: AdminDateRangePreset.days30);
+  StorageQuery _storageQuery =
+      const StorageQuery(range: AdminDateRangePreset.days30);
   StorageQuery get storageQuery => _storageQuery;
 
   StorageSnapshot? _storage;
@@ -210,7 +237,8 @@ class AdminStore extends ChangeNotifier {
   bool get isStorageLoading => _isStorageLoading;
 
   // AI usage
-  AiUsageQuery _aiUsageQuery = const AiUsageQuery(range: AdminDateRangePreset.days30);
+  AiUsageQuery _aiUsageQuery =
+      const AiUsageQuery(range: AdminDateRangePreset.days30);
   AiUsageQuery get aiUsageQuery => _aiUsageQuery;
 
   AiUsageSnapshot? _aiUsage;
@@ -220,7 +248,8 @@ class AdminStore extends ChangeNotifier {
   bool get isAiUsageLoading => _isAiUsageLoading;
 
   // Billing
-  BillingQuery _billingQuery = const BillingQuery(range: AdminDateRangePreset.days30);
+  BillingQuery _billingQuery =
+      const BillingQuery(range: AdminDateRangePreset.days30);
   BillingQuery get billingQuery => _billingQuery;
 
   // Website / CMS status
@@ -240,7 +269,8 @@ class AdminStore extends ChangeNotifier {
   bool get isBillingLoading => _isBillingLoading;
 
   // Compliance
-  ComplianceQuery _complianceQuery = const ComplianceQuery(range: AdminDateRangePreset.days30);
+  ComplianceQuery _complianceQuery =
+      const ComplianceQuery(range: AdminDateRangePreset.days30);
   ComplianceQuery get complianceQuery => _complianceQuery;
 
   ComplianceSnapshot? _compliance;
@@ -250,7 +280,8 @@ class AdminStore extends ChangeNotifier {
   bool get isComplianceLoading => _isComplianceLoading;
 
   // System health
-  SystemHealthQuery _systemHealthQuery = const SystemHealthQuery(range: AdminDateRangePreset.days30);
+  SystemHealthQuery _systemHealthQuery =
+      const SystemHealthQuery(range: AdminDateRangePreset.days30);
   SystemHealthQuery get systemHealthQuery => _systemHealthQuery;
 
   SystemHealthSnapshot? _systemHealth;
@@ -351,15 +382,24 @@ class AdminStore extends ChangeNotifier {
     _isSystemHealthLoading = true;
     notifyListeners();
     try {
-      _systemHealth = await _repository.getSystemHealthSnapshot(query: _systemHealthQuery);
+      _systemHealth =
+          await _repository.getSystemHealthSnapshot(query: _systemHealthQuery);
       _syncDataSourceFromRepository(AdminDataSourceKey.systemHealth);
     } catch (e) {
       debugPrint('AdminStore.refreshSystemHealth failed: $e');
       if (e is AdminNotInstrumentedException) {
         _systemHealth = null;
-        _setDataSource(AdminDataSourceKey.systemHealth, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.systemHealth,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.systemHealth, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.systemHealth,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isSystemHealthLoading = false;
@@ -380,9 +420,17 @@ class AdminStore extends ChangeNotifier {
       if (e is AdminNotInstrumentedException) {
         _websiteCms = null;
         _marketingCms = null;
-        _setDataSource(AdminDataSourceKey.websiteCms, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.websiteCms,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.websiteCms, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.websiteCms,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isWebsiteCmsLoading = false;
@@ -408,8 +456,12 @@ class AdminStore extends ChangeNotifier {
     await refreshAuditLogs();
   }
 
-  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {
-    await _repository.updateMarketingContentStatus(resourceType: resourceType, resourceId: resourceId, status: status);
+  Future<void> updateMarketingContentStatus(
+      {required String resourceType,
+      required String resourceId,
+      required MarketingContentStatus status}) async {
+    await _repository.updateMarketingContentStatus(
+        resourceType: resourceType, resourceId: resourceId, status: status);
     await refreshWebsiteCmsStatus();
     await refreshAuditLogs();
   }
@@ -425,15 +477,24 @@ class AdminStore extends ChangeNotifier {
     _isComplianceLoading = true;
     notifyListeners();
     try {
-      _compliance = await _repository.getComplianceSnapshot(query: _complianceQuery);
+      _compliance =
+          await _repository.getComplianceSnapshot(query: _complianceQuery);
       _syncDataSourceFromRepository(AdminDataSourceKey.compliance);
     } catch (e) {
       debugPrint('AdminStore.refreshCompliance failed: $e');
       if (e is AdminNotInstrumentedException) {
         _compliance = null;
-        _setDataSource(AdminDataSourceKey.compliance, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.compliance,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.compliance, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.compliance,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isComplianceLoading = false;
@@ -471,11 +532,22 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshBilling failed: $e');
       if (e is AdminNotInstrumentedException) {
         _billing = null;
-        _setDataSource(AdminDataSourceKey.billing, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
-        _billingLoad = _billingLoad.markFailure(queryName: 'admin_get_billing_summary', error: e.message);
+        _setDataSource(
+            AdminDataSourceKey.billing,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
+        _billingLoad = _billingLoad.markFailure(
+            queryName: 'admin_get_billing_summary', error: e.message);
       } else {
-        _setDataSource(AdminDataSourceKey.billing, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
-        _billingLoad = _billingLoad.markFailure(queryName: 'admin_get_billing_summary', error: formatAdminSafeError(e));
+        _setDataSource(
+            AdminDataSourceKey.billing,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
+        _billingLoad = _billingLoad.markFailure(
+            queryName: 'admin_get_billing_summary',
+            error: formatAdminSafeError(e));
       }
     } finally {
       _isBillingLoading = false;
@@ -500,9 +572,17 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshAiUsage failed: $e');
       if (e is AdminNotInstrumentedException) {
         _aiUsage = null;
-        _setDataSource(AdminDataSourceKey.aiUsage, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.aiUsage,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.aiUsage, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.aiUsage,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isAiUsageLoading = false;
@@ -525,7 +605,9 @@ class AdminStore extends ChangeNotifier {
   Future<void> refreshUsers() async {
     _userSummaryLoad = _userSummaryLoad.markAttempted();
     try {
-      _users = await _repository.listUsers(query: UserListQuery(search: _userSearch, filters: _userFilters), limit: 50);
+      _users = await _repository.listUsers(
+          query: UserListQuery(search: _userSearch, filters: _userFilters),
+          limit: 50);
       _userSummaryLoad = _userSummaryLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.users);
       notifyListeners();
@@ -534,11 +616,21 @@ class AdminStore extends ChangeNotifier {
       if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _users = const [];
-        _setDataSource(AdminDataSourceKey.users, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
-        _userSummaryLoad = _userSummaryLoad.markFailure(queryName: 'users_list', error: e.message);
+        _setDataSource(
+            AdminDataSourceKey.users,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
+        _userSummaryLoad = _userSummaryLoad.markFailure(
+            queryName: 'users_list', error: e.message);
       } else {
-        _setDataSource(AdminDataSourceKey.users, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
-        _userSummaryLoad = _userSummaryLoad.markFailure(queryName: 'users_list', error: formatAdminSafeError(e));
+        _setDataSource(
+            AdminDataSourceKey.users,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
+        _userSummaryLoad = _userSummaryLoad.markFailure(
+            queryName: 'users_list', error: formatAdminSafeError(e));
       }
       notifyListeners();
     }
@@ -583,7 +675,8 @@ class AdminStore extends ChangeNotifier {
     _isAuditLogsLoading = true;
     notifyListeners();
     try {
-      _auditLogs = await _repository.listAuditLogs(query: _auditLogQuery, limit: 80);
+      _auditLogs =
+          await _repository.listAuditLogs(query: _auditLogQuery, limit: 80);
       _auditSummary = await _repository.getAuditSummary();
       _syncDataSourceFromRepository(AdminDataSourceKey.auditLogs);
     } catch (e) {
@@ -591,9 +684,17 @@ class AdminStore extends ChangeNotifier {
       if (e is AdminNotInstrumentedException) {
         _auditLogs = const [];
         _auditSummary = null;
-        _setDataSource(AdminDataSourceKey.auditLogs, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.auditLogs,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.auditLogs, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.auditLogs,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isAuditLogsLoading = false;
@@ -619,7 +720,8 @@ class AdminStore extends ChangeNotifier {
     _dashboardLoad = _dashboardLoad.markAttempted();
     notifyListeners();
     try {
-      _dashboard = await _repository.getDashboardSnapshot(query: _dashboardQuery);
+      _dashboard =
+          await _repository.getDashboardSnapshot(query: _dashboardQuery);
       _dashboardLoad = _dashboardLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.dashboard);
     } catch (e, st) {
@@ -627,11 +729,22 @@ class AdminStore extends ChangeNotifier {
       if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _dashboard = null;
-        _setDataSource(AdminDataSourceKey.dashboard, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
-        _dashboardLoad = _dashboardLoad.markFailure(queryName: 'admin_get_dashboard_metrics', error: e.message);
+        _setDataSource(
+            AdminDataSourceKey.dashboard,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
+        _dashboardLoad = _dashboardLoad.markFailure(
+            queryName: 'admin_get_dashboard_metrics', error: e.message);
       } else {
-        _setDataSource(AdminDataSourceKey.dashboard, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
-        _dashboardLoad = _dashboardLoad.markFailure(queryName: 'admin_get_dashboard_metrics', error: formatAdminSafeError(e));
+        _setDataSource(
+            AdminDataSourceKey.dashboard,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
+        _dashboardLoad = _dashboardLoad.markFailure(
+            queryName: 'admin_get_dashboard_metrics',
+            error: formatAdminSafeError(e));
       }
     } finally {
       _isDashboardLoading = false;
@@ -651,7 +764,8 @@ class AdminStore extends ChangeNotifier {
     _usageEventsLoad = _usageEventsLoad.markAttempted();
     notifyListeners();
     try {
-      _usageAnalytics = await _repository.getUsageAnalyticsSnapshot(query: _usageAnalyticsQuery);
+      _usageAnalytics = await _repository.getUsageAnalyticsSnapshot(
+          query: _usageAnalyticsQuery);
       _usageEventsLoad = _usageEventsLoad.markSuccess();
       _syncDataSourceFromRepository(AdminDataSourceKey.usageAnalytics);
     } catch (e, st) {
@@ -659,11 +773,22 @@ class AdminStore extends ChangeNotifier {
       if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _usageAnalytics = null;
-        _setDataSource(AdminDataSourceKey.usageAnalytics, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
-        _usageEventsLoad = _usageEventsLoad.markFailure(queryName: 'admin_get_usage_events_summary', error: e.message);
+        _setDataSource(
+            AdminDataSourceKey.usageAnalytics,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
+        _usageEventsLoad = _usageEventsLoad.markFailure(
+            queryName: 'admin_get_usage_events_summary', error: e.message);
       } else {
-        _setDataSource(AdminDataSourceKey.usageAnalytics, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
-        _usageEventsLoad = _usageEventsLoad.markFailure(queryName: 'admin_get_usage_events_summary', error: formatAdminSafeError(e));
+        _setDataSource(
+            AdminDataSourceKey.usageAnalytics,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
+        _usageEventsLoad = _usageEventsLoad.markFailure(
+            queryName: 'admin_get_usage_events_summary',
+            error: formatAdminSafeError(e));
       }
     } finally {
       _isUsageAnalyticsLoading = false;
@@ -689,9 +814,17 @@ class AdminStore extends ChangeNotifier {
       if (kDebugMode) debugPrintStack(stackTrace: st);
       if (e is AdminNotInstrumentedException) {
         _storage = null;
-        _setDataSource(AdminDataSourceKey.storage, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.storage,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.storage, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.storage,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
     } finally {
       _isStorageLoading = false;
@@ -713,7 +846,10 @@ class AdminStore extends ChangeNotifier {
 
   Future<void> refreshSupportQueue() async {
     try {
-      _supportSessions = await _repository.listSupportSessions(query: SupportQueueQuery(search: _supportSearch, filters: _supportFilters), limit: 60);
+      _supportSessions = await _repository.listSupportSessions(
+          query: SupportQueueQuery(
+              search: _supportSearch, filters: _supportFilters),
+          limit: 60);
       _supportSummary = await _repository.getSupportSummary();
       _syncDataSourceFromRepository(AdminDataSourceKey.support);
       notifyListeners();
@@ -722,17 +858,27 @@ class AdminStore extends ChangeNotifier {
       if (e is AdminNotInstrumentedException) {
         _supportSessions = const [];
         _supportSummary = null;
-        _setDataSource(AdminDataSourceKey.support, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.support,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.support, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.support,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
       notifyListeners();
     }
   }
 
-  Future<SupportSessionDetail?> getSupportSessionDetail(String supportSessionId) async {
+  Future<SupportSessionDetail?> getSupportSessionDetail(
+      String supportSessionId) async {
     try {
-      final detail = await _repository.getSupportSessionDetail(supportSessionId: supportSessionId);
+      final detail = await _repository.getSupportSessionDetail(
+          supportSessionId: supportSessionId);
 
       final actorId = _currentAdmin?.id;
       if (actorId != null && actorId.isNotEmpty) {
@@ -783,9 +929,17 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshPlansOverview failed: $e');
       if (e is AdminNotInstrumentedException) {
         _plansOverview = const [];
-        _setDataSource(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.plansPermissions, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
       notifyListeners();
     }
@@ -799,9 +953,17 @@ class AdminStore extends ChangeNotifier {
     } catch (e) {
       debugPrint('AdminStore.getUserEntitlements failed: $e');
       if (e is AdminNotInstrumentedException) {
-        _setDataSource(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.plansPermissions, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
       return null;
     }
@@ -816,9 +978,17 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshFeatureFlags failed: $e');
       if (e is AdminNotInstrumentedException) {
         _featureFlags = const [];
-        _setDataSource(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.plansPermissions, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
       notifyListeners();
     }
@@ -833,9 +1003,17 @@ class AdminStore extends ChangeNotifier {
       debugPrint('AdminStore.refreshLimitOverrides failed: $e');
       if (e is AdminNotInstrumentedException) {
         _limitOverrides = const [];
-        _setDataSource(AdminDataSourceKey.plansPermissions, const AdminDataSourceStatus(kind: AdminDataSourceKind.notInstrumented, message: 'This data source is not instrumented yet.'));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            const AdminDataSourceStatus(
+                kind: AdminDataSourceKind.notInstrumented,
+                message: 'This data source is not instrumented yet.'));
       } else {
-        _setDataSource(AdminDataSourceKey.plansPermissions, AdminDataSourceStatus(kind: AdminDataSourceKind.error, message: formatAdminSafeError(e)));
+        _setDataSource(
+            AdminDataSourceKey.plansPermissions,
+            AdminDataSourceStatus(
+                kind: AdminDataSourceKind.error,
+                message: formatAdminSafeError(e)));
       }
       notifyListeners();
     }
@@ -844,7 +1022,11 @@ class AdminStore extends ChangeNotifier {
 
 @immutable
 class AdminDataLoadStatus {
-  const AdminDataLoadStatus({this.attempted = false, this.loaded = false, this.queryName, this.error});
+  const AdminDataLoadStatus(
+      {this.attempted = false,
+      this.loaded = false,
+      this.queryName,
+      this.error});
 
   final bool attempted;
   final bool loaded;
@@ -854,9 +1036,14 @@ class AdminDataLoadStatus {
   bool get isOk => loaded && error == null;
   bool get hasError => attempted && error != null;
 
-  AdminDataLoadStatus markAttempted() => AdminDataLoadStatus(attempted: true, loaded: loaded, queryName: queryName, error: error);
+  AdminDataLoadStatus markAttempted() => AdminDataLoadStatus(
+      attempted: true, loaded: loaded, queryName: queryName, error: error);
 
-  AdminDataLoadStatus markSuccess() => const AdminDataLoadStatus(attempted: true, loaded: true);
+  AdminDataLoadStatus markSuccess() =>
+      const AdminDataLoadStatus(attempted: true, loaded: true);
 
-  AdminDataLoadStatus markFailure({required String queryName, required String error}) => AdminDataLoadStatus(attempted: true, loaded: false, queryName: queryName, error: error);
+  AdminDataLoadStatus markFailure(
+          {required String queryName, required String error}) =>
+      AdminDataLoadStatus(
+          attempted: true, loaded: false, queryName: queryName, error: error);
 }

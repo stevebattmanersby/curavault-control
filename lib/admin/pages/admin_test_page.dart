@@ -32,7 +32,9 @@ class AdminTestPage extends StatelessWidget {
 
     final adminUserId = auth.adminUserId ?? '—';
     final email = auth.adminEmail ?? '—';
-    final displayName = (auth.adminDisplayName ?? '').trim().isEmpty ? '—' : auth.adminDisplayName!;
+    final displayName = (auth.adminDisplayName ?? '').trim().isEmpty
+        ? '—'
+        : auth.adminDisplayName!;
     final role = auth.role;
     final status = auth.adminStatus ?? '—';
     final isActive = auth.isActive;
@@ -45,8 +47,14 @@ class AdminTestPage extends StatelessWidget {
         FilledButton.icon(
           onPressed: () => context.go(AppRoutes.dashboard),
           icon: Icon(Icons.arrow_forward, color: cs.onPrimary),
-          label: Text('Continue', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800)),
-          style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+          label: Text('Continue',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800)),
+          style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg))),
         ),
       ],
       child: ListView(
@@ -61,22 +69,36 @@ class AdminTestPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
                   ),
-                  child: Icon(Icons.verified_user_outlined, color: cs.onPrimary),
+                  child:
+                      Icon(Icons.verified_user_outlined, color: cs.onPrimary),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                Expanded(child: Text('Current admin session', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('Current admin session',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Supabase Auth', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+                Text('Supabase Auth',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w900)),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'auth.uid()', value: authUid),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'auth email', value: authEmail),
                 const SizedBox(height: AppSpacing.md),
-                Text('public.admin_users', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+                Text('public.admin_users',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w900)),
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'admin_user_id', value: adminUserId),
                 const SizedBox(height: AppSpacing.sm),
@@ -86,23 +108,33 @@ class AdminTestPage extends StatelessWidget {
                 const SizedBox(height: AppSpacing.sm),
                 _InfoRow(label: 'Role', value: _roleLabel(role)),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'Active', value: (isActive == true) ? 'true' : 'false'),
+                _InfoRow(
+                    label: 'Active',
+                    value: (isActive == true) ? 'true' : 'false'),
                 const SizedBox(height: AppSpacing.sm),
-                _InfoRow(label: 'Step-up', value: (requireStepUp == true) ? 'true' : 'false'),
+                _InfoRow(
+                    label: 'Step-up',
+                    value: (requireStepUp == true) ? 'true' : 'false'),
                 const SizedBox(height: AppSpacing.md),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(AppSpacing.md),
                   decoration: BoxDecoration(
-                    color: (isActive == true) ? cs.primaryContainer.withValues(alpha: 0.55) : cs.errorContainer,
+                    color: (isActive == true)
+                        ? cs.primaryContainer.withValues(alpha: 0.55)
+                        : cs.errorContainer,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
-                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                    border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.35)),
                   ),
                   child: Text(
                     (isActive == true)
                         ? 'Access gate passed. You are allow-listed and active.'
                         : 'Access gate not passed. This account is not active/allow-listed.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: (isActive == true) ? cs.onPrimaryContainer : cs.onErrorContainer),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: (isActive == true)
+                            ? cs.onPrimaryContainer
+                            : cs.onErrorContainer),
                   ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
@@ -115,11 +147,18 @@ class AdminTestPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Security notes', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text('Security notes',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
                 const SizedBox(height: 8),
                 Text(
                   'This screen shows only admin metadata. The control site must never query or expose raw health tables in the frontend.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
                 ),
               ],
             ),
@@ -141,9 +180,14 @@ class _InfoRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        SizedBox(width: 90, child: Text(label, style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+        SizedBox(
+            width: 90,
+            child: Text(label,
+                style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
         const SizedBox(width: AppSpacing.sm),
-        Expanded(child: Text(value, style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+        Expanded(
+            child: Text(value,
+                style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
       ],
     );
   }

@@ -643,7 +643,9 @@ class _UserPlanEditorPanel extends StatelessWidget {
                       title: 'Adjust storage limit',
                       initialBytes: entitlements.storageLimitBytes);
                   if (nextBytes == null ||
-                      nextBytes == entitlements.storageLimitBytes) return;
+                      nextBytes == entitlements.storageLimitBytes) {
+                    return;
+                  }
                   if (!context.mounted) return;
                   await _applyAction(
                     context,
@@ -672,7 +674,9 @@ class _UserPlanEditorPanel extends StatelessWidget {
                       title: 'Adjust AI token limit (monthly)',
                       initial: entitlements.aiTokenLimitMonthly);
                   if (nextTokens == null ||
-                      nextTokens == entitlements.aiTokenLimitMonthly) return;
+                      nextTokens == entitlements.aiTokenLimitMonthly) {
+                    return;
+                  }
                   if (!context.mounted) return;
                   await _applyAction(
                     context,

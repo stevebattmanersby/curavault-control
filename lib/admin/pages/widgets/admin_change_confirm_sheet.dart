@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 @immutable
 class AdminChangeConfirmation {
-  const AdminChangeConfirmation({required this.reason, required this.ticketReference});
+  const AdminChangeConfirmation(
+      {required this.reason, required this.ticketReference});
   final String reason;
   final String? ticketReference;
 }
@@ -37,13 +38,20 @@ class AdminChangeConfirmSheet extends StatefulWidget {
         isScrollControlled: true,
         showDragHandle: true,
         builder: (context) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-          child: AdminChangeConfirmSheet(title: title, summary: summary, previousValue: previousValue, newValue: newValue, confirmLabel: confirmLabel),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: AdminChangeConfirmSheet(
+              title: title,
+              summary: summary,
+              previousValue: previousValue,
+              newValue: newValue,
+              confirmLabel: confirmLabel),
         ),
       );
 
   @override
-  State<AdminChangeConfirmSheet> createState() => _AdminChangeConfirmSheetState();
+  State<AdminChangeConfirmSheet> createState() =>
+      _AdminChangeConfirmSheetState();
 }
 
 class _AdminChangeConfirmSheetState extends State<AdminChangeConfirmSheet> {
@@ -66,7 +74,8 @@ class _AdminChangeConfirmSheetState extends State<AdminChangeConfirmSheet> {
       return;
     }
     final ticket = _ticketController.text.trim();
-    Navigator.of(context).pop(AdminChangeConfirmation(reason: reason, ticketReference: ticket.isEmpty ? null : ticket));
+    Navigator.of(context).pop(AdminChangeConfirmation(
+        reason: reason, ticketReference: ticket.isEmpty ? null : ticket));
   }
 
   @override
@@ -82,9 +91,11 @@ class _AdminChangeConfirmSheetState extends State<AdminChangeConfirmSheet> {
           children: [
             Text(widget.title, style: t.titleLarge),
             const SizedBox(height: 8),
-            Text(widget.summary, style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text(widget.summary,
+                style: t.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
             const SizedBox(height: 16),
-            _ValueDiffCard(previousValue: widget.previousValue, newValue: widget.newValue),
+            _ValueDiffCard(
+                previousValue: widget.previousValue, newValue: widget.newValue),
             const SizedBox(height: 16),
             TextField(
               controller: _reasonController,
@@ -112,14 +123,16 @@ class _AdminChangeConfirmSheetState extends State<AdminChangeConfirmSheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: _submit,
-                    child: Text(widget.confirmLabel, style: TextStyle(color: cs.onPrimary)),
+                    child: Text(widget.confirmLabel,
+                        style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],
@@ -151,13 +164,17 @@ class _ValueDiffCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Change preview', style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+          Text('Change preview',
+              style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 10),
           Row(
             children: [
-              Expanded(child: _ValueTile(label: 'Previous', value: previousValue)),
+              Expanded(
+                  child: _ValueTile(label: 'Previous', value: previousValue)),
               const SizedBox(width: 12),
-              Expanded(child: _ValueTile(label: 'New', value: newValue, emphasize: true)),
+              Expanded(
+                  child: _ValueTile(
+                      label: 'New', value: newValue, emphasize: true)),
             ],
           ),
         ],
@@ -167,7 +184,8 @@ class _ValueDiffCard extends StatelessWidget {
 }
 
 class _ValueTile extends StatelessWidget {
-  const _ValueTile({required this.label, required this.value, this.emphasize = false});
+  const _ValueTile(
+      {required this.label, required this.value, this.emphasize = false});
   final String label;
   final String value;
   final bool emphasize;
@@ -179,14 +197,17 @@ class _ValueTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: emphasize ? cs.primaryContainer.withValues(alpha: 0.55) : cs.surface,
+        color: emphasize
+            ? cs.primaryContainer.withValues(alpha: 0.55)
+            : cs.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Text(label,
+              style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
           const SizedBox(height: 6),
           Text(value, style: t.titleMedium?.copyWith(color: cs.onSurface)),
         ],

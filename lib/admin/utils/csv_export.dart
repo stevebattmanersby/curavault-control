@@ -44,7 +44,10 @@ class AdminCsvExport {
   }
 
   static String _escape(String v) {
-    final needs = v.contains(',') || v.contains('"') || v.contains('\n') || v.contains('\r');
+    final needs = v.contains(',') ||
+        v.contains('"') ||
+        v.contains('\n') ||
+        v.contains('\r');
     if (!needs) return v;
     final escaped = v.replaceAll('"', '""');
     return '"$escaped"';

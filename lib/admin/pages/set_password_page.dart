@@ -56,7 +56,9 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       _authSub = SupabaseConfig.auth.onAuthStateChange.listen((event) {
         if (!mounted) return;
         // For invite links, Supabase typically emits `signedIn` after parsing the URL.
-        if (event.session != null && (event.event == AuthChangeEvent.passwordRecovery || event.event == AuthChangeEvent.signedIn)) {
+        if (event.session != null &&
+            (event.event == AuthChangeEvent.passwordRecovery ||
+                event.event == AuthChangeEvent.signedIn)) {
           setState(() {
             _isRecovering = false;
             _error = null;
@@ -103,7 +105,8 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       if (kDebugMode) {
         final hasQuery = uri.queryParameters.isNotEmpty;
         final hasFragment = base.fragment.isNotEmpty;
-        debugPrint('[SetPasswordPage] linkDetected hasQuery=$hasQuery hasFragment=$hasFragment');
+        debugPrint(
+            '[SetPasswordPage] linkDetected hasQuery=$hasQuery hasFragment=$hasFragment');
       }
 
       await SupabaseConfig.auth.getSessionFromUrl(uri);
@@ -111,8 +114,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       final hasSession = SupabaseConfig.auth.currentSession != null;
       if (!hasSession) {
         setState(() {
-          _error =
-              'No invite/recovery session found in this URL.\n\n'
+          _error = 'No invite/recovery session found in this URL.\n\n'
               'Please open the link from your email again, or request a new password reset.';
         });
       } else {
@@ -123,8 +125,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
     } catch (e) {
       debugPrint('[SetPasswordPage] getSessionFromUrl failed: $e');
       setState(() {
-        _error =
-            'Unable to read the session from this link.\n\n'
+        _error = 'Unable to read the session from this link.\n\n'
             'Try requesting a new invite or password reset email.';
       });
     } finally {
@@ -167,13 +168,15 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       return;
     }
     if (SupabaseConfig.auth.currentSession == null) {
-      setState(() => _error = 'Session expired. Please use the link from your email again.');
+      setState(() => _error =
+          'Session expired. Please use the link from your email again.');
       return;
     }
 
     setState(() => _isSaving = true);
     try {
-      await SupabaseConfig.auth.updateUser(UserAttributes(password: _passwordCtrl.text.trim()));
+      await SupabaseConfig.auth
+          .updateUser(UserAttributes(password: _passwordCtrl.text.trim()));
 
       if (!mounted) return;
       final allowListed = await _isAllowListedAdmin();
@@ -220,7 +223,8 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       height: 44,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
+                        gradient:
+                            LinearGradient(colors: [cs.primary, cs.tertiary]),
                       ),
                       child: Icon(Icons.key, color: cs.onPrimary),
                     ),
@@ -229,10 +233,17 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Set password', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+                          Text('Set password',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w900)),
                           Text(
                             'Finish setup for your admin account',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -243,9 +254,14 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                 if (_isRecovering)
                   Row(
                     children: [
-                      SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                      SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.primary)),
                       const SizedBox(width: AppSpacing.md),
-                      Text('Verifying link…', style: Theme.of(context).textTheme.bodyMedium),
+                      Text('Verifying link…',
+                          style: Theme.of(context).textTheme.bodyMedium),
                     ],
                   )
                 else ...[
@@ -253,10 +269,13 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      decoration: BoxDecoration(
+                          color: cs.errorContainer,
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       child: Text(
                         _error!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer, height: 1.35),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onErrorContainer, height: 1.35),
                       ),
                     ),
                   if (_info != null)
@@ -264,10 +283,13 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                       width: double.infinity,
                       margin: const EdgeInsets.only(top: AppSpacing.md),
                       padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       child: Text(
                         _info!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onPrimaryContainer, height: 1.35),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onPrimaryContainer, height: 1.35),
                       ),
                     ),
                   const SizedBox(height: AppSpacing.lg),
@@ -279,14 +301,16 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                         TextFormField(
                           controller: _passwordCtrl,
                           obscureText: true,
-                          decoration: const InputDecoration(labelText: 'New password'),
+                          decoration:
+                              const InputDecoration(labelText: 'New password'),
                           validator: _validatePassword,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
                           controller: _confirmCtrl,
                           obscureText: true,
-                          decoration: const InputDecoration(labelText: 'Confirm password'),
+                          decoration: const InputDecoration(
+                              labelText: 'Confirm password'),
                           validator: _validatePassword,
                           onFieldSubmitted: (_) => _isSaving ? null : _save(),
                         ),
@@ -296,20 +320,36 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                           child: FilledButton.icon(
                             onPressed: _isSaving ? null : _save,
                             icon: _isSaving
-                                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: cs.onPrimary))
                                 : Icon(Icons.check_circle, color: cs.onPrimary),
                             label: Text(
                               _isSaving ? 'Saving…' : 'Set password',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                      color: cs.onPrimary,
+                                      fontWeight: FontWeight.w800),
                             ),
-                            style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+                            style: FilledButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.lg))),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextButton.icon(
                           onPressed: () => context.go(AppRoutes.login),
                           icon: Icon(Icons.arrow_back, color: cs.primary),
-                          label: Text('Back to sign in', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary)),
+                          label: Text('Back to sign in',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(color: cs.primary)),
                         ),
                       ],
                     ),

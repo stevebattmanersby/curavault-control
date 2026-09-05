@@ -58,7 +58,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         }
       });
     } catch (e) {
-      debugPrint('[ResetPasswordPage] Failed to listen for auth recovery events: $e');
+      debugPrint(
+          '[ResetPasswordPage] Failed to listen for auth recovery events: $e');
     }
   }
 
@@ -108,7 +109,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       if (kDebugMode) {
         final hasQuery = uri.queryParameters.isNotEmpty;
         final hasFragment = base.fragment.isNotEmpty;
-        debugPrint('[ResetPasswordPage] recoveryLinkDetected hasQuery=$hasQuery hasFragment=$hasFragment');
+        debugPrint(
+            '[ResetPasswordPage] recoveryLinkDetected hasQuery=$hasQuery hasFragment=$hasFragment');
       }
 
       // Supabase may encode recovery tokens in either:
@@ -121,8 +123,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       final hasSession = SupabaseConfig.auth.currentSession != null;
       if (!hasSession) {
         setState(() {
-          _error =
-              'No recovery session found in this URL.\n\n'
+          _error = 'No recovery session found in this URL.\n\n'
               'Please open the password reset link from your email again.';
         });
       } else {
@@ -133,8 +134,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     } catch (e) {
       debugPrint('[ResetPasswordPage] Recovery failed: $e');
       setState(() {
-        _error =
-            'Unable to read recovery session from the reset link.\n\n'
+        _error = 'Unable to read recovery session from the reset link.\n\n'
             'Try requesting a new reset email.';
       });
     } finally {
@@ -160,7 +160,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     }
 
     if (SupabaseConfig.auth.currentSession == null) {
-      setState(() => _error = 'Reset session expired. Please request a new reset email.');
+      setState(() =>
+          _error = 'Reset session expired. Please request a new reset email.');
       return;
     }
 
@@ -214,7 +215,8 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       height: 44,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(AppRadius.lg),
-                        gradient: LinearGradient(colors: [cs.primary, cs.tertiary]),
+                        gradient:
+                            LinearGradient(colors: [cs.primary, cs.tertiary]),
                       ),
                       child: Icon(Icons.lock_reset, color: cs.onPrimary),
                     ),
@@ -223,10 +225,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Reset password', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900)),
+                          Text('Reset password',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.w900)),
                           Text(
                             'Update your admin account password',
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(color: cs.onSurfaceVariant),
                           ),
                         ],
                       ),
@@ -234,13 +243,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
-
                 if (_isRecovering)
                   Row(
                     children: [
-                      SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+                      SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.primary)),
                       const SizedBox(width: AppSpacing.md),
-                      Text('Verifying reset link…', style: Theme.of(context).textTheme.bodyMedium),
+                      Text('Verifying reset link…',
+                          style: Theme.of(context).textTheme.bodyMedium),
                     ],
                   )
                 else ...[
@@ -248,10 +261,13 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(color: cs.errorContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      decoration: BoxDecoration(
+                          color: cs.errorContainer,
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       child: Text(
                         _error!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer, height: 1.35),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onErrorContainer, height: 1.35),
                       ),
                     ),
                   if (_info != null)
@@ -259,13 +275,15 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       width: double.infinity,
                       margin: const EdgeInsets.only(top: AppSpacing.md),
                       padding: const EdgeInsets.all(AppSpacing.md),
-                      decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                      decoration: BoxDecoration(
+                          color: cs.primaryContainer,
+                          borderRadius: BorderRadius.circular(AppRadius.lg)),
                       child: Text(
                         _info!,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onPrimaryContainer, height: 1.35),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: cs.onPrimaryContainer, height: 1.35),
                       ),
                     ),
-
                   const SizedBox(height: AppSpacing.lg),
                   Form(
                     key: _formKey,
@@ -275,14 +293,16 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                         TextFormField(
                           controller: _passwordCtrl,
                           obscureText: true,
-                          decoration: const InputDecoration(labelText: 'New password'),
+                          decoration:
+                              const InputDecoration(labelText: 'New password'),
                           validator: _validatePassword,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextFormField(
                           controller: _confirmCtrl,
                           obscureText: true,
-                          decoration: const InputDecoration(labelText: 'Confirm new password'),
+                          decoration: const InputDecoration(
+                              labelText: 'Confirm new password'),
                           validator: _validatePassword,
                           onFieldSubmitted: (_) => _isSaving ? null : _save(),
                         ),
@@ -292,20 +312,36 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                           child: FilledButton.icon(
                             onPressed: _isSaving ? null : _save,
                             icon: _isSaving
-                                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                                ? SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: cs.onPrimary))
                                 : Icon(Icons.check_circle, color: cs.onPrimary),
                             label: Text(
                               _isSaving ? 'Saving…' : 'Set new password',
-                              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(
+                                      color: cs.onPrimary,
+                                      fontWeight: FontWeight.w800),
                             ),
-                            style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+                            style: FilledButton.styleFrom(
+                                shape: RoundedRectangleBorder(
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.lg))),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         TextButton.icon(
                           onPressed: () => context.go(AppRoutes.login),
                           icon: Icon(Icons.arrow_back, color: cs.primary),
-                          label: Text('Back to sign in', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.primary)),
+                          label: Text('Back to sign in',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .labelLarge
+                                  ?.copyWith(color: cs.primary)),
                         ),
                       ],
                     ),

@@ -8,7 +8,8 @@ class AdminFileSaver {
   ///
   /// Web: triggers download.
   /// Non-web: copies to clipboard as a fallback.
-  static Future<void> saveTextFile({required String filename, required String contents}) async {
+  static Future<void> saveTextFile(
+      {required String filename, required String contents}) async {
     if (kIsWeb) {
       await saveTextFileWeb(filename: filename, contents: contents);
       return;

@@ -26,10 +26,10 @@ enum AdminThemeMode {
   }
 
   String get label => switch (this) {
-    AdminThemeMode.light => 'Light',
-    AdminThemeMode.dark => 'Dark',
-    AdminThemeMode.ai => 'AI',
-  };
+        AdminThemeMode.light => 'Light',
+        AdminThemeMode.dark => 'Dark',
+        AdminThemeMode.ai => 'AI',
+      };
 }
 
 @immutable
@@ -114,19 +114,23 @@ class AdminThemeTokens extends ThemeExtension<AdminThemeTokens> {
   }
 
   @override
-  ThemeExtension<AdminThemeTokens> lerp(ThemeExtension<AdminThemeTokens>? other, double t) {
+  ThemeExtension<AdminThemeTokens> lerp(
+      ThemeExtension<AdminThemeTokens>? other, double t) {
     if (other is! AdminThemeTokens) return this;
     return AdminThemeTokens(
       background: Color.lerp(background, other.background, t) ?? background,
-      backgroundGradient: t < 0.5 ? backgroundGradient : other.backgroundGradient,
+      backgroundGradient:
+          t < 0.5 ? backgroundGradient : other.backgroundGradient,
       surface: Color.lerp(surface, other.surface, t) ?? surface,
-      surfaceElevated: Color.lerp(surfaceElevated, other.surfaceElevated, t) ?? surfaceElevated,
+      surfaceElevated: Color.lerp(surfaceElevated, other.surfaceElevated, t) ??
+          surfaceElevated,
       border: Color.lerp(border, other.border, t) ?? border,
       borderGlow: Color.lerp(borderGlow, other.borderGlow, t) ?? borderGlow,
       primary: Color.lerp(primary, other.primary, t) ?? primary,
       secondary: Color.lerp(secondary, other.secondary, t) ?? secondary,
       textPrimary: Color.lerp(textPrimary, other.textPrimary, t) ?? textPrimary,
-      textSecondary: Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
+      textSecondary:
+          Color.lerp(textSecondary, other.textSecondary, t) ?? textSecondary,
       success: Color.lerp(success, other.success, t) ?? success,
       warning: Color.lerp(warning, other.warning, t) ?? warning,
       danger: Color.lerp(danger, other.danger, t) ?? danger,
@@ -139,7 +143,9 @@ class AdminThemeTokens extends ThemeExtension<AdminThemeTokens> {
 }
 
 extension AdminTokensContext on BuildContext {
-  AdminThemeTokens get tokens => Theme.of(this).extension<AdminThemeTokens>() ?? _fallbackTokens(Theme.of(this));
+  AdminThemeTokens get tokens =>
+      Theme.of(this).extension<AdminThemeTokens>() ??
+      _fallbackTokens(Theme.of(this));
 }
 
 AdminThemeTokens _fallbackTokens(ThemeData theme) {
@@ -160,7 +166,9 @@ AdminThemeTokens _fallbackTokens(ThemeData theme) {
     danger: cs.error,
     info: Colors.blue,
     aiAccent: cs.tertiary,
-    cardShadow: const [BoxShadow(color: Colors.black12, blurRadius: 18, offset: Offset(0, 10))],
+    cardShadow: const [
+      BoxShadow(color: Colors.black12, blurRadius: 18, offset: Offset(0, 10))
+    ],
     glowShadow: const [],
   );
 }
@@ -350,177 +358,245 @@ class FontSizes {
 
 /// Light theme with modern, neutral aesthetic
 ThemeData get lightTheme => ThemeData(
-  useMaterial3: true,
-  colorScheme: ColorScheme.light(
-    primary: LightModeColors.lightPrimary,
-    onPrimary: LightModeColors.lightOnPrimary,
-    primaryContainer: LightModeColors.lightPrimaryContainer,
-    onPrimaryContainer: LightModeColors.lightOnPrimaryContainer,
-    secondary: LightModeColors.lightSecondary,
-    onSecondary: LightModeColors.lightOnSecondary,
-    tertiary: LightModeColors.lightTertiary,
-    onTertiary: LightModeColors.lightOnTertiary,
-    error: LightModeColors.lightError,
-    onError: LightModeColors.lightOnError,
-    errorContainer: LightModeColors.lightErrorContainer,
-    onErrorContainer: LightModeColors.lightOnErrorContainer,
-    surface: LightModeColors.lightSurface,
-    onSurface: LightModeColors.lightOnSurface,
-    surfaceContainerHighest: LightModeColors.lightSurfaceVariant,
-    onSurfaceVariant: LightModeColors.lightOnSurfaceVariant,
-    outline: LightModeColors.lightOutline,
-    shadow: LightModeColors.lightShadow,
-    inversePrimary: LightModeColors.lightInversePrimary,
-  ),
-  brightness: Brightness.light,
-  scaffoldBackgroundColor: LightModeColors.lightBackground,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.transparent,
-    foregroundColor: LightModeColors.lightOnSurface,
-    elevation: 0,
-    scrolledUnderElevation: 0,
-  ),
-  cardTheme: CardThemeData(
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(
-        color: LightModeColors.lightOutline.withValues(alpha: 0.2),
-        width: 1,
+      useMaterial3: true,
+      colorScheme: ColorScheme.light(
+        primary: LightModeColors.lightPrimary,
+        onPrimary: LightModeColors.lightOnPrimary,
+        primaryContainer: LightModeColors.lightPrimaryContainer,
+        onPrimaryContainer: LightModeColors.lightOnPrimaryContainer,
+        secondary: LightModeColors.lightSecondary,
+        onSecondary: LightModeColors.lightOnSecondary,
+        tertiary: LightModeColors.lightTertiary,
+        onTertiary: LightModeColors.lightOnTertiary,
+        error: LightModeColors.lightError,
+        onError: LightModeColors.lightOnError,
+        errorContainer: LightModeColors.lightErrorContainer,
+        onErrorContainer: LightModeColors.lightOnErrorContainer,
+        surface: LightModeColors.lightSurface,
+        onSurface: LightModeColors.lightOnSurface,
+        surfaceContainerHighest: LightModeColors.lightSurfaceVariant,
+        onSurfaceVariant: LightModeColors.lightOnSurfaceVariant,
+        outline: LightModeColors.lightOutline,
+        shadow: LightModeColors.lightShadow,
+        inversePrimary: LightModeColors.lightInversePrimary,
       ),
-    ),
-  ),
-  dividerTheme: DividerThemeData(color: LightModeColors.lightOutline.withValues(alpha: 0.18), space: 1, thickness: 1),
-  dataTableTheme: DataTableThemeData(
-    headingRowColor: WidgetStatePropertyAll(LightModeColors.lightSurfaceVariant.withValues(alpha: 0.65)),
-    dataRowColor: const WidgetStatePropertyAll(Colors.transparent),
-    headingTextStyle: _buildTextTheme(Brightness.light).labelLarge?.copyWith(fontWeight: FontWeight.w800, color: LightModeColors.lightOnSurfaceVariant),
-    dataTextStyle: _buildTextTheme(Brightness.light).bodyMedium?.copyWith(color: LightModeColors.lightOnSurface),
-    dividerThickness: 0.8,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: LightModeColors.lightSurface,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: LightModeColors.lightOutline.withValues(alpha: 0.25))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: LightModeColors.lightOutline.withValues(alpha: 0.22))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: const BorderSide(color: LightModeColors.lightPrimary, width: 1.4)),
-  ),
-  snackBarTheme: SnackBarThemeData(
-    behavior: SnackBarBehavior.floating,
-    backgroundColor: LightModeColors.lightOnSurface,
-    contentTextStyle: _buildTextTheme(Brightness.light).bodyMedium?.copyWith(color: LightModeColors.lightSurface),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-  ),
-  extensions: [
-    AdminThemeTokens(
-      background: LightModeColors.lightBackground,
-      backgroundGradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFFAFCFD), Color(0xFFF3F7F8)]),
-      surface: LightModeColors.lightSurface,
-      surfaceElevated: Colors.white,
-      border: LightModeColors.lightOutline.withValues(alpha: 0.22),
-      borderGlow: LightModeColors.lightPrimary.withValues(alpha: 0.28),
-      primary: LightModeColors.lightPrimary,
-      secondary: const Color(0xFF4F46E5),
-      textPrimary: LightModeColors.lightOnSurface,
-      textSecondary: LightModeColors.lightOnSurfaceVariant,
-      success: const Color(0xFF16A34A),
-      warning: const Color(0xFFF97316),
-      danger: const Color(0xFFE11D48),
-      info: const Color(0xFF2563EB),
-      aiAccent: const Color(0xFF7C3AED),
-      cardShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 18, offset: const Offset(0, 10))],
-      glowShadow: [BoxShadow(color: LightModeColors.lightPrimary.withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 10))],
-    ),
-  ],
-  textTheme: _buildTextTheme(Brightness.light),
-);
+      brightness: Brightness.light,
+      scaffoldBackgroundColor: LightModeColors.lightBackground,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        foregroundColor: LightModeColors.lightOnSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: LightModeColors.lightOutline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+          color: LightModeColors.lightOutline.withValues(alpha: 0.18),
+          space: 1,
+          thickness: 1),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStatePropertyAll(
+            LightModeColors.lightSurfaceVariant.withValues(alpha: 0.65)),
+        dataRowColor: const WidgetStatePropertyAll(Colors.transparent),
+        headingTextStyle: _buildTextTheme(Brightness.light)
+            .labelLarge
+            ?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: LightModeColors.lightOnSurfaceVariant),
+        dataTextStyle: _buildTextTheme(Brightness.light)
+            .bodyMedium
+            ?.copyWith(color: LightModeColors.lightOnSurface),
+        dividerThickness: 0.8,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: LightModeColors.lightSurface,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(
+                color: LightModeColors.lightOutline.withValues(alpha: 0.25))),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(
+                color: LightModeColors.lightOutline.withValues(alpha: 0.22))),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: const BorderSide(
+                color: LightModeColors.lightPrimary, width: 1.4)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: LightModeColors.lightOnSurface,
+        contentTextStyle: _buildTextTheme(Brightness.light)
+            .bodyMedium
+            ?.copyWith(color: LightModeColors.lightSurface),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
+      ),
+      extensions: [
+        AdminThemeTokens(
+          background: LightModeColors.lightBackground,
+          backgroundGradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFFAFCFD), Color(0xFFF3F7F8)]),
+          surface: LightModeColors.lightSurface,
+          surfaceElevated: Colors.white,
+          border: LightModeColors.lightOutline.withValues(alpha: 0.22),
+          borderGlow: LightModeColors.lightPrimary.withValues(alpha: 0.28),
+          primary: LightModeColors.lightPrimary,
+          secondary: const Color(0xFF4F46E5),
+          textPrimary: LightModeColors.lightOnSurface,
+          textSecondary: LightModeColors.lightOnSurfaceVariant,
+          success: const Color(0xFF16A34A),
+          warning: const Color(0xFFF97316),
+          danger: const Color(0xFFE11D48),
+          info: const Color(0xFF2563EB),
+          aiAccent: const Color(0xFF7C3AED),
+          cardShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 10))
+          ],
+          glowShadow: [
+            BoxShadow(
+                color: LightModeColors.lightPrimary.withValues(alpha: 0.10),
+                blurRadius: 24,
+                offset: const Offset(0, 10))
+          ],
+        ),
+      ],
+      textTheme: _buildTextTheme(Brightness.light),
+    );
 
 /// Dark theme with good contrast and readability
 ThemeData get darkTheme => ThemeData(
-  useMaterial3: true,
-  colorScheme: ColorScheme.dark(
-    primary: DarkModeColors.darkPrimary,
-    onPrimary: DarkModeColors.darkOnPrimary,
-    primaryContainer: DarkModeColors.darkPrimaryContainer,
-    onPrimaryContainer: DarkModeColors.darkOnPrimaryContainer,
-    secondary: DarkModeColors.darkSecondary,
-    onSecondary: DarkModeColors.darkOnSecondary,
-    tertiary: DarkModeColors.darkTertiary,
-    onTertiary: DarkModeColors.darkOnTertiary,
-    error: DarkModeColors.darkError,
-    onError: DarkModeColors.darkOnError,
-    errorContainer: DarkModeColors.darkErrorContainer,
-    onErrorContainer: DarkModeColors.darkOnErrorContainer,
-    surface: DarkModeColors.darkSurface,
-    onSurface: DarkModeColors.darkOnSurface,
-    surfaceContainerHighest: DarkModeColors.darkSurfaceVariant,
-    onSurfaceVariant: DarkModeColors.darkOnSurfaceVariant,
-    outline: DarkModeColors.darkOutline,
-    shadow: DarkModeColors.darkShadow,
-    inversePrimary: DarkModeColors.darkInversePrimary,
-  ),
-  brightness: Brightness.dark,
-  scaffoldBackgroundColor: DarkModeColors.darkSurface,
-  appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.transparent,
-    foregroundColor: DarkModeColors.darkOnSurface,
-    elevation: 0,
-    scrolledUnderElevation: 0,
-  ),
-  cardTheme: CardThemeData(
-    elevation: 0,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-      side: BorderSide(
-        color: DarkModeColors.darkOutline.withValues(alpha: 0.2),
-        width: 1,
+      useMaterial3: true,
+      colorScheme: ColorScheme.dark(
+        primary: DarkModeColors.darkPrimary,
+        onPrimary: DarkModeColors.darkOnPrimary,
+        primaryContainer: DarkModeColors.darkPrimaryContainer,
+        onPrimaryContainer: DarkModeColors.darkOnPrimaryContainer,
+        secondary: DarkModeColors.darkSecondary,
+        onSecondary: DarkModeColors.darkOnSecondary,
+        tertiary: DarkModeColors.darkTertiary,
+        onTertiary: DarkModeColors.darkOnTertiary,
+        error: DarkModeColors.darkError,
+        onError: DarkModeColors.darkOnError,
+        errorContainer: DarkModeColors.darkErrorContainer,
+        onErrorContainer: DarkModeColors.darkOnErrorContainer,
+        surface: DarkModeColors.darkSurface,
+        onSurface: DarkModeColors.darkOnSurface,
+        surfaceContainerHighest: DarkModeColors.darkSurfaceVariant,
+        onSurfaceVariant: DarkModeColors.darkOnSurfaceVariant,
+        outline: DarkModeColors.darkOutline,
+        shadow: DarkModeColors.darkShadow,
+        inversePrimary: DarkModeColors.darkInversePrimary,
       ),
-    ),
-  ),
-  dividerTheme: DividerThemeData(color: DarkModeColors.darkOutline.withValues(alpha: 0.3), space: 1, thickness: 1),
-  dataTableTheme: DataTableThemeData(
-    headingRowColor: WidgetStatePropertyAll(DarkModeColors.darkSurfaceVariant.withValues(alpha: 0.75)),
-    dataRowColor: const WidgetStatePropertyAll(Colors.transparent),
-    headingTextStyle: _buildTextTheme(Brightness.dark).labelLarge?.copyWith(fontWeight: FontWeight.w800, color: DarkModeColors.darkOnSurfaceVariant),
-    dataTextStyle: _buildTextTheme(Brightness.dark).bodyMedium?.copyWith(color: DarkModeColors.darkOnSurface),
-    dividerThickness: 0.8,
-  ),
-  inputDecorationTheme: InputDecorationTheme(
-    filled: true,
-    fillColor: DarkModeColors.darkSurfaceVariant,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: DarkModeColors.darkOutline.withValues(alpha: 0.6))),
-    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: DarkModeColors.darkOutline.withValues(alpha: 0.55))),
-    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: const BorderSide(color: DarkModeColors.darkPrimary, width: 1.4)),
-  ),
-  snackBarTheme: SnackBarThemeData(
-    behavior: SnackBarBehavior.floating,
-    backgroundColor: const Color(0xFF111827),
-    contentTextStyle: _buildTextTheme(Brightness.dark).bodyMedium?.copyWith(color: DarkModeColors.darkOnSurface),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
-  ),
-  extensions: [
-    AdminThemeTokens(
-      background: DarkModeColors.darkSurface,
-      backgroundGradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFF0B1220), Color(0xFF08101E)]),
-      surface: const Color(0xFF0F172A),
-      surfaceElevated: DarkModeColors.darkSurfaceVariant,
-      border: DarkModeColors.darkOutline.withValues(alpha: 0.55),
-      borderGlow: DarkModeColors.darkPrimary.withValues(alpha: 0.22),
-      primary: const Color(0xFF22D3EE),
-      secondary: DarkModeColors.darkPrimary,
-      textPrimary: DarkModeColors.darkOnSurface,
-      textSecondary: DarkModeColors.darkOnSurfaceVariant,
-      success: const Color(0xFF34D399),
-      warning: const Color(0xFFFB923C),
-      danger: const Color(0xFFFB7185),
-      info: const Color(0xFF60A5FA),
-      aiAccent: const Color(0xFF7CCCCC),
-      cardShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.25), blurRadius: 22, offset: const Offset(0, 12))],
-      glowShadow: [BoxShadow(color: const Color(0xFF22D3EE).withValues(alpha: 0.08), blurRadius: 28, offset: const Offset(0, 12))],
-    ),
-  ],
-  textTheme: _buildTextTheme(Brightness.dark),
-);
+      brightness: Brightness.dark,
+      scaffoldBackgroundColor: DarkModeColors.darkSurface,
+      appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        foregroundColor: DarkModeColors.darkOnSurface,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(
+            color: DarkModeColors.darkOutline.withValues(alpha: 0.2),
+            width: 1,
+          ),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+          color: DarkModeColors.darkOutline.withValues(alpha: 0.3),
+          space: 1,
+          thickness: 1),
+      dataTableTheme: DataTableThemeData(
+        headingRowColor: WidgetStatePropertyAll(
+            DarkModeColors.darkSurfaceVariant.withValues(alpha: 0.75)),
+        dataRowColor: const WidgetStatePropertyAll(Colors.transparent),
+        headingTextStyle: _buildTextTheme(Brightness.dark).labelLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: DarkModeColors.darkOnSurfaceVariant),
+        dataTextStyle: _buildTextTheme(Brightness.dark)
+            .bodyMedium
+            ?.copyWith(color: DarkModeColors.darkOnSurface),
+        dividerThickness: 0.8,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: DarkModeColors.darkSurfaceVariant,
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(
+                color: DarkModeColors.darkOutline.withValues(alpha: 0.6))),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: BorderSide(
+                color: DarkModeColors.darkOutline.withValues(alpha: 0.55))),
+        focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderSide: const BorderSide(
+                color: DarkModeColors.darkPrimary, width: 1.4)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF111827),
+        contentTextStyle: _buildTextTheme(Brightness.dark)
+            .bodyMedium
+            ?.copyWith(color: DarkModeColors.darkOnSurface),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
+      ),
+      extensions: [
+        AdminThemeTokens(
+          background: DarkModeColors.darkSurface,
+          backgroundGradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0B1220), Color(0xFF08101E)]),
+          surface: const Color(0xFF0F172A),
+          surfaceElevated: DarkModeColors.darkSurfaceVariant,
+          border: DarkModeColors.darkOutline.withValues(alpha: 0.55),
+          borderGlow: DarkModeColors.darkPrimary.withValues(alpha: 0.22),
+          primary: const Color(0xFF22D3EE),
+          secondary: DarkModeColors.darkPrimary,
+          textPrimary: DarkModeColors.darkOnSurface,
+          textSecondary: DarkModeColors.darkOnSurfaceVariant,
+          success: const Color(0xFF34D399),
+          warning: const Color(0xFFFB923C),
+          danger: const Color(0xFFFB7185),
+          info: const Color(0xFF60A5FA),
+          aiAccent: const Color(0xFF7CCCCC),
+          cardShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 22,
+                offset: const Offset(0, 12))
+          ],
+          glowShadow: [
+            BoxShadow(
+                color: const Color(0xFF22D3EE).withValues(alpha: 0.08),
+                blurRadius: 28,
+                offset: const Offset(0, 12))
+          ],
+        ),
+      ],
+      textTheme: _buildTextTheme(Brightness.dark),
+    );
 
 ThemeData get aiTheme {
   final base = ThemeData(
@@ -540,26 +616,49 @@ ThemeData get aiTheme {
       onError: AiModeColors.base,
       outline: AiModeColors.border,
     ),
-    appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0, scrolledUnderElevation: 0),
-    dividerTheme: DividerThemeData(color: AiModeColors.border.withValues(alpha: 0.55), space: 1, thickness: 1),
-    textTheme: _buildTextTheme(Brightness.dark).apply(bodyColor: AiModeColors.text, displayColor: AiModeColors.text),
+    appBarTheme: const AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        scrolledUnderElevation: 0),
+    dividerTheme: DividerThemeData(
+        color: AiModeColors.border.withValues(alpha: 0.55),
+        space: 1,
+        thickness: 1),
+    textTheme: _buildTextTheme(Brightness.dark)
+        .apply(bodyColor: AiModeColors.text, displayColor: AiModeColors.text),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
       backgroundColor: const Color(0xFF0B1220),
-      contentTextStyle: _buildTextTheme(Brightness.dark).bodyMedium?.copyWith(color: AiModeColors.text),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+      contentTextStyle: _buildTextTheme(Brightness.dark)
+          .bodyMedium
+          ?.copyWith(color: AiModeColors.text),
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg)),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: AiModeColors.surface.withValues(alpha: 0.72),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: AiModeColors.border.withValues(alpha: 0.6))),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide(color: AiModeColors.border.withValues(alpha: 0.55))),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: const BorderSide(color: AiModeColors.cyan, width: 1.3)),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide:
+              BorderSide(color: AiModeColors.border.withValues(alpha: 0.6))),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide:
+              BorderSide(color: AiModeColors.border.withValues(alpha: 0.55))),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderSide: const BorderSide(color: AiModeColors.cyan, width: 1.3)),
     ),
     dataTableTheme: DataTableThemeData(
-      headingRowColor: WidgetStatePropertyAll(const Color(0xFF0F1B33).withValues(alpha: 0.9)),
-      headingTextStyle: _buildTextTheme(Brightness.dark).labelLarge?.copyWith(fontWeight: FontWeight.w900, color: AiModeColors.textDim),
-      dataTextStyle: _buildTextTheme(Brightness.dark).bodyMedium?.copyWith(color: AiModeColors.text),
+      headingRowColor: WidgetStatePropertyAll(
+          const Color(0xFF0F1B33).withValues(alpha: 0.9)),
+      headingTextStyle: _buildTextTheme(Brightness.dark)
+          .labelLarge
+          ?.copyWith(fontWeight: FontWeight.w900, color: AiModeColors.textDim),
+      dataTextStyle: _buildTextTheme(Brightness.dark)
+          .bodyMedium
+          ?.copyWith(color: AiModeColors.text),
       dividerThickness: 0.8,
     ),
     cardTheme: CardThemeData(
@@ -567,7 +666,8 @@ ThemeData get aiTheme {
       color: AiModeColors.surface.withValues(alpha: 0.78),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        side: BorderSide(color: AiModeColors.border.withValues(alpha: 0.72), width: 1),
+        side: BorderSide(
+            color: AiModeColors.border.withValues(alpha: 0.72), width: 1),
       ),
     ),
   );
@@ -576,7 +676,10 @@ ThemeData get aiTheme {
     extensions: [
       AdminThemeTokens(
         background: AiModeColors.base,
-        backgroundGradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [AiModeColors.base, AiModeColors.base2]),
+        backgroundGradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AiModeColors.base, AiModeColors.base2]),
         surface: AiModeColors.glass.withValues(alpha: 0.64),
         surfaceElevated: AiModeColors.surface.withValues(alpha: 0.78),
         border: AiModeColors.border.withValues(alpha: 0.65),
@@ -590,10 +693,21 @@ ThemeData get aiTheme {
         danger: AiModeColors.danger,
         info: AiModeColors.cyan,
         aiAccent: AiModeColors.violet,
-        cardShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.35), blurRadius: 26, offset: const Offset(0, 16))],
+        cardShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.35),
+              blurRadius: 26,
+              offset: const Offset(0, 16))
+        ],
         glowShadow: [
-          BoxShadow(color: AiModeColors.violet.withValues(alpha: 0.14), blurRadius: 34, offset: const Offset(0, 16)),
-          BoxShadow(color: AiModeColors.cyan.withValues(alpha: 0.10), blurRadius: 40, offset: const Offset(0, 18)),
+          BoxShadow(
+              color: AiModeColors.violet.withValues(alpha: 0.14),
+              blurRadius: 34,
+              offset: const Offset(0, 16)),
+          BoxShadow(
+              color: AiModeColors.cyan.withValues(alpha: 0.10),
+              blurRadius: 40,
+              offset: const Offset(0, 18)),
         ],
       ),
     ],

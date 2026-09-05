@@ -5,7 +5,8 @@ import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 
 class AdminShell extends StatefulWidget {
-  const AdminShell({super.key, required this.currentLocation, required this.child});
+  const AdminShell(
+      {super.key, required this.currentLocation, required this.child});
 
   final String currentLocation;
   final Widget child;
@@ -46,7 +47,8 @@ class _AdminShellState extends State<AdminShell> {
                     children: [
                       AdminTopBar(
                         isDesktop: isDesktop,
-                        onMenuPressed: () => _scaffoldKey.currentState?.openDrawer(),
+                        onMenuPressed: () =>
+                            _scaffoldKey.currentState?.openDrawer(),
                       ),
                       Expanded(child: widget.child),
                     ],

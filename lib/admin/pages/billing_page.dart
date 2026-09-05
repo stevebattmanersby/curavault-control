@@ -43,7 +43,7 @@ class _BillingPageState extends State<BillingPage>
     final diag = billing?.diagnostics;
     final sections = diag?.sections ?? const <String, BillingSectionStatus>{};
 
-    Tab _statusTab(String label) {
+    Tab statusTab(String label) {
       final s = sections[label];
       final state = s?.state ?? BillingSectionState.notInstrumented;
       final dot = switch (state) {
@@ -60,7 +60,11 @@ class _BillingPageState extends State<BillingPage>
           children: [
             Text(label, overflow: TextOverflow.ellipsis),
             const SizedBox(width: 8),
-            Container(width: 8, height: 8, decoration: BoxDecoration(color: dot, borderRadius: BorderRadius.circular(99))),
+            Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                    color: dot, borderRadius: BorderRadius.circular(99))),
           ],
         ),
       );
@@ -118,12 +122,12 @@ class _BillingPageState extends State<BillingPage>
               dividerColor: cs.outlineVariant.withValues(alpha: 0.35),
               tabAlignment: TabAlignment.start,
               tabs: [
-                _statusTab('Overview'),
-                _statusTab('Subscriptions'),
-                _statusTab('Trials'),
-                _statusTab('Failed payments'),
-                _statusTab('Revenue by plan'),
-                _statusTab('Revenue by country'),
+                statusTab('Overview'),
+                statusTab('Subscriptions'),
+                statusTab('Trials'),
+                statusTab('Failed payments'),
+                statusTab('Revenue by plan'),
+                statusTab('Revenue by country'),
               ],
             ),
           if (status.kind != AdminDataSourceKind.notInstrumented) ...[
@@ -204,16 +208,20 @@ class _BillingHonestyPanel extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text('Billing verifiability',
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    style:
+                        t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.35)),
                 ),
-                child: Text('Revenue source: ${diagnostics.revenueSource.label}',
+                child: Text(
+                    'Revenue source: ${diagnostics.revenueSource.label}',
                     style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
               ),
             ],
@@ -314,7 +322,8 @@ class _BillingDataSourceStatusTable extends StatelessWidget {
               DataCell(Text(r.lastRefreshedAt == null
                   ? '—'
                   : AdminFormatters.relativeTime(r.lastRefreshedAt!))),
-              DataCell(Text((r.safeError ?? '').trim().isEmpty ? '—' : r.safeError!)),
+              DataCell(Text(
+                  (r.safeError ?? '').trim().isEmpty ? '—' : r.safeError!)),
             ]),
         ],
       ),
@@ -607,8 +616,9 @@ class _BillingOverviewTab extends StatelessWidget {
     if (isLoading && overview == null) return const _LoadingState();
     final cs = Theme.of(context).colorScheme;
     final o = overview;
-    if (o == null)
+    if (o == null) {
       return const _EmptyState(label: 'No usage data has been collected yet.');
+    }
 
     return ListView(
       padding: const EdgeInsets.all(14),
@@ -619,7 +629,8 @@ class _BillingOverviewTab extends StatelessWidget {
         ],
         if (diagnostics != null) ...[
           _RevenueCatReadinessChecklist(
-              revenueCat: revenueCat, revenueSource: diagnostics!.revenueSource),
+              revenueCat: revenueCat,
+              revenueSource: diagnostics!.revenueSource),
           const SizedBox(height: 12),
         ],
         Wrap(
@@ -804,10 +815,8 @@ class _RevenueCatSyncCard extends StatelessWidget {
                         ?.copyWith(fontWeight: FontWeight.w900)),
               ),
               Text(statusLabel,
-                  style: Theme.of(context)
-                      .textTheme
-                      .labelLarge
-                      ?.copyWith(color: statusColor, fontWeight: FontWeight.w900)),
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: statusColor, fontWeight: FontWeight.w900)),
             ],
           ),
           const SizedBox(height: 10),
@@ -815,21 +824,27 @@ class _RevenueCatSyncCard extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              metric('Webhook events',
+              metric(
+                  'Webhook events',
                   AdminFormatters.compactInt(health.webhookEventRows),
                   Icons.webhook_rounded),
-              metric('Failed webhooks',
+              metric(
+                  'Failed webhooks',
                   AdminFormatters.compactInt(health.webhookFailedRows),
                   Icons.error_outline_rounded,
                   iconColor:
                       health.webhookFailedRows > 0 ? cs.error : cs.primary),
-              metric('Unmapped app_user_id',
-                  AdminFormatters.compactInt(health.webhookUnmappedAppUserIdRows),
+              metric(
+                  'Unmapped app_user_id',
+                  AdminFormatters.compactInt(
+                      health.webhookUnmappedAppUserIdRows),
                   Icons.link_off_rounded),
-              metric('Entitlements rows',
+              metric(
+                  'Entitlements rows',
                   AdminFormatters.compactInt(health.entitlementsRows),
                   Icons.badge_outlined),
-              metric('Active entitlements',
+              metric(
+                  'Active entitlements',
                   AdminFormatters.compactInt(health.activeEntitlementsRows),
                   Icons.verified_outlined),
             ],
@@ -1007,7 +1022,10 @@ class _SubscriptionsTab extends StatelessWidget {
 
 class _TrialsTab extends StatelessWidget {
   const _TrialsTab(
-      {required this.rows, required this.isLoading, required this.role, required this.status});
+      {required this.rows,
+      required this.isLoading,
+      required this.role,
+      required this.status});
   final List<TrialRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -1112,7 +1130,10 @@ class _TrialsTab extends StatelessWidget {
 
 class _FailedPaymentsTab extends StatelessWidget {
   const _FailedPaymentsTab(
-      {required this.rows, required this.isLoading, required this.role, required this.status});
+      {required this.rows,
+      required this.isLoading,
+      required this.role,
+      required this.status});
   final List<FailedPaymentRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -1202,7 +1223,8 @@ class _FailedPaymentsTab extends StatelessWidget {
 }
 
 class _RevenueByPlanTab extends StatelessWidget {
-  const _RevenueByPlanTab({required this.rows, required this.isLoading, required this.status});
+  const _RevenueByPlanTab(
+      {required this.rows, required this.isLoading, required this.status});
   final List<RevenueByPlanRow> rows;
   final bool isLoading;
   final BillingSectionStatus? status;
@@ -1283,7 +1305,8 @@ class _RevenueByPlanTab extends StatelessWidget {
 }
 
 class _RevenueByCountryTab extends StatelessWidget {
-  const _RevenueByCountryTab({required this.rows, required this.isLoading, required this.status});
+  const _RevenueByCountryTab(
+      {required this.rows, required this.isLoading, required this.status});
   final List<RevenueByCountryRow> rows;
   final bool isLoading;
   final BillingSectionStatus? status;
@@ -1921,7 +1944,8 @@ class _TabStatusPanel extends StatelessWidget {
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+              border:
+                  Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1933,7 +1957,8 @@ class _TabStatusPanel extends StatelessWidget {
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(status.state.label,
-                          style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                          style: t.titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w900)),
                     ),
                   ],
                 ),
@@ -1943,7 +1968,8 @@ class _TabStatusPanel extends StatelessWidget {
                 if ((status.requiredSource ?? '').trim().isNotEmpty) ...[
                   const SizedBox(height: 10),
                   Text('Requires: ${status.requiredSource}',
-                      style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      style:
+                          t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ],
             ),
@@ -1955,7 +1981,8 @@ class _TabStatusPanel extends StatelessWidget {
 }
 
 class _RevenueCatReadinessChecklist extends StatelessWidget {
-  const _RevenueCatReadinessChecklist({required this.revenueCat, required this.revenueSource});
+  const _RevenueCatReadinessChecklist(
+      {required this.revenueCat, required this.revenueSource});
   final RevenueCatSyncHealth? revenueCat;
   final BillingRevenueSource revenueSource;
 
@@ -1983,10 +2010,14 @@ class _RevenueCatReadinessChecklist extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(label, style: t.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                  Text(label,
+                      style:
+                          t.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
                   if ((detail ?? '').trim().isNotEmpty) ...[
                     const SizedBox(height: 2),
-                    Text(detail!, style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                    Text(detail!,
+                        style:
+                            t.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
                   ],
                 ],
               ),
@@ -2012,20 +2043,40 @@ class _RevenueCatReadinessChecklist extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text('RevenueCat readiness checklist',
-                    style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+                    style:
+                        t.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
               ),
               Text('Detected: ${revenueSource.label}',
                   style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
             ],
           ),
           const SizedBox(height: 10),
-          row('RevenueCat SDK configured (consumer app)', ok: revenueSource == BillingRevenueSource.revenueCat, detail: revenueSource == BillingRevenueSource.revenueCat ? 'RevenueCat detected in entitlement aggregates.' : 'Not verifiable from Control Site repo.'),
-          row('RevenueCat webhooks configured', ok: hasWebhook, detail: hasWebhook ? 'Latest: ${latestReceived == null ? '—' : AdminFormatters.relativeTime(latestReceived)}' : 'No webhook events recorded.'),
-          row('Latest webhook received', ok: hasWebhook, detail: hasWebhook ? 'Events: ${revenueCat?.webhookEventRows ?? 0}' : null),
-          row('user_entitlements updated by webhook', ok: hasEntitlements, detail: 'Rows: ${revenueCat?.entitlementsRows ?? 0}'),
-          row('subscription_events updated by webhook', ok: false, detail: 'Not verifiable without a privacy-safe summary for subscription_events updates.'),
-          row('Sandbox purchase tested iOS', ok: false, detail: 'Manual check.'),
-          row('Sandbox purchase tested Android', ok: false, detail: 'Manual check.'),
+          row('RevenueCat SDK configured (consumer app)',
+              ok: revenueSource == BillingRevenueSource.revenueCat,
+              detail: revenueSource == BillingRevenueSource.revenueCat
+                  ? 'RevenueCat detected in entitlement aggregates.'
+                  : 'Not verifiable from Control Site repo.'),
+          row('RevenueCat webhooks configured',
+              ok: hasWebhook,
+              detail: hasWebhook
+                  ? 'Latest: ${latestReceived == null ? '—' : AdminFormatters.relativeTime(latestReceived)}'
+                  : 'No webhook events recorded.'),
+          row('Latest webhook received',
+              ok: hasWebhook,
+              detail: hasWebhook
+                  ? 'Events: ${revenueCat?.webhookEventRows ?? 0}'
+                  : null),
+          row('user_entitlements updated by webhook',
+              ok: hasEntitlements,
+              detail: 'Rows: ${revenueCat?.entitlementsRows ?? 0}'),
+          row('subscription_events updated by webhook',
+              ok: false,
+              detail:
+                  'Not verifiable without a privacy-safe summary for subscription_events updates.'),
+          row('Sandbox purchase tested iOS',
+              ok: false, detail: 'Manual check.'),
+          row('Sandbox purchase tested Android',
+              ok: false, detail: 'Manual check.'),
           row('Restore purchase tested', ok: false, detail: 'Manual check.'),
           if (!hasActiveEntitlements) ...[
             const SizedBox(height: 6),

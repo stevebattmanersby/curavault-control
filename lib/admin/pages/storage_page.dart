@@ -22,17 +22,23 @@ class StoragePage extends StatelessWidget {
 
     return AdminPageScaffold(
       title: 'Storage',
-      subtitle: 'Usage, limits, cost, and upload reliability (privacy-safe; no file names/URLs/paths).',
+      subtitle:
+          'Usage, limits, cost, and upload reliability (privacy-safe; no file names/URLs/paths).',
       actions: [
-        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.storage)),
+        AdminDataSourceBadge(
+            status: store.dataSource(AdminDataSourceKey.storage)),
         const SizedBox(width: AppSpacing.sm),
-        _StorageFiltersBar(query: store.storageQuery, onChanged: store.setStorageQuery),
+        _StorageFiltersBar(
+            query: store.storageQuery, onChanged: store.setStorageQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshStorage(),
-          icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(Icons.refresh,
+              color: Theme.of(context).colorScheme.onSurface),
           splashColor: Colors.transparent,
-          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-          hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          highlightColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          hoverColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
           tooltip: 'Refresh',
         ),
       ],
@@ -41,23 +47,55 @@ class StoragePage extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.storage, title: 'Storage'),
+                AdminOwnerDataSourcePanel(
+                    store: store,
+                    dataSourceKey: AdminDataSourceKey.storage,
+                    title: 'Storage'),
                 const SizedBox(height: AppSpacing.md),
                 Expanded(
-                  child: store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.notInstrumented
+                  child: store.dataSource(AdminDataSourceKey.storage).kind ==
+                          AdminDataSourceKind.notInstrumented
                       ? const AdminNotInstrumentedPanel()
-                      : store.dataSource(AdminDataSourceKey.storage).kind == AdminDataSourceKind.error
-                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.storage).safeErrorMessage ?? 'Failed to load storage data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                      : store.dataSource(AdminDataSourceKey.storage).kind ==
+                              AdminDataSourceKind.error
+                          ? Center(
+                              child: Text(
+                                  store
+                                          .dataSource(
+                                              AdminDataSourceKey.storage)
+                                          .safeErrorMessage ??
+                                      'Failed to load storage data.',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant)))
                           : snap == null
                               ? Center(
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Icon(Icons.cloud_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                                      Icon(Icons.cloud_outlined,
+                                          size: 44,
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant),
                                       const SizedBox(height: AppSpacing.sm),
-                                      Text('No storage data yet.', style: Theme.of(context).textTheme.titleMedium),
+                                      Text('No storage data yet.',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleMedium),
                                       const SizedBox(height: AppSpacing.sm),
-                                      Text('No data has been collected yet.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                                      Text('No data has been collected yet.',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .bodyMedium
+                                              ?.copyWith(
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant)),
                                     ],
                                   ),
                                 )
@@ -91,9 +129,13 @@ class _StorageFiltersBar extends StatelessWidget {
             value: query.range,
             borderRadius: BorderRadius.circular(AppRadius.md),
             icon: Icon(Icons.expand_more, color: cs.onSurfaceVariant, size: 18),
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface),
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: cs.onSurface),
             items: [
-              for (final r in AdminDateRangePreset.values) DropdownMenuItem(value: r, child: Text(r.label)),
+              for (final r in AdminDateRangePreset.values)
+                DropdownMenuItem(value: r, child: Text(r.label)),
             ],
             onChanged: (v) {
               if (v == null) return;
@@ -157,7 +199,10 @@ class _StorageTabBar extends StatelessWidget {
         ),
         labelColor: cs.onPrimaryContainer,
         unselectedLabelColor: cs.onSurfaceVariant,
-        labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        labelStyle: Theme.of(context)
+            .textTheme
+            .labelLarge
+            ?.copyWith(fontWeight: FontWeight.w700),
         tabs: const [
           Tab(text: 'Overview'),
           Tab(text: 'High usage users'),
@@ -183,20 +228,51 @@ class _StorageOverviewTab extends StatelessWidget {
         children: [
           _SectionTitle(
             title: 'Storage Overview',
-            subtitle: 'Aggregated usage and reliability signals. No file metadata that could reveal health details.',
-            trailing: Text('Generated ${formatDateTimeShort(snapshot.generatedAt)}', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            subtitle:
+                'Aggregated usage and reliability signals. No file metadata that could reveal health details.',
+            trailing: Text(
+                'Generated ${formatDateTimeShort(snapshot.generatedAt)}',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelMedium
+                    ?.copyWith(color: cs.onSurfaceVariant)),
           ),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              MetricTile(label: 'Total storage used', value: formatBytes(snapshot.totalStorageUsedBytes), icon: Icons.storage_outlined),
-              MetricTile(label: 'Total document count', value: formatCompactInt(snapshot.totalDocumentCount), icon: Icons.description_outlined),
-              MetricTile(label: 'Average storage per user', value: formatBytes(snapshot.averageStoragePerUserBytes), icon: Icons.stacked_bar_chart_outlined),
-              MetricTile(label: 'Users over storage limit', value: formatCompactInt(snapshot.usersOverStorageLimit), icon: Icons.block_outlined),
-              MetricTile(label: 'Users >80% of limit', value: formatCompactInt(snapshot.usersOver80PercentStorageLimit), icon: Icons.warning_amber_outlined),
-              MetricTile(label: 'Uploads this month', value: formatCompactInt(snapshot.uploadsThisMonth), icon: Icons.cloud_upload_outlined),
-              MetricTile(label: 'Failed uploads this month', value: formatCompactInt(snapshot.failedUploadsThisMonth), icon: Icons.cloud_off_outlined),
-              MetricTile(label: 'Estimated storage cost', value: AdminFormatters.usd(snapshot.estimatedStorageCostUsd), icon: Icons.payments_outlined),
+              MetricTile(
+                  label: 'Total storage used',
+                  value: formatBytes(snapshot.totalStorageUsedBytes),
+                  icon: Icons.storage_outlined),
+              MetricTile(
+                  label: 'Total document count',
+                  value: formatCompactInt(snapshot.totalDocumentCount),
+                  icon: Icons.description_outlined),
+              MetricTile(
+                  label: 'Average storage per user',
+                  value: formatBytes(snapshot.averageStoragePerUserBytes),
+                  icon: Icons.stacked_bar_chart_outlined),
+              MetricTile(
+                  label: 'Users over storage limit',
+                  value: formatCompactInt(snapshot.usersOverStorageLimit),
+                  icon: Icons.block_outlined),
+              MetricTile(
+                  label: 'Users >80% of limit',
+                  value:
+                      formatCompactInt(snapshot.usersOver80PercentStorageLimit),
+                  icon: Icons.warning_amber_outlined),
+              MetricTile(
+                  label: 'Uploads this month',
+                  value: formatCompactInt(snapshot.uploadsThisMonth),
+                  icon: Icons.cloud_upload_outlined),
+              MetricTile(
+                  label: 'Failed uploads this month',
+                  value: formatCompactInt(snapshot.failedUploadsThisMonth),
+                  icon: Icons.cloud_off_outlined),
+              MetricTile(
+                  label: 'Estimated storage cost',
+                  value: AdminFormatters.usd(snapshot.estimatedStorageCostUsd),
+                  icon: Icons.payments_outlined),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -206,12 +282,20 @@ class _StorageOverviewTab extends StatelessWidget {
                 child: AdminCard(
                   header: Row(
                     children: [
-                      Text('Storage by plan (top)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('Storage by plan (top)',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
                       const Spacer(),
-                      Icon(Icons.bar_chart_outlined, color: cs.onSurfaceVariant, size: 18),
+                      Icon(Icons.bar_chart_outlined,
+                          color: cs.onSurfaceVariant, size: 18),
                     ],
                   ),
-                  child: SizedBox(height: 240, child: _StorageByPlanBarChart(rows: snapshot.storageByPlan.take(6).toList())),
+                  child: SizedBox(
+                      height: 240,
+                      child: _StorageByPlanBarChart(
+                          rows: snapshot.storageByPlan.take(6).toList())),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -219,12 +303,18 @@ class _StorageOverviewTab extends StatelessWidget {
                 child: AdminCard(
                   header: Row(
                     children: [
-                      Text('Recent upload errors', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('Recent upload errors',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
                       const Spacer(),
-                      Icon(Icons.error_outline, color: cs.onSurfaceVariant, size: 18),
+                      Icon(Icons.error_outline,
+                          color: cs.onSurfaceVariant, size: 18),
                     ],
                   ),
-                  child: _RecentUploadErrorsMiniList(errors: snapshot.uploadErrors.take(6).toList()),
+                  child: _RecentUploadErrorsMiniList(
+                      errors: snapshot.uploadErrors.take(6).toList()),
                 ),
               ),
             ],
@@ -233,14 +323,22 @@ class _StorageOverviewTab extends StatelessWidget {
           AdminCard(
             header: Row(
               children: [
-                Text('Policy reminder', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                Text('Policy reminder',
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const Spacer(),
-                Icon(Icons.privacy_tip_outlined, color: cs.onSurfaceVariant, size: 18),
+                Icon(Icons.privacy_tip_outlined,
+                    color: cs.onSurfaceVariant, size: 18),
               ],
             ),
             child: Text(
               'This section intentionally excludes file names, URLs, previews, paths, and document categories. All insights are derived from summary tables/views only.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant, height: 1.45),
             ),
           ),
         ],
@@ -272,15 +370,26 @@ class _HighUsageUsersTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Expanded(child: Text('High usage users', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Expanded(
+                    child: Text('High usage users',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700))),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: cs.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
+                    border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.45)),
                   ),
-                  child: Text('Sorted by % used', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  child: Text('Sorted by % used',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ),
               ],
             ),
@@ -298,7 +407,8 @@ class _HighUsageUsersTab extends StatelessWidget {
                       dataTextStyle: Theme.of(context).textTheme.bodyMedium,
                       columns: [
                         const DataColumn(label: Text('User ID')),
-                        if (canViewEmail) const DataColumn(label: Text('Email')),
+                        if (canViewEmail)
+                          const DataColumn(label: Text('Email')),
                         const DataColumn(label: Text('Country')),
                         const DataColumn(label: Text('Plan')),
                         const DataColumn(label: Text('Storage used')),
@@ -321,8 +431,10 @@ class _HighUsageUsersTab extends StatelessWidget {
                               DataCell(Text(formatBytes(r.storageLimitBytes))),
                               DataCell(_PercentPill(value: r.percentUsed)),
                               DataCell(Text(formatCompactInt(r.documentCount))),
-                              DataCell(Text(formatDateTimeShort(r.lastUploadAt))),
-                              DataCell(Text(formatCompactInt(r.failedUploadCount))),
+                              DataCell(
+                                  Text(formatDateTimeShort(r.lastUploadAt))),
+                              DataCell(
+                                  Text(formatCompactInt(r.failedUploadCount))),
                               DataCell(_StatusPill(status: r.accountStatus)),
                             ],
                           ),
@@ -350,12 +462,22 @@ class _StorageByPlanTab extends StatelessWidget {
         AdminCard(
           header: Row(
             children: [
-              Text('Storage by plan', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+              Text('Storage by plan',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w700)),
               const Spacer(),
-              Text('Top plans by usage', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+              Text('Top plans by usage',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: cs.onSurfaceVariant)),
             ],
           ),
-          child: SizedBox(height: 220, child: _StorageByPlanBarChart(rows: rows.take(8).toList())),
+          child: SizedBox(
+              height: 220,
+              child: _StorageByPlanBarChart(rows: rows.take(8).toList())),
         ),
         const SizedBox(height: AppSpacing.md),
         Expanded(
@@ -363,7 +485,8 @@ class _StorageByPlanTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: cs.surface,
               borderRadius: BorderRadius.circular(AppRadius.lg),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+              border:
+                  Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
             ),
             child: rows.isEmpty
                 ? const _EmptyState(label: 'No plan breakdown rows available.')
@@ -389,9 +512,12 @@ class _StorageByPlanTab extends StatelessWidget {
                               DataCell(Text(r.plan)),
                               DataCell(Text(formatCompactInt(r.users))),
                               DataCell(Text(formatBytes(r.totalStorageBytes))),
-                              DataCell(Text(formatBytes(r.avgStoragePerUserBytes))),
-                              DataCell(Text(formatCompactInt(r.usersNearLimit))),
-                              DataCell(Text(formatCompactInt(r.usersOverLimit))),
+                              DataCell(
+                                  Text(formatBytes(r.avgStoragePerUserBytes))),
+                              DataCell(
+                                  Text(formatCompactInt(r.usersNearLimit))),
+                              DataCell(
+                                  Text(formatCompactInt(r.usersOverLimit))),
                             ],
                           ),
                       ],
@@ -425,8 +551,17 @@ class _StorageByCountryTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Expanded(child: Text('Storage by country', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
-                Text('Countries with <10 users grouped into “Other”.', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Expanded(
+                    child: Text('Storage by country',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700))),
+                Text('Countries with <10 users grouped into “Other”.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -492,15 +627,26 @@ class _UploadErrorsTab extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
             child: Row(
               children: [
-                Expanded(child: Text('Upload errors', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700))),
+                Expanded(
+                    child: Text('Upload errors',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w700))),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: cs.tertiaryContainer.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.45)),
+                    border: Border.all(
+                        color: cs.outlineVariant.withValues(alpha: 0.45)),
                   ),
-                  child: Text('User IDs are pseudonymized', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onTertiaryContainer)),
+                  child: Text('User IDs are pseudonymized',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onTertiaryContainer)),
                 ),
               ],
             ),
@@ -537,7 +683,8 @@ class _UploadErrorsTab extends StatelessWidget {
                               DataCell(Text(r.errorCode)),
                               DataCell(_ResultPill(result: r.result)),
                               DataCell(Text(r.fileSizeBucket)),
-                              DataCell(Text(formatBytes(r.storageUsedBytesAtTime))),
+                              DataCell(
+                                  Text(formatBytes(r.storageUsedBytesAtTime))),
                             ],
                           ),
                       ],
@@ -558,16 +705,24 @@ class _StorageByPlanBarChart extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rows.isEmpty) return const SizedBox.shrink();
     final cs = Theme.of(context).colorScheme;
-    final maxBytes = rows.map((e) => e.totalStorageBytes).reduce((a, b) => a > b ? a : b).toDouble();
+    final maxBytes = rows
+        .map((e) => e.totalStorageBytes)
+        .reduce((a, b) => a > b ? a : b)
+        .toDouble();
 
     return BarChart(
       BarChartData(
         alignment: BarChartAlignment.spaceAround,
         borderData: FlBorderData(show: false),
-        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: maxBytes / 4),
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: maxBytes / 4),
         titlesData: FlTitlesData(
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -575,7 +730,11 @@ class _StorageByPlanBarChart extends StatelessWidget {
               interval: maxBytes / 4,
               getTitlesWidget: (value, meta) => Padding(
                 padding: const EdgeInsets.only(right: 6),
-                child: Text(formatBytes(value.round()), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)),
+                child: Text(formatBytes(value.round()),
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelSmall
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ),
             ),
           ),
@@ -584,11 +743,18 @@ class _StorageByPlanBarChart extends StatelessWidget {
               showTitles: true,
               getTitlesWidget: (value, meta) {
                 final idx = value.toInt();
-                if (idx < 0 || idx >= rows.length) return const SizedBox.shrink();
+                if (idx < 0 || idx >= rows.length) {
+                  return const SizedBox.shrink();
+                }
                 final label = rows[idx].plan;
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(label, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+                  child: Text(label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis),
                 );
               },
             ),
@@ -599,7 +765,12 @@ class _StorageByPlanBarChart extends StatelessWidget {
           touchTooltipData: BarTouchTooltipData(
             getTooltipItem: (group, groupIndex, rod, rodIndex) {
               final r = rows[group.x.toInt()];
-              return BarTooltipItem('${r.plan}\n${formatBytes(r.totalStorageBytes)}', Theme.of(context).textTheme.labelMedium!.copyWith(color: cs.onSurface));
+              return BarTooltipItem(
+                  '${r.plan}\n${formatBytes(r.totalStorageBytes)}',
+                  Theme.of(context)
+                      .textTheme
+                      .labelMedium!
+                      .copyWith(color: cs.onSurface));
             },
           ),
         ),
@@ -613,7 +784,11 @@ class _StorageByPlanBarChart extends StatelessWidget {
                   width: 18,
                   borderRadius: BorderRadius.circular(8),
                   color: cs.primary,
-                  backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxBytes, color: cs.surfaceContainerHighest.withValues(alpha: 0.55)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: maxBytes,
+                      color:
+                          cs.surfaceContainerHighest.withValues(alpha: 0.55)),
                 ),
               ],
             ),
@@ -631,7 +806,11 @@ class _RecentUploadErrorsMiniList extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     if (errors.isEmpty) {
-      return Text('No recent errors.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant));
+      return Text('No recent errors.',
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(color: cs.onSurfaceVariant));
     }
     return Column(
       children: [
@@ -646,9 +825,17 @@ class _RecentUploadErrorsMiniList extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('${e.errorCode} • ${e.platform} ${e.appVersion}', style: Theme.of(context).textTheme.labelLarge, overflow: TextOverflow.ellipsis),
+                      Text('${e.errorCode} • ${e.platform} ${e.appVersion}',
+                          style: Theme.of(context).textTheme.labelLarge,
+                          overflow: TextOverflow.ellipsis),
                       const SizedBox(height: 3),
-                      Text('${formatDateTimeShort(e.occurredAt)} • ${e.fileSizeBucket} • ${formatBytes(e.storageUsedBytesAtTime)} used', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+                      Text(
+                          '${formatDateTimeShort(e.occurredAt)} • ${e.fileSizeBucket} • ${formatBytes(e.storageUsedBytesAtTime)} used',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: cs.onSurfaceVariant),
+                          overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
@@ -675,7 +862,11 @@ class _ResultDot extends StatelessWidget {
       'retry_scheduled' => cs.secondary,
       _ => cs.primary,
     };
-    return Container(width: 10, height: 10, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(999)));
+    return Container(
+        width: 10,
+        height: 10,
+        decoration: BoxDecoration(
+            color: color, borderRadius: BorderRadius.circular(999)));
   }
 }
 
@@ -700,8 +891,12 @@ class _ResultPill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
-      child: Text(result, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
+      child: Text(result,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
     );
   }
 }
@@ -735,8 +930,12 @@ class _PercentPill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
-      child: Text('$pct%', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
+      child: Text('$pct%',
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
     );
   }
 }
@@ -763,8 +962,12 @@ class _StatusPill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
-      child: Text(status, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
+      child: Text(status,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg)),
     );
   }
 }
@@ -788,7 +991,8 @@ class _MetricsGrid extends StatelessWidget {
           spacing: AppSpacing.md,
           runSpacing: AppSpacing.md,
           children: [
-            for (final child in children) SizedBox(width: tileW.clamp(260, 520), child: child),
+            for (final child in children)
+              SizedBox(width: tileW.clamp(260, 520), child: child),
           ],
         );
       },
@@ -797,7 +1001,8 @@ class _MetricsGrid extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, required this.subtitle, this.trailing});
+  const _SectionTitle(
+      {required this.title, required this.subtitle, this.trailing});
   final String title;
   final String subtitle;
   final Widget? trailing;
@@ -812,13 +1017,24 @@ class _SectionTitle extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+              Text(title,
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w800)),
               const SizedBox(height: 6),
-              Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
+              Text(subtitle,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
             ],
           ),
         ),
-        if (trailing != null) ...[const SizedBox(width: AppSpacing.md), trailing!],
+        if (trailing != null) ...[
+          const SizedBox(width: AppSpacing.md),
+          trailing!
+        ],
       ],
     );
   }
