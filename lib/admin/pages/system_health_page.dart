@@ -20,17 +20,24 @@ class SystemHealthPage extends StatelessWidget {
 
     return AdminPageScaffold(
       title: 'System Health',
-      subtitle: 'Reliability, sync/upload health, AI service health, and technical error logs (no user content).',
+      subtitle:
+          'Reliability, sync/upload health, AI service health, and technical error logs (no user content).',
       actions: [
-        AdminDataSourceBadge(status: store.dataSource(AdminDataSourceKey.systemHealth)),
+        AdminDataSourceBadge(
+            status: store.dataSource(AdminDataSourceKey.systemHealth)),
         const SizedBox(width: AppSpacing.sm),
-        _SystemHealthFiltersBar(query: store.systemHealthQuery, onChanged: store.setSystemHealthQuery),
+        _SystemHealthFiltersBar(
+            query: store.systemHealthQuery,
+            onChanged: store.setSystemHealthQuery),
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshSystemHealth(),
-          icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.onSurface),
+          icon: Icon(Icons.refresh,
+              color: Theme.of(context).colorScheme.onSurface),
           splashColor: Colors.transparent,
-          highlightColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
-          hoverColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          highlightColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
+          hoverColor:
+              Theme.of(context).colorScheme.primary.withValues(alpha: 0.06),
           tooltip: 'Refresh',
         ),
       ],
@@ -39,15 +46,38 @@ class SystemHealthPage extends StatelessWidget {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.systemHealth, title: 'System Health'),
+                AdminOwnerDataSourcePanel(
+                    store: store,
+                    dataSourceKey: AdminDataSourceKey.systemHealth,
+                    title: 'System Health'),
                 const SizedBox(height: AppSpacing.md),
                 Expanded(
-                  child: store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.notInstrumented
+                  child: store
+                              .dataSource(AdminDataSourceKey.systemHealth)
+                              .kind ==
+                          AdminDataSourceKind.notInstrumented
                       ? const AdminNotInstrumentedPanel()
-                      : store.dataSource(AdminDataSourceKey.systemHealth).kind == AdminDataSourceKind.error
-                          ? Center(child: Text(store.dataSource(AdminDataSourceKey.systemHealth).safeErrorMessage ?? 'Failed to load system health.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)))
+                      : store
+                                  .dataSource(AdminDataSourceKey.systemHealth)
+                                  .kind ==
+                              AdminDataSourceKind.error
+                          ? Center(
+                              child: Text(
+                                  store
+                                          .dataSource(
+                                              AdminDataSourceKey.systemHealth)
+                                          .safeErrorMessage ??
+                                      'Failed to load system health.',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant)))
                           : snap == null
-                              ? _EmptySystemHealthState(query: store.systemHealthQuery)
+                              ? _EmptySystemHealthState(
+                                  query: store.systemHealthQuery)
                               : _SystemHealthTabs(snapshot: snap),
                 ),
               ],
@@ -66,13 +96,16 @@ class _EmptySystemHealthState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.monitor_heart_outlined, size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
+          Icon(Icons.monitor_heart_outlined,
+              size: 44, color: Theme.of(context).colorScheme.onSurfaceVariant),
           const SizedBox(height: AppSpacing.sm),
-          Text('No system health data yet.', style: Theme.of(context).textTheme.titleMedium),
+          Text('No system health data yet.',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'No system health aggregates collected yet (${query.range.label}).',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
             textAlign: TextAlign.center,
           ),
         ],
@@ -103,9 +136,13 @@ class _SystemHealthFiltersBar extends StatelessWidget {
             value: query.range,
             borderRadius: BorderRadius.circular(AppRadius.md),
             icon: Icon(Icons.expand_more, color: cs.onSurfaceVariant, size: 18),
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface),
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: cs.onSurface),
             items: [
-              for (final r in AdminDateRangePreset.values) DropdownMenuItem(value: r, child: Text(r.label)),
+              for (final r in AdminDateRangePreset.values)
+                DropdownMenuItem(value: r, child: Text(r.label)),
             ],
             onChanged: (v) {
               if (v == null) return;
@@ -171,7 +208,10 @@ class _SystemHealthTabBar extends StatelessWidget {
         ),
         labelColor: cs.onPrimaryContainer,
         unselectedLabelColor: cs.onSurfaceVariant,
-        labelStyle: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        labelStyle: Theme.of(context)
+            .textTheme
+            .labelLarge
+            ?.copyWith(fontWeight: FontWeight.w700),
         tabs: const [
           Tab(text: 'Overview'),
           Tab(text: 'API Health'),
@@ -200,32 +240,67 @@ class _SystemOverviewTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'System Overview', subtitle: 'High-level service status and operational signals (no user content).'),
+          _SectionTitle(
+              title: 'System Overview',
+              subtitle:
+                  'High-level service status and operational signals (no user content).'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              _StatusCard(title: 'API status', status: o.apiStatus, icon: Icons.api_outlined),
-              _StatusCard(title: 'Database status', status: o.databaseStatus, icon: Icons.storage_outlined),
-              _StatusCard(title: 'Storage status', status: o.storageStatus, icon: Icons.cloud_outlined),
-              _StatusCard(title: 'Auth status', status: o.authStatus, icon: Icons.lock_outline),
-              _StatusCard(title: 'AI service status', status: o.aiServiceStatus, icon: Icons.smart_toy_outlined),
+              _StatusCard(
+                  title: 'API status',
+                  status: o.apiStatus,
+                  icon: Icons.api_outlined),
+              _StatusCard(
+                  title: 'Database status',
+                  status: o.databaseStatus,
+                  icon: Icons.storage_outlined),
+              _StatusCard(
+                  title: 'Storage status',
+                  status: o.storageStatus,
+                  icon: Icons.cloud_outlined),
+              _StatusCard(
+                  title: 'Auth status',
+                  status: o.authStatus,
+                  icon: Icons.lock_outline),
+              _StatusCard(
+                  title: 'AI service status',
+                  status: o.aiServiceStatus,
+                  icon: Icons.smart_toy_outlined),
               _InfoCard(
                 title: 'Last successful scheduled job',
                 value: AdminFormatters.dateTime(o.lastSuccessfulScheduledJob),
                 icon: Icons.schedule_outlined,
               ),
-              _InfoCard(title: 'Error rate (24h)', value: _formatPct(o.errorRateLast24h), icon: Icons.query_stats_outlined, emphasize: o.errorRateLast24h > 0.015),
-              _InfoCard(title: 'Failed uploads (24h)', value: AdminFormatters.compactInt(o.failedUploadsLast24h), icon: Icons.upload_outlined, emphasize: o.failedUploadsLast24h > 80),
-              _InfoCard(title: 'Failed syncs (24h)', value: AdminFormatters.compactInt(o.failedSyncsLast24h), icon: Icons.sync_problem_outlined, emphasize: o.failedSyncsLast24h > 70),
+              _InfoCard(
+                  title: 'Error rate (24h)',
+                  value: _formatPct(o.errorRateLast24h),
+                  icon: Icons.query_stats_outlined,
+                  emphasize: o.errorRateLast24h > 0.015),
+              _InfoCard(
+                  title: 'Failed uploads (24h)',
+                  value: AdminFormatters.compactInt(o.failedUploadsLast24h),
+                  icon: Icons.upload_outlined,
+                  emphasize: o.failedUploadsLast24h > 80),
+              _InfoCard(
+                  title: 'Failed syncs (24h)',
+                  value: AdminFormatters.compactInt(o.failedSyncsLast24h),
+                  icon: Icons.sync_problem_outlined,
+                  emphasize: o.failedSyncsLast24h > 70),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          _SectionTitle(title: 'Top API endpoints by errors', subtitle: 'Aggregated request/error counts and latency percentiles.'),
+          _SectionTitle(
+              title: 'Top API endpoints by errors',
+              subtitle:
+                  'Aggregated request/error counts and latency percentiles.'),
           const SizedBox(height: AppSpacing.md),
           _Card(
             child: SizedBox(
               height: 240,
-              child: _ApiErrorsBarChart(rows: snapshot.apiEndpoints.take(6).toList(), primary: cs.primary),
+              child: _ApiErrorsBarChart(
+                  rows: snapshot.apiEndpoints.take(6).toList(),
+                  primary: cs.primary),
             ),
           ),
         ],
@@ -242,18 +317,40 @@ class _ApiErrorsBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    if (rows.isEmpty) return Center(child: Text('No endpoint data', style: Theme.of(context).textTheme.bodyMedium));
+    if (rows.isEmpty) {
+      return Center(
+          child: Text('No endpoint data',
+              style: Theme.of(context).textTheme.bodyMedium));
+    }
 
-    final maxY = rows.map((e) => e.errorCount).fold<int>(0, (a, b) => a > b ? a : b).toDouble().clamp(1, double.infinity);
+    final maxY = rows
+        .map((e) => e.errorCount)
+        .fold<int>(0, (a, b) => a > b ? a : b)
+        .toDouble()
+        .clamp(1, double.infinity);
     return BarChart(
       BarChartData(
         maxY: maxY * 1.15,
-        gridData: FlGridData(show: true, drawVerticalLine: false, horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
+        gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            horizontalInterval: (maxY / 4).clamp(1, double.infinity)),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 44, getTitlesWidget: (v, meta) => Text(AdminFormatters.compactInt(v.round()), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant)))),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 44,
+                  getTitlesWidget: (v, meta) => Text(
+                      AdminFormatters.compactInt(v.round()),
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant)))),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -263,7 +360,12 @@ class _ApiErrorsBarChart extends StatelessWidget {
                 final short = rows[i].endpointName.split('.').last;
                 return Padding(
                   padding: const EdgeInsets.only(top: 8),
-                  child: Text(short, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant), overflow: TextOverflow.ellipsis),
+                  child: Text(short,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelSmall
+                          ?.copyWith(color: cs.onSurfaceVariant),
+                      overflow: TextOverflow.ellipsis),
                 );
               },
             ),
@@ -279,7 +381,10 @@ class _ApiErrorsBarChart extends StatelessWidget {
                   width: 16,
                   color: primary,
                   borderRadius: BorderRadius.circular(6),
-                  backDrawRodData: BackgroundBarChartRodData(show: true, toY: maxY * 1.15, color: cs.surfaceContainerHighest.withValues(alpha: 0.5)),
+                  backDrawRodData: BackgroundBarChartRodData(
+                      show: true,
+                      toY: maxY * 1.15,
+                      color: cs.surfaceContainerHighest.withValues(alpha: 0.5)),
                 ),
               ],
             ),
@@ -292,7 +397,10 @@ class _ApiErrorsBarChart extends StatelessWidget {
               final row = rows[group.x.toInt()];
               return BarTooltipItem(
                 '${row.endpointName}\nErrors: ${AdminFormatters.compactInt(row.errorCount)}\nRequests: ${AdminFormatters.compactInt(row.requestCount)}\np95: ${row.p95LatencyMs}ms',
-                Theme.of(context).textTheme.labelMedium!.copyWith(color: cs.onSurface),
+                Theme.of(context)
+                    .textTheme
+                    .labelMedium!
+                    .copyWith(color: cs.onSurface),
               );
             },
           ),
@@ -315,14 +423,24 @@ class _ApiHealthTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'API Health', subtitle: 'Endpoint-level reliability and latency (aggregate-only).'),
+          _SectionTitle(
+              title: 'API Health',
+              subtitle:
+                  'Endpoint-level reliability and latency (aggregate-only).'),
           const SizedBox(height: AppSpacing.md),
           _Card(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800),
-                dataTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
+                headingTextStyle: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w800),
+                dataTextStyle: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurface),
                 columns: const [
                   DataColumn(label: Text('Endpoint')),
                   DataColumn(label: Text('Requests')),
@@ -337,11 +455,15 @@ class _ApiHealthTab extends StatelessWidget {
                     DataRow(
                       cells: [
                         DataCell(Text(r.endpointName)),
-                        DataCell(Text(AdminFormatters.compactInt(r.requestCount))),
-                        DataCell(Text(AdminFormatters.compactInt(r.errorCount))),
+                        DataCell(
+                            Text(AdminFormatters.compactInt(r.requestCount))),
+                        DataCell(
+                            Text(AdminFormatters.compactInt(r.errorCount))),
                         DataCell(Text('${r.avgLatencyMs}ms')),
                         DataCell(Text('${r.p95LatencyMs}ms')),
-                        DataCell(Text(r.lastFailureAt == null ? '—' : AdminFormatters.dateTime(r.lastFailureAt!))),
+                        DataCell(Text(r.lastFailureAt == null
+                            ? '—'
+                            : AdminFormatters.dateTime(r.lastFailureAt!))),
                         DataCell(_StatusPill(status: r.status)),
                       ],
                     ),
@@ -367,15 +489,37 @@ class _SyncHealthTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'Sync Health', subtitle: 'Reliability and job status for background sync workflows.'),
+          _SectionTitle(
+              title: 'Sync Health',
+              subtitle:
+                  'Reliability and job status for background sync workflows.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              _InfoCard(title: 'Successful syncs', value: AdminFormatters.compactInt(s.successfulSyncs), icon: Icons.sync_outlined),
-              _InfoCard(title: 'Failed syncs', value: AdminFormatters.compactInt(s.failedSyncs), icon: Icons.sync_problem_outlined, emphasize: s.failedSyncs > 300),
-              _InfoCard(title: 'Users w/ repeated failure', value: AdminFormatters.compactInt(s.usersWithRepeatedSyncFailure), icon: Icons.person_outline, emphasize: s.usersWithRepeatedSyncFailure > 20),
-              _InfoCard(title: 'Avg sync duration', value: '${(s.avgSyncDurationMs / 1000).toStringAsFixed(1)}s', icon: Icons.timer_outlined),
-              _InfoCard(title: 'Last sync job status', value: s.lastSyncJobStatus, icon: Icons.badge_outlined, emphasize: s.lastSyncJobStatus != 'success'),
+              _InfoCard(
+                  title: 'Successful syncs',
+                  value: AdminFormatters.compactInt(s.successfulSyncs),
+                  icon: Icons.sync_outlined),
+              _InfoCard(
+                  title: 'Failed syncs',
+                  value: AdminFormatters.compactInt(s.failedSyncs),
+                  icon: Icons.sync_problem_outlined,
+                  emphasize: s.failedSyncs > 300),
+              _InfoCard(
+                  title: 'Users w/ repeated failure',
+                  value: AdminFormatters.compactInt(
+                      s.usersWithRepeatedSyncFailure),
+                  icon: Icons.person_outline,
+                  emphasize: s.usersWithRepeatedSyncFailure > 20),
+              _InfoCard(
+                  title: 'Avg sync duration',
+                  value: '${(s.avgSyncDurationMs / 1000).toStringAsFixed(1)}s',
+                  icon: Icons.timer_outlined),
+              _InfoCard(
+                  title: 'Last sync job status',
+                  value: s.lastSyncJobStatus,
+                  icon: Icons.badge_outlined,
+                  emphasize: s.lastSyncJobStatus != 'success'),
             ],
           ),
         ],
@@ -396,17 +540,43 @@ class _UploadHealthTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'Upload Health', subtitle: 'Upload reliability without file names or contents.'),
+          _SectionTitle(
+              title: 'Upload Health',
+              subtitle: 'Upload reliability without file names or contents.'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              _InfoCard(title: 'Upload attempts', value: AdminFormatters.compactInt(u.uploadAttempts), icon: Icons.upload_outlined),
-              _InfoCard(title: 'Upload success rate', value: _formatPct(u.uploadSuccessRate), icon: Icons.check_circle_outline),
-              _InfoCard(title: 'Upload failure rate', value: _formatPct(u.uploadFailureRate), icon: Icons.error_outline, emphasize: u.uploadFailureRate > 0.035),
-              _InfoCard(title: 'Avg upload size bucket', value: u.averageUploadSizeBucket, icon: Icons.data_usage_outlined),
-              _InfoCard(title: 'Storage errors', value: AdminFormatters.compactInt(u.storageErrors), icon: Icons.cloud_off_outlined, emphasize: u.storageErrors > 40),
-              _InfoCard(title: 'Permission errors', value: AdminFormatters.compactInt(u.permissionErrors), icon: Icons.no_accounts_outlined),
-              _InfoCard(title: 'Timeout errors', value: AdminFormatters.compactInt(u.timeoutErrors), icon: Icons.timer_off_outlined, emphasize: u.timeoutErrors > 60),
+              _InfoCard(
+                  title: 'Upload attempts',
+                  value: AdminFormatters.compactInt(u.uploadAttempts),
+                  icon: Icons.upload_outlined),
+              _InfoCard(
+                  title: 'Upload success rate',
+                  value: _formatPct(u.uploadSuccessRate),
+                  icon: Icons.check_circle_outline),
+              _InfoCard(
+                  title: 'Upload failure rate',
+                  value: _formatPct(u.uploadFailureRate),
+                  icon: Icons.error_outline,
+                  emphasize: u.uploadFailureRate > 0.035),
+              _InfoCard(
+                  title: 'Avg upload size bucket',
+                  value: u.averageUploadSizeBucket,
+                  icon: Icons.data_usage_outlined),
+              _InfoCard(
+                  title: 'Storage errors',
+                  value: AdminFormatters.compactInt(u.storageErrors),
+                  icon: Icons.cloud_off_outlined,
+                  emphasize: u.storageErrors > 40),
+              _InfoCard(
+                  title: 'Permission errors',
+                  value: AdminFormatters.compactInt(u.permissionErrors),
+                  icon: Icons.no_accounts_outlined),
+              _InfoCard(
+                  title: 'Timeout errors',
+                  value: AdminFormatters.compactInt(u.timeoutErrors),
+                  icon: Icons.timer_off_outlined,
+                  emphasize: u.timeoutErrors > 60),
             ],
           ),
         ],
@@ -423,32 +593,63 @@ class _AiServiceHealthTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final a = snapshot.ai;
     final cs = Theme.of(context).colorScheme;
-    final entries = a.errorCodes.entries.toList()..sort((x, y) => y.value.compareTo(x.value));
+    final entries = a.errorCodes.entries.toList()
+      ..sort((x, y) => y.value.compareTo(x.value));
     return SingleChildScrollView(
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'AI Service Health', subtitle: 'Service reliability and error codes (never prompts or outputs).'),
+          _SectionTitle(
+              title: 'AI Service Health',
+              subtitle:
+                  'Service reliability and error codes (never prompts or outputs).'),
           const SizedBox(height: AppSpacing.md),
           _MetricsGrid(
             children: [
-              _InfoCard(title: 'AI requests', value: AdminFormatters.compactInt(a.aiRequests), icon: Icons.smart_toy_outlined),
-              _InfoCard(title: 'AI success rate', value: _formatPct(a.aiSuccessRate), icon: Icons.check_circle_outline),
-              _InfoCard(title: 'AI failure rate', value: _formatPct(a.aiFailureRate), icon: Icons.error_outline, emphasize: a.aiFailureRate > 0.012),
-              _InfoCard(title: 'Avg latency', value: '${a.averageLatencyMs}ms', icon: Icons.timer_outlined, emphasize: a.averageLatencyMs > 1200),
-              _InfoCard(title: 'Rate limit events', value: AdminFormatters.compactInt(a.rateLimitEvents), icon: Icons.speed_outlined, emphasize: a.rateLimitEvents > 250),
+              _InfoCard(
+                  title: 'AI requests',
+                  value: AdminFormatters.compactInt(a.aiRequests),
+                  icon: Icons.smart_toy_outlined),
+              _InfoCard(
+                  title: 'AI success rate',
+                  value: _formatPct(a.aiSuccessRate),
+                  icon: Icons.check_circle_outline),
+              _InfoCard(
+                  title: 'AI failure rate',
+                  value: _formatPct(a.aiFailureRate),
+                  icon: Icons.error_outline,
+                  emphasize: a.aiFailureRate > 0.012),
+              _InfoCard(
+                  title: 'Avg latency',
+                  value: '${a.averageLatencyMs}ms',
+                  icon: Icons.timer_outlined,
+                  emphasize: a.averageLatencyMs > 1200),
+              _InfoCard(
+                  title: 'Rate limit events',
+                  value: AdminFormatters.compactInt(a.rateLimitEvents),
+                  icon: Icons.speed_outlined,
+                  emphasize: a.rateLimitEvents > 250),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          _SectionTitle(title: 'Error codes', subtitle: 'Counts aggregated for the selected range.'),
+          _SectionTitle(
+              title: 'Error codes',
+              subtitle: 'Counts aggregated for the selected range.'),
           const SizedBox(height: AppSpacing.md),
           _Card(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800),
-                dataTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
+                headingTextStyle: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w800),
+                dataTextStyle: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurface),
                 columns: const [
                   DataColumn(label: Text('Error code')),
                   DataColumn(label: Text('Count')),
@@ -484,14 +685,24 @@ class _AppVersionHealthTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionTitle(title: 'App Version Health', subtitle: 'Active users and reliability signals by version & platform.'),
+          _SectionTitle(
+              title: 'App Version Health',
+              subtitle:
+                  'Active users and reliability signals by version & platform.'),
           const SizedBox(height: AppSpacing.md),
           _Card(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800),
-                dataTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
+                headingTextStyle: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w800),
+                dataTextStyle: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurface),
                 columns: const [
                   DataColumn(label: Text('App version')),
                   DataColumn(label: Text('Platform')),
@@ -507,14 +718,23 @@ class _AppVersionHealthTab extends StatelessWidget {
                       cells: [
                         DataCell(Text(r.appVersion)),
                         DataCell(Text(r.platform)),
-                        DataCell(Text(AdminFormatters.compactInt(r.activeUsers))),
+                        DataCell(
+                            Text(AdminFormatters.compactInt(r.activeUsers))),
                         DataCell(Text(_formatPct(r.errorRate))),
-                        DataCell(Text(AdminFormatters.compactInt(r.failedUploads))),
-                        DataCell(Text(AdminFormatters.compactInt(r.failedSyncs))),
+                        DataCell(
+                            Text(AdminFormatters.compactInt(r.failedUploads))),
+                        DataCell(
+                            Text(AdminFormatters.compactInt(r.failedSyncs))),
                         DataCell(
                           Text(
                             r.upgradeRecommended ? 'Yes' : 'No',
-                            style: Theme.of(context).textTheme.labelLarge?.copyWith(color: r.upgradeRecommended ? cs.error : cs.onSurface),
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                    color: r.upgradeRecommended
+                                        ? cs.error
+                                        : cs.onSurface),
                           ),
                         ),
                       ],
@@ -544,15 +764,23 @@ class _ErrorLogsTab extends StatelessWidget {
         children: [
           _SectionTitle(
             title: 'Error Logs',
-            subtitle: 'Technical metadata only: timestamp, codes, platform/version, pseudonymized user id, result, severity.',
+            subtitle:
+                'Technical metadata only: timestamp, codes, platform/version, pseudonymized user id, result, severity.',
           ),
           const SizedBox(height: AppSpacing.md),
           _Card(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800),
-                dataTextStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurface),
+                headingTextStyle: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(
+                        color: cs.onSurface, fontWeight: FontWeight.w800),
+                dataTextStyle: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurface),
                 columns: const [
                   DataColumn(label: Text('Timestamp')),
                   DataColumn(label: Text('Error code')),
@@ -618,9 +846,17 @@ class _SectionTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
+        Text(title,
+            style: Theme.of(context)
+                .textTheme
+                .titleLarge
+                ?.copyWith(fontWeight: FontWeight.w800)),
         const SizedBox(height: 6),
-        Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+        Text(subtitle,
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant)),
       ],
     );
   }
@@ -655,7 +891,11 @@ class _MetricsGrid extends StatelessWidget {
 }
 
 class _InfoCard extends StatelessWidget {
-  const _InfoCard({required this.title, required this.value, required this.icon, this.emphasize = false});
+  const _InfoCard(
+      {required this.title,
+      required this.value,
+      required this.icon,
+      this.emphasize = false});
   final String title;
   final String value;
   final IconData icon;
@@ -669,7 +909,8 @@ class _InfoCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: cs.surfaceContainerHighest.withValues(alpha: 0.35),
         borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: cs.outline.withValues(alpha: emphasize ? 0.45 : 0.18)),
+        border: Border.all(
+            color: cs.outline.withValues(alpha: emphasize ? 0.45 : 0.18)),
       ),
       child: Row(
         children: [
@@ -677,19 +918,31 @@ class _InfoCard extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: emphasize ? cs.errorContainer.withValues(alpha: 0.55) : cs.primaryContainer.withValues(alpha: 0.55),
+              color: emphasize
+                  ? cs.errorContainer.withValues(alpha: 0.55)
+                  : cs.primaryContainer.withValues(alpha: 0.55),
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            child: Icon(icon, color: emphasize ? cs.onErrorContainer : cs.onPrimaryContainer, size: 18),
+            child: Icon(icon,
+                color: emphasize ? cs.onErrorContainer : cs.onPrimaryContainer,
+                size: 18),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 6),
-                Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(value,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
               ],
             ),
           ),
@@ -700,7 +953,8 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _StatusCard extends StatelessWidget {
-  const _StatusCard({required this.title, required this.status, required this.icon});
+  const _StatusCard(
+      {required this.title, required this.status, required this.icon});
   final String title;
   final ServiceHealthStatus status;
   final IconData icon;
@@ -721,7 +975,9 @@ class _StatusCard extends StatelessWidget {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(color: colors.iconBg, borderRadius: BorderRadius.circular(AppRadius.lg)),
+            decoration: BoxDecoration(
+                color: colors.iconBg,
+                borderRadius: BorderRadius.circular(AppRadius.lg)),
             child: Icon(icon, color: colors.iconFg, size: 18),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -729,11 +985,21 @@ class _StatusCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Text(status.label, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900, color: colors.text)),
+                    Text(status.label,
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(
+                                fontWeight: FontWeight.w900,
+                                color: colors.text)),
                     const SizedBox(width: 10),
                     _StatusDot(color: colors.dot),
                   ],
@@ -778,7 +1044,11 @@ class _StatusPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: colors.border),
       ),
-      child: Text(status.label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800)),
+      child: Text(status.label,
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(color: cs.onSurface, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -791,21 +1061,45 @@ class _SeverityPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final (bg, border, fg) = switch (severity) {
-      SystemErrorSeverity.info => (cs.surfaceContainerHighest.withValues(alpha: 0.55), cs.outline.withValues(alpha: 0.22), cs.onSurface),
-      SystemErrorSeverity.warning => (cs.tertiaryContainer.withValues(alpha: 0.55), cs.tertiary.withValues(alpha: 0.35), cs.onTertiaryContainer),
-      SystemErrorSeverity.error => (cs.errorContainer.withValues(alpha: 0.55), cs.error.withValues(alpha: 0.35), cs.onErrorContainer),
-      SystemErrorSeverity.critical => (cs.errorContainer.withValues(alpha: 0.85), cs.error.withValues(alpha: 0.55), cs.onErrorContainer),
+      SystemErrorSeverity.info => (
+          cs.surfaceContainerHighest.withValues(alpha: 0.55),
+          cs.outline.withValues(alpha: 0.22),
+          cs.onSurface
+        ),
+      SystemErrorSeverity.warning => (
+          cs.tertiaryContainer.withValues(alpha: 0.55),
+          cs.tertiary.withValues(alpha: 0.35),
+          cs.onTertiaryContainer
+        ),
+      SystemErrorSeverity.error => (
+          cs.errorContainer.withValues(alpha: 0.55),
+          cs.error.withValues(alpha: 0.35),
+          cs.onErrorContainer
+        ),
+      SystemErrorSeverity.critical => (
+          cs.errorContainer.withValues(alpha: 0.85),
+          cs.error.withValues(alpha: 0.55),
+          cs.onErrorContainer
+        ),
     };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: border)),
-      child: Text(severity.label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w900)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: border)),
+      child: Text(severity.label,
+          style: Theme.of(context)
+              .textTheme
+              .labelLarge
+              ?.copyWith(color: fg, fontWeight: FontWeight.w900)),
     );
   }
 }
 
-({Color bg, Color border, Color iconBg, Color iconFg, Color dot, Color text}) _statusColors(BuildContext context, ServiceHealthStatus status) {
+({Color bg, Color border, Color iconBg, Color iconFg, Color dot, Color text})
+    _statusColors(BuildContext context, ServiceHealthStatus status) {
   final cs = Theme.of(context).colorScheme;
   return switch (status) {
     ServiceHealthStatus.healthy => (

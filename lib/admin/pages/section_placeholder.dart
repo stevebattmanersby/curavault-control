@@ -3,7 +3,12 @@ import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 
 class SectionPlaceholderPage extends StatelessWidget {
-  const SectionPlaceholderPage({super.key, required this.title, required this.subtitle, required this.icon, required this.sections});
+  const SectionPlaceholderPage(
+      {super.key,
+      required this.title,
+      required this.subtitle,
+      required this.icon,
+      required this.sections});
 
   final String title;
   final String subtitle;
@@ -24,14 +29,19 @@ class SectionPlaceholderPage extends StatelessWidget {
                 Container(
                   width: 44,
                   height: 44,
-                  decoration: BoxDecoration(color: cs.primaryContainer, borderRadius: BorderRadius.circular(AppRadius.lg)),
+                  decoration: BoxDecoration(
+                      color: cs.primaryContainer,
+                      borderRadius: BorderRadius.circular(AppRadius.lg)),
                   child: Icon(icon, color: cs.onPrimaryContainer),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
                     'This section is scaffolded with privacy-safe placeholders. Connect Supabase to populate real operational metrics (never medical content).',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
                   ),
                 ),
               ],
@@ -39,7 +49,13 @@ class SectionPlaceholderPage extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           for (final s in sections) ...[
-            AdminCard(header: Text(s.title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)), child: s.child),
+            AdminCard(
+                header: Text(s.title,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w700)),
+                child: s.child),
             const SizedBox(height: AppSpacing.md),
           ],
         ],
@@ -51,7 +67,8 @@ class SectionPlaceholderPage extends StatelessWidget {
 class PlaceholderSection {
   const PlaceholderSection({required this.title, required this.child});
 
-  static PlaceholderSection of({required String title, required Widget child}) =>
+  static PlaceholderSection of(
+          {required String title, required Widget child}) =>
       PlaceholderSection(title: title, child: child);
 
   final String title;

@@ -83,21 +83,28 @@ class AdminLoginDiagnostics {
       signInSucceeded: signInSucceeded ?? this.signInSucceeded,
       authUid: authUid ?? this.authUid,
       authEmail: authEmail ?? this.authEmail,
-      adminUsersLookupAttempted: adminUsersLookupAttempted ?? this.adminUsersLookupAttempted,
+      adminUsersLookupAttempted:
+          adminUsersLookupAttempted ?? this.adminUsersLookupAttempted,
       adminUsersRowFound: adminUsersRowFound ?? this.adminUsersRowFound,
-      adminUsersAdminUserId: adminUsersAdminUserId ?? this.adminUsersAdminUserId,
+      adminUsersAdminUserId:
+          adminUsersAdminUserId ?? this.adminUsersAdminUserId,
       adminUsersEmail: adminUsersEmail ?? this.adminUsersEmail,
       role: role ?? this.role,
       isActive: isActive ?? this.isActive,
-      routeTargetAfterLogin: routeTargetAfterLogin ?? this.routeTargetAfterLogin,
+      routeTargetAfterLogin:
+          routeTargetAfterLogin ?? this.routeTargetAfterLogin,
       loginAuditAttempted: loginAuditAttempted ?? this.loginAuditAttempted,
       loginAuditSucceeded: loginAuditSucceeded ?? this.loginAuditSucceeded,
       loginAuditTable: loginAuditTable ?? this.loginAuditTable,
       loginAuditActionType: loginAuditActionType ?? this.loginAuditActionType,
-      loginAuditExceptionType: loginAuditExceptionType ?? this.loginAuditExceptionType,
-      loginAuditExceptionMessage: loginAuditExceptionMessage ?? this.loginAuditExceptionMessage,
-      loginAuditAuthUidPresent: loginAuditAuthUidPresent ?? this.loginAuditAuthUidPresent,
-      loginAuditRolePresent: loginAuditRolePresent ?? this.loginAuditRolePresent,
+      loginAuditExceptionType:
+          loginAuditExceptionType ?? this.loginAuditExceptionType,
+      loginAuditExceptionMessage:
+          loginAuditExceptionMessage ?? this.loginAuditExceptionMessage,
+      loginAuditAuthUidPresent:
+          loginAuditAuthUidPresent ?? this.loginAuditAuthUidPresent,
+      loginAuditRolePresent:
+          loginAuditRolePresent ?? this.loginAuditRolePresent,
       exceptionType: exceptionType ?? this.exceptionType,
       exceptionMessage: exceptionMessage ?? this.exceptionMessage,
     );
@@ -160,33 +167,38 @@ class AdminAuthAllowListLookupException implements Exception {
 ///
 /// Rules enforced:
 /// - Must be signed into Supabase Auth (anon key only; no service role)
-  /// - Must have a matching row in `public.admin_users` (or `control.admin_users`)
-  /// - Must be `is_active = true`
+/// - Must have a matching row in `public.admin_users` (or `control.admin_users`)
+/// - Must be `is_active = true`
 /// - Role must be known (otherwise deny)
 class AdminAuthStore extends ChangeNotifier {
   // Keep route strings here to avoid circular imports with nav.dart.
   static const String _routeUnauthorized = '/unauthorized';
   static const String _routeAdminTest = '/admin-test';
-  static const supabaseServiceRoleKey = String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
+  static const supabaseServiceRoleKey =
+      String.fromEnvironment('SUPABASE_SERVICE_ROLE_KEY', defaultValue: '');
 
   /// IMPORTANT (Flutter Web + hash routing): `redirectTo` must be an absolute URL
   /// that includes the SPA hash fragment (/#/...). Do NOT join path segments.
   ///
   /// Keep this as a single hard-coded constant to avoid accidental URL joining
   /// that can produce malformed URLs like `...///set-password`.
-  static String get passwordResetRedirectTo => SupabaseConfig.setPasswordRedirectUrl;
+  static String get passwordResetRedirectTo =>
+      SupabaseConfig.setPasswordRedirectUrl;
 
   static bool _initialized = false;
 
   /// Temporary debug output to verify Supabase bootstrap behavior in Dreamflow.
   ///
   /// Prints only true/false flags—never secret values.
-  static void debugPrintSupabaseBootstrapStatus({String source = 'AdminAuthStore'}) {
+  static void debugPrintSupabaseBootstrapStatus(
+      {String source = 'AdminAuthStore'}) {
     if (!kDebugMode) return;
 
-    final hasResolvedUrl = SupabaseConfig.resolvedSupabaseProjectUrl.trim().isNotEmpty;
+    final hasResolvedUrl =
+        SupabaseConfig.resolvedSupabaseProjectUrl.trim().isNotEmpty;
     final hasResolvedAnon = SupabaseConfig.resolvedAnonKeyPresent;
-    final serviceRoleDetected = SupabaseConfig.serviceRoleDetected || supabaseServiceRoleKey.isNotEmpty;
+    final serviceRoleDetected =
+        SupabaseConfig.serviceRoleDetected || supabaseServiceRoleKey.isNotEmpty;
 
     bool instanceClientAvailable;
     try {
@@ -217,20 +229,25 @@ class AdminAuthStore extends ChangeNotifier {
   static Future<void> initializeSupabase() async {
     if (_initialized) return;
 
-    debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.initializeSupabase(before)');
+    debugPrintSupabaseBootstrapStatus(
+        source: 'AdminAuthStore.initializeSupabase(before)');
 
     // Fail closed if a service role key was accidentally bundled into the frontend.
     // (This should never be set in a client build.)
-    if (supabaseServiceRoleKey.isNotEmpty || SupabaseConfig.serviceRoleDetected) {
-      debugPrint('SECURITY: SUPABASE_SERVICE_ROLE_KEY detected in client build. Refusing to initialize Supabase.');
+    if (supabaseServiceRoleKey.isNotEmpty ||
+        SupabaseConfig.serviceRoleDetected) {
+      debugPrint(
+          'SECURITY: SUPABASE_SERVICE_ROLE_KEY detected in client build. Refusing to initialize Supabase.');
       return;
     }
 
     try {
       // Prefer a single initialization path (SupabaseConfig provides fallbacks + optional overrides).
       await SupabaseConfig.initialize();
-      _initialized = SupabaseConfig.isInitialized || _tryGetExistingSupabaseClient() != null;
-      debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.initializeSupabase(afterSupabaseConfigInit)');
+      _initialized = SupabaseConfig.isInitialized ||
+          _tryGetExistingSupabaseClient() != null;
+      debugPrintSupabaseBootstrapStatus(
+          source: 'AdminAuthStore.initializeSupabase(afterSupabaseConfigInit)');
     } catch (e) {
       debugPrint('Supabase.initialize failed: $e');
     }
@@ -286,7 +303,8 @@ class AdminAuthStore extends ChangeNotifier {
   AdminLoginDiagnostics _loginDiagnostics = AdminLoginDiagnostics.empty();
   AdminLoginDiagnostics get loginDiagnostics => _loginDiagnostics;
 
-  void _resetLoginDiagnostics() => _loginDiagnostics = AdminLoginDiagnostics.empty();
+  void _resetLoginDiagnostics() =>
+      _loginDiagnostics = AdminLoginDiagnostics.empty();
 
   void _recordLoginDiag(AdminLoginDiagnostics next) {
     _loginDiagnostics = next;
@@ -301,22 +319,22 @@ class AdminAuthStore extends ChangeNotifier {
 
   bool get isSignedIn => _session != null;
 
-  bool get isAuthorized =>
-      isSignedIn &&
-      (_isActive == true) &&
-      _role != null;
+  bool get isAuthorized => isSignedIn && (_isActive == true) && _role != null;
 
   Future<void> bootstrap() async {
-    debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.bootstrap(start)');
+    debugPrintSupabaseBootstrapStatus(
+        source: 'AdminAuthStore.bootstrap(start)');
     // Ensure initialize was called (main() should do this first, but keep defensive init).
     await initializeSupabase();
 
     // Explicit security fail-closed if a service role key is present.
-    if (supabaseServiceRoleKey.isNotEmpty || SupabaseConfig.serviceRoleDetected) {
+    if (supabaseServiceRoleKey.isNotEmpty ||
+        SupabaseConfig.serviceRoleDetected) {
       _fatalConfigError =
           'Security error: SUPABASE_SERVICE_ROLE_KEY detected in a client build.\n\n'
           'Remove it from your build configuration and rebuild.';
-      debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.bootstrap(serviceRoleDetected)');
+      debugPrintSupabaseBootstrapStatus(
+          source: 'AdminAuthStore.bootstrap(serviceRoleDetected)');
       _isBootstrapping = false;
       notifyListeners();
       return;
@@ -324,8 +342,7 @@ class AdminAuthStore extends ChangeNotifier {
 
     // If we still cannot access a client, THEN fail closed with a clear error.
     if (_tryGetExistingSupabaseClient() == null) {
-      _fatalConfigError =
-          'Supabase failed to initialize in this build.\n\n'
+      _fatalConfigError = 'Supabase failed to initialize in this build.\n\n'
           'This usually means required public configuration is missing.\n\n'
           'Recommended (Dreamflow Web Deployments):\n'
           '- Edit assets/config/control_site_config.json and set:\n'
@@ -339,13 +356,15 @@ class AdminAuthStore extends ChangeNotifier {
           'Security notes:\n'
           '- Never use the service role key in frontend code.\n'
           '- Do not expose database passwords or service_role JWTs.';
-      debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.bootstrap(fatalConfigError)');
+      debugPrintSupabaseBootstrapStatus(
+          source: 'AdminAuthStore.bootstrap(fatalConfigError)');
       _isBootstrapping = false;
       notifyListeners();
       return;
     }
 
-    debugPrintSupabaseBootstrapStatus(source: 'AdminAuthStore.bootstrap(afterInitializeSupabase)');
+    debugPrintSupabaseBootstrapStatus(
+        source: 'AdminAuthStore.bootstrap(afterInitializeSupabase)');
 
     _session = _client?.auth.currentSession;
 
@@ -362,7 +381,8 @@ class AdminAuthStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> signInWithPassword({required String email, required String password}) async {
+  Future<void> signInWithPassword(
+      {required String email, required String password}) async {
     if (_client == null) return;
     if (_isSigningIn) return;
     _isSigningIn = true;
@@ -378,7 +398,8 @@ class AdminAuthStore extends ChangeNotifier {
     );
     notifyListeners();
     try {
-      final res = await _client!.auth.signInWithPassword(email: email.trim(), password: password);
+      final res = await _client!.auth
+          .signInWithPassword(email: email.trim(), password: password);
       _session = res.session;
 
       // Best-effort usage instrumentation (no PHI).
@@ -422,7 +443,8 @@ class AdminAuthStore extends ChangeNotifier {
         throw AdminAccessDeniedException(reason);
       }
 
-      _recordLoginDiag(loginDiagnostics.copyWith(routeTargetAfterLogin: _routeAdminTest));
+      _recordLoginDiag(
+          loginDiagnostics.copyWith(routeTargetAfterLogin: _routeAdminTest));
 
       final actor = _client!.auth.currentUser?.id;
       if (actor != null && actor.isNotEmpty) {
@@ -448,9 +470,11 @@ class AdminAuthStore extends ChangeNotifier {
             newValue: {'email': email.trim()},
             failClosed: false,
           );
-          _recordLoginDiag(loginDiagnostics.copyWith(loginAuditSucceeded: true));
+          _recordLoginDiag(
+              loginDiagnostics.copyWith(loginAuditSucceeded: true));
         } catch (e) {
-          debugPrint('AdminAuthStore.signInWithPassword login audit insert failed (best-effort): $e');
+          debugPrint(
+              'AdminAuthStore.signInWithPassword login audit insert failed (best-effort): $e');
           _recordLoginDiag(
             loginDiagnostics.copyWith(
               loginAuditSucceeded: false,
@@ -492,12 +516,15 @@ class AdminAuthStore extends ChangeNotifier {
               exceptionMessage: 'Invalid email or password.',
             ),
           );
-          throw const AdminAuthInvalidCredentialsException('Invalid login credentials');
+          throw const AdminAuthInvalidCredentialsException(
+              'Invalid login credentials');
         }
       }
 
       final s = e.toString().toLowerCase();
-      if (e is AuthRetryableFetchException || s.contains('failed to fetch') || s.contains('clientexception: failed to fetch')) {
+      if (e is AuthRetryableFetchException ||
+          s.contains('failed to fetch') ||
+          s.contains('clientexception: failed to fetch')) {
         _recordLoginDiag(
           loginDiagnostics.copyWith(
             routeTargetAfterLogin: '/login',
@@ -517,14 +544,16 @@ class AdminAuthStore extends ChangeNotifier {
   Future<void> sendPasswordResetEmail({required String email}) async {
     final c = _client;
     if (c == null) {
-      debugPrint('AdminAuthStore.sendPasswordResetEmail: Supabase client not available.');
+      debugPrint(
+          'AdminAuthStore.sendPasswordResetEmail: Supabase client not available.');
       return;
     }
     try {
       // CRITICAL: Do not construct/normalize this with Uri helpers.
       final redirectTo = AdminAuthStore.passwordResetRedirectTo;
       if (kDebugMode) {
-        debugPrint('AdminAuthStore.sendPasswordResetEmail: using redirectTo=$redirectTo');
+        debugPrint(
+            'AdminAuthStore.sendPasswordResetEmail: using redirectTo=$redirectTo');
       }
       await c.auth.resetPasswordForEmail(
         email.trim(),
@@ -539,7 +568,8 @@ class AdminAuthStore extends ChangeNotifier {
   Future<void> updatePassword({required String newPassword}) async {
     final c = _client;
     if (c == null) {
-      debugPrint('AdminAuthStore.updatePassword: Supabase client not available.');
+      debugPrint(
+          'AdminAuthStore.updatePassword: Supabase client not available.');
       return;
     }
     try {
@@ -563,7 +593,10 @@ class AdminAuthStore extends ChangeNotifier {
   }) async {
     final c = _client;
     if (c == null) {
-      if (failClosed) throw StateError('Supabase client not initialized; cannot write audit log.');
+      if (failClosed) {
+        throw StateError(
+            'Supabase client not initialized; cannot write audit log.');
+      }
       return;
     }
     try {
@@ -574,12 +607,15 @@ class AdminAuthStore extends ChangeNotifier {
         if (targetUserId != null) 'target_user_id': targetUserId,
         'action_type': actionType,
         'result': result ?? 'success',
-        if (previousValue != null) 'prev': AdminAuditRedactor.redactMap(previousValue),
+        if (previousValue != null)
+          'prev': AdminAuditRedactor.redactMap(previousValue),
         if (newValue != null) 'next': AdminAuditRedactor.redactMap(newValue),
         if (reason != null) 'reason': reason,
         if (ticketReference != null) 'ticket_id': ticketReference,
-        if (AdminClientContext.ipAddress != null) 'ip': AdminClientContext.ipAddress,
-        if (AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
+        if (AdminClientContext.ipAddress != null)
+          'ip': AdminClientContext.ipAddress,
+        if (AdminClientContext.userAgent != null)
+          'user_agent': AdminClientContext.userAgent,
         // created_at is NOT NULL; keep explicit for clarity.
         'created_at': DateTime.now().toUtc().toIso8601String(),
       };
@@ -634,11 +670,13 @@ class AdminAuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _refreshAdminProfile({bool recordLoginDiagnostics = false}) async {
+  Future<void> _refreshAdminProfile(
+      {bool recordLoginDiagnostics = false}) async {
     _accessDeniedReason = null;
 
     if (recordLoginDiagnostics) {
-      _recordLoginDiag(loginDiagnostics.copyWith(adminUsersLookupAttempted: true));
+      _recordLoginDiag(
+          loginDiagnostics.copyWith(adminUsersLookupAttempted: true));
     }
 
     final authUser = _client?.auth.currentUser;
@@ -661,7 +699,8 @@ class AdminAuthStore extends ChangeNotifier {
           // IMPORTANT:
           // - Column is named `role` (type `admin_role`).
           // - Auth user id column is `admin_user_id`.
-          .select('admin_user_id, email, display_name, role, is_active, require_step_up')
+          .select(
+              'admin_user_id, email, display_name, role, is_active, require_step_up')
           .eq('admin_user_id', authUser.id)
           .maybeSingle();
 
@@ -690,7 +729,10 @@ class AdminAuthStore extends ChangeNotifier {
 
       _adminUserId = (row['admin_user_id'] as String?) ?? authUser.id;
       _adminEmail = (row['email'] as String?) ?? authUser.email;
-      _adminDisplayName = (row['display_name'] as String?)?.trim().isEmpty == true ? null : (row['display_name'] as String?);
+      _adminDisplayName =
+          (row['display_name'] as String?)?.trim().isEmpty == true
+              ? null
+              : (row['display_name'] as String?);
       final isActive = row['is_active'] == true;
       _isActive = isActive;
       _adminStatus = isActive ? 'active' : 'inactive';

@@ -24,7 +24,8 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
   @override
   void initState() {
     super.initState();
-    _search = TextEditingController(text: context.read<AdminStore>().supportQuery);
+    _search =
+        TextEditingController(text: context.read<AdminStore>().supportQuery);
   }
 
   @override
@@ -35,15 +36,21 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
 
   @override
   Widget build(BuildContext context) {
-    final sessions = context.select<AdminStore, List<SupportSessionSummary>>((s) => s.supportSessions);
-    final filters = context.select<AdminStore, SupportQueueFilters>((s) => s.supportFilters);
+    final sessions = context.select<AdminStore, List<SupportSessionSummary>>(
+        (s) => s.supportSessions);
+    final filters = context
+        .select<AdminStore, SupportQueueFilters>((s) => s.supportFilters);
     final cs = Theme.of(context).colorScheme;
 
     return AdminPageScaffold(
       title: 'Support',
-      subtitle: 'Privacy-safe troubleshooting. No user health content is accessible here.',
+      subtitle:
+          'Privacy-safe troubleshooting. No user health content is accessible here.',
       actions: [
-        AdminDataSourceBadge(status: context.watch<AdminStore>().dataSource(AdminDataSourceKey.support)),
+        AdminDataSourceBadge(
+            status: context
+                .watch<AdminStore>()
+                .dataSource(AdminDataSourceKey.support)),
         const SizedBox(width: AppSpacing.sm),
         _SupportFilterButton(filters: filters),
         const SizedBox(width: AppSpacing.sm),
@@ -53,8 +60,10 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
           label: Text('Diagnostics', style: TextStyle(color: cs.onSurface)),
           style: TextButton.styleFrom(
             backgroundColor: cs.surfaceContainerHighest,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.md),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg)),
           ),
         ),
         const SizedBox(width: AppSpacing.sm),
@@ -64,43 +73,75 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
             controller: _search,
             onChanged: (v) => context.read<AdminStore>().setSupportQuery(v),
             decoration: InputDecoration(
-              hintText: 'Search by session ID, user ID${_emailSearchHint(context)}, ticket ref…',
+              hintText:
+                  'Search by session ID, user ID${_emailSearchHint(context)}, ticket ref…',
               prefixIcon: Icon(Icons.search, color: cs.onSurfaceVariant),
               filled: true,
               fillColor: cs.surfaceContainerHighest,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.lg), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.md),
             ),
           ),
         ),
       ],
       child: Builder(
         builder: (context) {
-          final status = context.watch<AdminStore>().dataSource(AdminDataSourceKey.support);
-          if (status.kind == AdminDataSourceKind.notInstrumented) return const AdminNotInstrumentedPanel();
+          final status = context
+              .watch<AdminStore>()
+              .dataSource(AdminDataSourceKey.support);
+          if (status.kind == AdminDataSourceKind.notInstrumented) {
+            return const AdminNotInstrumentedPanel();
+          }
           if (status.kind == AdminDataSourceKind.error) {
-            return Center(child: Text(status.safeErrorMessage ?? 'Failed to load support data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)));
+            return Center(
+                child: Text(
+                    status.safeErrorMessage ?? 'Failed to load support data.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)));
           }
           final summary = context.watch<AdminStore>().supportSummary;
 
           return Column(
             children: [
-              AdminOwnerDataSourcePanel(store: context.watch<AdminStore>(), dataSourceKey: AdminDataSourceKey.support, title: 'Support'),
+              AdminOwnerDataSourcePanel(
+                  store: context.watch<AdminStore>(),
+                  dataSourceKey: AdminDataSourceKey.support,
+                  title: 'Support'),
               const SizedBox(height: AppSpacing.md),
               if (summary != null)
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: AdminCard(
-                    header: Text('Support summary', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+                    header: Text('Support summary',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800)),
                     child: Wrap(
                       spacing: AppSpacing.lg,
                       runSpacing: AppSpacing.sm,
                       children: [
-                        _Kpi(label: 'Total', value: formatCompactInt(summary.totalSessions)),
-                        _Kpi(label: 'Open', value: formatCompactInt(summary.openSessions)),
-                        _Kpi(label: 'Active', value: formatCompactInt(summary.activeSessions)),
-                        _Kpi(label: 'Expired', value: formatCompactInt(summary.expiredSessions)),
-                        _Kpi(label: 'Latest', value: formatDateTimeShort(summary.latestSessionAt)),
+                        _Kpi(
+                            label: 'Total',
+                            value: formatCompactInt(summary.totalSessions)),
+                        _Kpi(
+                            label: 'Open',
+                            value: formatCompactInt(summary.openSessions)),
+                        _Kpi(
+                            label: 'Active',
+                            value: formatCompactInt(summary.activeSessions)),
+                        _Kpi(
+                            label: 'Expired',
+                            value: formatCompactInt(summary.expiredSessions)),
+                        _Kpi(
+                            label: 'Latest',
+                            value:
+                                formatDateTimeShort(summary.latestSessionAt)),
                       ],
                     ),
                   ),
@@ -109,46 +150,63 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
                 child: AdminCard(
                   header: Row(
                     children: [
-                      Text('Support queue', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                      Text('Support queue',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w700)),
                       const Spacer(),
-                      Text('${sessions.length} results', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                      Text('${sessions.length} results',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelMedium
+                              ?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
                   child: SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: DataTable(
-            headingTextStyle: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700),
-            dataTextStyle: Theme.of(context).textTheme.labelLarge,
-            columns: [
-              const DataColumn(label: Text('Support session ID')),
-              const DataColumn(label: Text('User ID')),
-              if (_canShowEmail(context)) const DataColumn(label: Text('Email')),
-              const DataColumn(label: Text('Ticket reference')),
-              const DataColumn(label: Text('Consent status')),
-              const DataColumn(label: Text('Status')),
-              const DataColumn(label: Text('Assigned admin')),
-              const DataColumn(label: Text('Created at')),
-              const DataColumn(label: Text('Access expires at')),
-              const DataColumn(label: Text('Last updated')),
-            ],
-            rows: [
-              for (final s in sessions)
-                DataRow(
-                  onSelectChanged: (_) => context.go('/support/${s.supportSessionId}'),
-                  cells: [
-                    DataCell(SelectableText(s.supportSessionId)),
-                    DataCell(SelectableText(s.userId)),
-                    if (_canShowEmail(context)) DataCell(Text(s.email ?? '—')),
-                    DataCell(Text(s.ticketReference ?? '—')),
-                    DataCell(_ConsentPill(status: s.consentStatus)),
-                    DataCell(_SupportStatusPill(status: s.status)),
-                    DataCell(Text(s.assignedAdmin ?? '—')),
-                    DataCell(Text(formatDateTimeShort(s.createdAt))),
-                    DataCell(Text(formatDateTimeShort(s.accessExpiresAt))),
-                    DataCell(Text(formatDateTimeShort(s.updatedAt))),
-                  ],
-                ),
-            ],
+                      headingTextStyle: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(
+                              color: cs.onSurfaceVariant,
+                              fontWeight: FontWeight.w700),
+                      dataTextStyle: Theme.of(context).textTheme.labelLarge,
+                      columns: [
+                        const DataColumn(label: Text('Support session ID')),
+                        const DataColumn(label: Text('User ID')),
+                        if (_canShowEmail(context))
+                          const DataColumn(label: Text('Email')),
+                        const DataColumn(label: Text('Ticket reference')),
+                        const DataColumn(label: Text('Consent status')),
+                        const DataColumn(label: Text('Status')),
+                        const DataColumn(label: Text('Assigned admin')),
+                        const DataColumn(label: Text('Created at')),
+                        const DataColumn(label: Text('Access expires at')),
+                        const DataColumn(label: Text('Last updated')),
+                      ],
+                      rows: [
+                        for (final s in sessions)
+                          DataRow(
+                            onSelectChanged: (_) =>
+                                context.go('/support/${s.supportSessionId}'),
+                            cells: [
+                              DataCell(SelectableText(s.supportSessionId)),
+                              DataCell(SelectableText(s.userId)),
+                              if (_canShowEmail(context))
+                                DataCell(Text(s.email ?? '—')),
+                              DataCell(Text(s.ticketReference ?? '—')),
+                              DataCell(_ConsentPill(status: s.consentStatus)),
+                              DataCell(_SupportStatusPill(status: s.status)),
+                              DataCell(Text(s.assignedAdmin ?? '—')),
+                              DataCell(Text(formatDateTimeShort(s.createdAt))),
+                              DataCell(
+                                  Text(formatDateTimeShort(s.accessExpiresAt))),
+                              DataCell(Text(formatDateTimeShort(s.updatedAt))),
+                            ],
+                          ),
+                      ],
                     ),
                   ),
                 ),
@@ -166,7 +224,8 @@ class _SupportQueuePageState extends State<SupportQueuePage> {
     return AdminRbac.canViewUserEmail(role);
   }
 
-  static String _emailSearchHint(BuildContext context) => _canShowEmail(context) ? ', email' : '';
+  static String _emailSearchHint(BuildContext context) =>
+      _canShowEmail(context) ? ', email' : '';
 }
 
 class _Kpi extends StatelessWidget {
@@ -188,9 +247,15 @@ class _Kpi extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+          Text(label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
-          Text(value, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900)),
         ],
       ),
     );
@@ -220,14 +285,19 @@ class _SupportFilterButton extends StatelessWidget {
           backgroundColor: Colors.transparent,
           builder: (_) => SupportQueueFilterSheet(initial: filters),
         );
-        if (res != null && context.mounted) await context.read<AdminStore>().setSupportFilters(res);
+        if (res != null && context.mounted) {
+          await context.read<AdminStore>().setSupportFilters(res);
+        }
       },
       icon: Icon(Icons.tune, color: cs.onSurface),
-      label: Text(activeCount == 0 ? 'Filters' : 'Filters ($activeCount)', style: TextStyle(color: cs.onSurface)),
+      label: Text(activeCount == 0 ? 'Filters' : 'Filters ($activeCount)',
+          style: TextStyle(color: cs.onSurface)),
       style: TextButton.styleFrom(
         backgroundColor: cs.surfaceContainerHighest,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.md),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.lg)),
       ),
     );
   }
@@ -239,7 +309,8 @@ class SupportQueueFilterSheet extends StatefulWidget {
   final SupportQueueFilters initial;
 
   @override
-  State<SupportQueueFilterSheet> createState() => _SupportQueueFilterSheetState();
+  State<SupportQueueFilterSheet> createState() =>
+      _SupportQueueFilterSheetState();
 }
 
 class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
@@ -271,7 +342,12 @@ class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
             children: [
               Row(
                 children: [
-                  Expanded(child: Text('Support queue filters', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
+                  Expanded(
+                      child: Text('Support queue filters',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w800))),
                   IconButton(
                     onPressed: () => context.pop(),
                     icon: Icon(Icons.close, color: cs.onSurfaceVariant),
@@ -287,13 +363,15 @@ class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
                   _ChoiceChip<SupportSessionStatus?>(
                     label: 'Any status',
                     selected: _filters.status == null,
-                    onSelected: () => setState(() => _filters = _filters.copyWith(clearStatus: true)),
+                    onSelected: () => setState(
+                        () => _filters = _filters.copyWith(clearStatus: true)),
                   ),
                   for (final st in SupportSessionStatus.values)
                     _ChoiceChip<SupportSessionStatus>(
                       label: st.label,
                       selected: _filters.status == st,
-                      onSelected: () => setState(() => _filters = _filters.copyWith(status: st)),
+                      onSelected: () => setState(
+                          () => _filters = _filters.copyWith(status: st)),
                     ),
                 ],
               ),
@@ -305,22 +383,30 @@ class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
                   _ChoiceChip<String?>(
                     label: 'Any consent',
                     selected: _filters.consentStatus == null,
-                    onSelected: () => setState(() => _filters = _filters.copyWith(clearConsentStatus: true)),
+                    onSelected: () => setState(() =>
+                        _filters = _filters.copyWith(clearConsentStatus: true)),
                   ),
                   for (final c in const ['on_file', 'missing', 'revoked'])
                     _ChoiceChip<String>(
                       label: c,
                       selected: _filters.consentStatus == c,
-                      onSelected: () => setState(() => _filters = _filters.copyWith(consentStatus: c)),
+                      onSelected: () => setState(
+                          () => _filters = _filters.copyWith(consentStatus: c)),
                     ),
                 ],
               ),
               const SizedBox(height: AppSpacing.md),
               SwitchListTile.adaptive(
                 value: _filters.onlyExpiringSoon ?? false,
-                onChanged: (v) => setState(() => _filters = _filters.copyWith(onlyExpiringSoon: v == true ? true : null)),
-                title: Text('Expiring in next 15 minutes', style: Theme.of(context).textTheme.labelLarge),
-                subtitle: Text('Helps prioritize active access windows.', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant)),
+                onChanged: (v) => setState(() => _filters = _filters.copyWith(
+                    onlyExpiringSoon: v == true ? true : null)),
+                title: Text('Expiring in next 15 minutes',
+                    style: Theme.of(context).textTheme.labelLarge),
+                subtitle: Text('Helps prioritize active access windows.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: cs.onSurfaceVariant)),
                 contentPadding: EdgeInsets.zero,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -328,15 +414,18 @@ class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => setState(() => _filters = const SupportQueueFilters()),
-                      child: Text('Clear', style: TextStyle(color: cs.onSurface)),
+                      onPressed: () => setState(
+                          () => _filters = const SupportQueueFilters()),
+                      child:
+                          Text('Clear', style: TextStyle(color: cs.onSurface)),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: FilledButton(
                       onPressed: () => context.pop(_filters),
-                      child: Text('Apply filters', style: TextStyle(color: cs.onPrimary)),
+                      child: Text('Apply filters',
+                          style: TextStyle(color: cs.onPrimary)),
                     ),
                   ),
                 ],
@@ -350,7 +439,8 @@ class _SupportQueueFilterSheetState extends State<SupportQueueFilterSheet> {
 }
 
 class _ChoiceChip<T> extends StatelessWidget {
-  const _ChoiceChip({required this.label, required this.selected, required this.onSelected});
+  const _ChoiceChip(
+      {required this.label, required this.selected, required this.onSelected});
   final String label;
   final bool selected;
   final VoidCallback onSelected;
@@ -365,13 +455,19 @@ class _ChoiceChip<T> extends StatelessWidget {
       highlightColor: Colors.transparent,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 160),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
         decoration: BoxDecoration(
           color: selected ? cs.primaryContainer : cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: selected ? cs.primaryContainer : cs.outlineVariant.withValues(alpha: 0.5)),
+          border: Border.all(
+              color: selected
+                  ? cs.primaryContainer
+                  : cs.outlineVariant.withValues(alpha: 0.5)),
         ),
-        child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant)),
+        child: Text(label,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: selected ? cs.onPrimaryContainer : cs.onSurfaceVariant)),
       ),
     );
   }
@@ -385,16 +481,33 @@ class _SupportStatusPill extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final (bg, fg) = switch (status) {
-      SupportSessionStatus.pending => (cs.secondaryContainer, cs.onSecondaryContainer),
-      SupportSessionStatus.active => (cs.primaryContainer, cs.onPrimaryContainer),
-      SupportSessionStatus.expired => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
-      SupportSessionStatus.closed => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
+      SupportSessionStatus.pending => (
+          cs.secondaryContainer,
+          cs.onSecondaryContainer
+        ),
+      SupportSessionStatus.active => (
+          cs.primaryContainer,
+          cs.onPrimaryContainer
+        ),
+      SupportSessionStatus.expired => (
+          cs.surfaceContainerHighest,
+          cs.onSurfaceVariant
+        ),
+      SupportSessionStatus.closed => (
+          cs.surfaceContainerHighest,
+          cs.onSurfaceVariant
+        ),
       SupportSessionStatus.revoked => (cs.errorContainer, cs.onErrorContainer),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(status.label, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      child: Text(status.label,
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -415,8 +528,13 @@ class _ConsentPill extends StatelessWidget {
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(norm, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      child: Text(norm,
+          style: Theme.of(context)
+              .textTheme
+              .labelMedium
+              ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
     );
   }
 }

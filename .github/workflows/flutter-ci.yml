@@ -1,0 +1,112 @@
+name: Flutter CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - feature/development-control-plane-phase-*
+
+permissions:
+  contents: read
+
+jobs:
+  flutter:
+    name: Flutter format and tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+      - run: flutter pub get
+      - name: Check changed Dart formatting
+        shell: bash
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ "$base_sha" =~ ^0+$ ]] || \
+              ! git cat-file -e "$base_sha^{commit}" 2>/dev/null || \
+              ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
+            base_sha="$(git rev-parse "$GITHUB_SHA^")"
+          fi
+          changed_dart_files="$(git diff --name-only "$base_sha" "$GITHUB_SHA" -- '*.dart')"
+          if [[ -n "$changed_dart_files" ]]; then
+            dart format --output=none --set-exit-if-changed $changed_dart_files
+          fi
+      - run: flutter test
+
+  analyzer-regression:
+    name: Analyzer regression gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.44.2
+          channel: stable
+      - run: flutter pub get
+      - name: Compare analyzer diagnostics with the PR base
+        shell: bash
+        run: |
+          base_sha="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [[ "$base_sha" =~ ^0+$ ]] || \
+              ! git cat-file -e "$base_sha^{commit}" 2>/dev/null || \
+              ! git merge-base --is-ancestor "$base_sha" "$GITHUB_SHA"; then
+            base_sha="$(git rev-parse "$GITHUB_SHA^")"
+          fi
+          bash tool/check_analyzer_regression.sh "$base_sha"
+
+  codex-provider-contract:
+    name: Codex provider contract tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Run credential-free provider contract tests
+        run: deno test --allow-net --allow-env --allow-read --allow-write worker/codex_execution_provider_test.ts worker/runtime/worker_runtime_test.ts
+
+  trusted-worker-container:
+    name: Trusted worker container contract
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the credential-free non-root worker image
+        run: docker build --file worker/Dockerfile --tag curavault-trusted-worker:ci .
+      - name: Verify worker image does not run as root
+        run: test "$(docker image inspect curavault-trusted-worker:ci --format '{{.Config.User}}')" = "65532:65532"
+
+  development-control-migration:
+    name: Development Control migration validation
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: control_validation
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd "pg_isready -U postgres -d control_validation"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: control_validation
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install --yes postgresql-client
+      - name: Apply and validate the disposable Development Control schema
+        run: bash tool/validate_development_control_migration.sh

@@ -10,18 +10,18 @@ enum AdminDateRangePreset {
   days90;
 
   int get days => switch (this) {
-    AdminDateRangePreset.today => 1,
-    AdminDateRangePreset.days7 => 7,
-    AdminDateRangePreset.days30 => 30,
-    AdminDateRangePreset.days90 => 90,
-  };
+        AdminDateRangePreset.today => 1,
+        AdminDateRangePreset.days7 => 7,
+        AdminDateRangePreset.days30 => 30,
+        AdminDateRangePreset.days90 => 90,
+      };
 
   String get label => switch (this) {
-    AdminDateRangePreset.today => 'Today',
-    AdminDateRangePreset.days7 => '7 days',
-    AdminDateRangePreset.days30 => '30 days',
-    AdminDateRangePreset.days90 => '90 days',
-  };
+        AdminDateRangePreset.today => 'Today',
+        AdminDateRangePreset.days7 => '7 days',
+        AdminDateRangePreset.days30 => '30 days',
+        AdminDateRangePreset.days90 => '90 days',
+      };
 }
 
 // ------------------------------
@@ -37,11 +37,11 @@ enum ComplianceRequestStatus {
 
 extension ComplianceRequestStatusX on ComplianceRequestStatus {
   String get label => switch (this) {
-    ComplianceRequestStatus.open => 'open',
-    ComplianceRequestStatus.inProgress => 'in_progress',
-    ComplianceRequestStatus.completed => 'completed',
-    ComplianceRequestStatus.failed => 'failed',
-  };
+        ComplianceRequestStatus.open => 'open',
+        ComplianceRequestStatus.inProgress => 'in_progress',
+        ComplianceRequestStatus.completed => 'completed',
+        ComplianceRequestStatus.failed => 'failed',
+      };
 }
 
 ComplianceRequestStatus? parseComplianceRequestStatus(String? value) {
@@ -66,7 +66,8 @@ ComplianceRequestStatus? parseComplianceRequestStatus(String? value) {
 class ComplianceQuery {
   const ComplianceQuery({required this.range});
   final AdminDateRangePreset range;
-  ComplianceQuery copyWith({AdminDateRangePreset? range}) => ComplianceQuery(range: range ?? this.range);
+  ComplianceQuery copyWith({AdminDateRangePreset? range}) =>
+      ComplianceQuery(range: range ?? this.range);
 }
 
 @immutable
@@ -138,9 +139,11 @@ class DataExportRequestRow {
         email: clearEmail ? null : (email ?? this.email),
         status: status ?? this.status,
         requestedAt: requestedAt ?? this.requestedAt,
-        completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
+        completedAt:
+            clearCompletedAt ? null : (completedAt ?? this.completedAt),
         verifiedBy: clearVerifiedBy ? null : (verifiedBy ?? this.verifiedBy),
-        failureReason: clearFailureReason ? null : (failureReason ?? this.failureReason),
+        failureReason:
+            clearFailureReason ? null : (failureReason ?? this.failureReason),
         notes: clearNotes ? null : (notes ?? this.notes),
       );
 }
@@ -188,8 +191,10 @@ class DeletionRequestRow {
         email: clearEmail ? null : (email ?? this.email),
         status: status ?? this.status,
         requestedAt: requestedAt ?? this.requestedAt,
-        completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
-        failedReason: clearFailedReason ? null : (failedReason ?? this.failedReason),
+        completedAt:
+            clearCompletedAt ? null : (completedAt ?? this.completedAt),
+        failedReason:
+            clearFailedReason ? null : (failedReason ?? this.failedReason),
         retentionException: retentionException ?? this.retentionException,
         verifiedBy: clearVerifiedBy ? null : (verifiedBy ?? this.verifiedBy),
       );
@@ -250,10 +255,16 @@ class SupportAccessRecordRow {
         userId: userId,
         adminUser: adminUser,
         consentGranted: consentGranted ?? this.consentGranted,
-        consentGrantedAt: clearConsentGrantedAt ? null : (consentGrantedAt ?? this.consentGrantedAt),
-        accessExpiresAt: clearAccessExpiresAt ? null : (accessExpiresAt ?? this.accessExpiresAt),
+        consentGrantedAt: clearConsentGrantedAt
+            ? null
+            : (consentGrantedAt ?? this.consentGrantedAt),
+        accessExpiresAt: clearAccessExpiresAt
+            ? null
+            : (accessExpiresAt ?? this.accessExpiresAt),
         status: status ?? this.status,
-        ticketReference: clearTicketReference ? null : (ticketReference ?? this.ticketReference),
+        ticketReference: clearTicketReference
+            ? null
+            : (ticketReference ?? this.ticketReference),
       );
 }
 
@@ -303,14 +314,14 @@ enum ComplianceAction {
 
 extension ComplianceActionX on ComplianceAction {
   String get label => switch (this) {
-    ComplianceAction.markExportInProgress => 'Mark export in progress',
-    ComplianceAction.markExportComplete => 'Mark export complete',
-    ComplianceAction.markDeletionInProgress => 'Mark deletion in progress',
-    ComplianceAction.markDeletionComplete => 'Mark deletion complete',
-    ComplianceAction.recordFailureReason => 'Record failure reason',
-    ComplianceAction.addComplianceNote => 'Add compliance note',
-    ComplianceAction.closeSupportAccess => 'Close support access',
-  };
+        ComplianceAction.markExportInProgress => 'Mark export in progress',
+        ComplianceAction.markExportComplete => 'Mark export complete',
+        ComplianceAction.markDeletionInProgress => 'Mark deletion in progress',
+        ComplianceAction.markDeletionComplete => 'Mark deletion complete',
+        ComplianceAction.recordFailureReason => 'Record failure reason',
+        ComplianceAction.addComplianceNote => 'Add compliance note',
+        ComplianceAction.closeSupportAccess => 'Close support access',
+      };
 }
 
 @immutable
@@ -376,18 +387,18 @@ enum BillingSubscriptionProvider {
 
 extension BillingSubscriptionProviderX on BillingSubscriptionProvider {
   String get label => switch (this) {
-    BillingSubscriptionProvider.apple => 'Apple',
-    BillingSubscriptionProvider.google => 'Google',
-    BillingSubscriptionProvider.stripe => 'Stripe',
-    BillingSubscriptionProvider.manual => 'Manual/Admin',
-  };
+        BillingSubscriptionProvider.apple => 'Apple',
+        BillingSubscriptionProvider.google => 'Google',
+        BillingSubscriptionProvider.stripe => 'Stripe',
+        BillingSubscriptionProvider.manual => 'Manual/Admin',
+      };
 
   String get key => switch (this) {
-    BillingSubscriptionProvider.apple => 'apple',
-    BillingSubscriptionProvider.google => 'google',
-    BillingSubscriptionProvider.stripe => 'stripe',
-    BillingSubscriptionProvider.manual => 'manual',
-  };
+        BillingSubscriptionProvider.apple => 'apple',
+        BillingSubscriptionProvider.google => 'google',
+        BillingSubscriptionProvider.stripe => 'stripe',
+        BillingSubscriptionProvider.manual => 'manual',
+      };
 
   static BillingSubscriptionProvider? parse(String? value) {
     switch ((value ?? '').trim().toLowerCase()) {
@@ -409,7 +420,8 @@ extension BillingSubscriptionProviderX on BillingSubscriptionProvider {
 
 @immutable
 class BillingQuery {
-  const BillingQuery({required this.range, this.country, this.plan, this.provider});
+  const BillingQuery(
+      {required this.range, this.country, this.plan, this.provider});
 
   final AdminDateRangePreset range;
   final String? country;
@@ -457,6 +469,7 @@ class BillingOverviewMetrics {
   final double monthlyRecurringRevenueUsd;
   final double annualRecurringRevenueUsd;
   final double averageRevenuePerUserUsd;
+
   /// Range [0..1]
   final double trialConversionRate;
 
@@ -470,16 +483,22 @@ class BillingOverviewMetrics {
   final String? revenueMetricsNote;
 }
 
-enum BillingRevenueSource { revenueCat, manualEntitlement, stripe, none, unknown }
+enum BillingRevenueSource {
+  revenueCat,
+  manualEntitlement,
+  stripe,
+  none,
+  unknown
+}
 
 extension BillingRevenueSourceX on BillingRevenueSource {
   String get label => switch (this) {
-    BillingRevenueSource.revenueCat => 'RevenueCat',
-    BillingRevenueSource.manualEntitlement => 'Manual entitlement',
-    BillingRevenueSource.stripe => 'Stripe',
-    BillingRevenueSource.none => 'None',
-    BillingRevenueSource.unknown => 'Unknown',
-  };
+        BillingRevenueSource.revenueCat => 'RevenueCat',
+        BillingRevenueSource.manualEntitlement => 'Manual entitlement',
+        BillingRevenueSource.stripe => 'Stripe',
+        BillingRevenueSource.none => 'None',
+        BillingRevenueSource.unknown => 'Unknown',
+      };
 }
 
 enum BillingSectionState {
@@ -493,18 +512,19 @@ enum BillingSectionState {
 
 extension BillingSectionStateX on BillingSectionState {
   String get label => switch (this) {
-    BillingSectionState.live => 'Live',
-    BillingSectionState.partial => 'Partial',
-    BillingSectionState.empty => 'Empty',
-    BillingSectionState.notInstrumented => 'Not instrumented yet',
-    BillingSectionState.mock => 'Mock / debug',
-    BillingSectionState.error => 'Error',
-  };
+        BillingSectionState.live => 'Live',
+        BillingSectionState.partial => 'Partial',
+        BillingSectionState.empty => 'Empty',
+        BillingSectionState.notInstrumented => 'Not instrumented yet',
+        BillingSectionState.mock => 'Mock / debug',
+        BillingSectionState.error => 'Error',
+      };
 }
 
 @immutable
 class BillingSectionStatus {
-  const BillingSectionStatus({required this.state, required this.message, this.requiredSource});
+  const BillingSectionStatus(
+      {required this.state, required this.message, this.requiredSource});
   final BillingSectionState state;
   final String message;
   final String? requiredSource;
@@ -512,7 +532,13 @@ class BillingSectionStatus {
 
 @immutable
 class BillingDataSourceStatusRow {
-  const BillingDataSourceStatusRow({required this.name, required this.queryOrTable, required this.kind, this.rowCount, this.lastRefreshedAt, this.safeError});
+  const BillingDataSourceStatusRow(
+      {required this.name,
+      required this.queryOrTable,
+      required this.kind,
+      this.rowCount,
+      this.lastRefreshedAt,
+      this.safeError});
 
   final String name;
   final String queryOrTable;
@@ -595,12 +621,15 @@ class SubscriptionRow {
         billingStatus: billingStatus ?? this.billingStatus,
         provider: provider ?? this.provider,
         subscriptionStart: subscriptionStart ?? this.subscriptionStart,
-        renewalDate: clearRenewalDate ? null : (renewalDate ?? this.renewalDate),
-        cancelledDate: clearCancelledDate ? null : (cancelledDate ?? this.cancelledDate),
+        renewalDate:
+            clearRenewalDate ? null : (renewalDate ?? this.renewalDate),
+        cancelledDate:
+            clearCancelledDate ? null : (cancelledDate ?? this.cancelledDate),
         paymentFailureCount: paymentFailureCount ?? this.paymentFailureCount,
         country: country ?? this.country,
         manualCompAccess: manualCompAccess ?? this.manualCompAccess,
-        billingNote: clearBillingNote ? null : (billingNote ?? this.billingNote),
+        billingNote:
+            clearBillingNote ? null : (billingNote ?? this.billingNote),
       );
 }
 
@@ -620,6 +649,7 @@ class TrialRow {
   final String plan;
   final DateTime trialStart;
   final DateTime trialEnd;
+
   /// e.g. "Low" / "Medium" / "High"
   final String usageLevel;
   final bool upgradePromptClicked;
@@ -657,19 +687,29 @@ class FailedPaymentRow {
 
 @immutable
 class RevenueByPlanRow {
-  const RevenueByPlanRow({required this.plan, required this.users, required this.mrrUsd, required this.arrUsd, required this.churnRate});
+  const RevenueByPlanRow(
+      {required this.plan,
+      required this.users,
+      required this.mrrUsd,
+      required this.arrUsd,
+      required this.churnRate});
 
   final String plan;
   final int users;
   final double mrrUsd;
   final double arrUsd;
+
   /// Range [0..1]
   final double churnRate;
 }
 
 @immutable
 class RevenueByCountryRow {
-  const RevenueByCountryRow({required this.country, required this.users, required this.mrrUsd, required this.arrUsd});
+  const RevenueByCountryRow(
+      {required this.country,
+      required this.users,
+      required this.mrrUsd,
+      required this.arrUsd});
 
   final String country;
   final int users;
@@ -699,6 +739,7 @@ class BillingSnapshot {
   final List<FailedPaymentRow> failedPayments;
   final List<RevenueByPlanRow> revenueByPlan;
   final List<RevenueByCountryRow> revenueByCountry;
+
   /// Aggregate-only RevenueCat entitlement sync health (privacy-safe).
   ///
   /// This is optional because not all environments will have RevenueCat wired up.
@@ -758,29 +799,34 @@ enum AiFeatureArea {
 
 extension AiFeatureAreaX on AiFeatureArea {
   String get label => switch (this) {
-    AiFeatureArea.aiAssistant => 'AI assistant',
-    AiFeatureArea.documentSummary => 'Document summary',
-    AiFeatureArea.timelineSummary => 'Timeline summary',
-    AiFeatureArea.searchHelper => 'Search helper',
-    AiFeatureArea.appointmentHelper => 'Appointment helper',
-    AiFeatureArea.healthOrganisationHelper => 'Health organisation helper',
-    AiFeatureArea.exportHelper => 'Export helper',
-  };
+        AiFeatureArea.aiAssistant => 'AI assistant',
+        AiFeatureArea.documentSummary => 'Document summary',
+        AiFeatureArea.timelineSummary => 'Timeline summary',
+        AiFeatureArea.searchHelper => 'Search helper',
+        AiFeatureArea.appointmentHelper => 'Appointment helper',
+        AiFeatureArea.healthOrganisationHelper => 'Health organisation helper',
+        AiFeatureArea.exportHelper => 'Export helper',
+      };
 
   String get key => switch (this) {
-    AiFeatureArea.aiAssistant => 'ai_assistant',
-    AiFeatureArea.documentSummary => 'document_summary',
-    AiFeatureArea.timelineSummary => 'timeline_summary',
-    AiFeatureArea.searchHelper => 'search_helper',
-    AiFeatureArea.appointmentHelper => 'appointment_helper',
-    AiFeatureArea.healthOrganisationHelper => 'health_organisation_helper',
-    AiFeatureArea.exportHelper => 'export_helper',
-  };
+        AiFeatureArea.aiAssistant => 'ai_assistant',
+        AiFeatureArea.documentSummary => 'document_summary',
+        AiFeatureArea.timelineSummary => 'timeline_summary',
+        AiFeatureArea.searchHelper => 'search_helper',
+        AiFeatureArea.appointmentHelper => 'appointment_helper',
+        AiFeatureArea.healthOrganisationHelper => 'health_organisation_helper',
+        AiFeatureArea.exportHelper => 'export_helper',
+      };
 }
 
 @immutable
 class AiUsageQuery {
-  const AiUsageQuery({required this.range, this.country, this.platform, this.plan, this.appVersion});
+  const AiUsageQuery(
+      {required this.range,
+      this.country,
+      this.platform,
+      this.plan,
+      this.appVersion});
 
   final AdminDateRangePreset range;
   final String? country;
@@ -810,7 +856,10 @@ class AiUsageQuery {
 
 @immutable
 class AiTokensTimeseriesPoint {
-  const AiTokensTimeseriesPoint({required this.day, required this.inputTokens, required this.outputTokens});
+  const AiTokensTimeseriesPoint(
+      {required this.day,
+      required this.inputTokens,
+      required this.outputTokens});
 
   final DateTime day;
   final int inputTokens;
@@ -820,7 +869,8 @@ class AiTokensTimeseriesPoint {
 
 @immutable
 class AiCostTimeseriesPoint {
-  const AiCostTimeseriesPoint({required this.day, required this.estimatedCostUsd});
+  const AiCostTimeseriesPoint(
+      {required this.day, required this.estimatedCostUsd});
   final DateTime day;
   final double estimatedCostUsd;
 }
@@ -868,7 +918,8 @@ class AiLimitMonitoringRow {
   final int limitReachedCount;
   final DateTime? lastAiRequestAt;
 
-  int get remainingTokens => (monthlyTokenLimit - tokensUsed).clamp(0, monthlyTokenLimit).toInt();
+  int get remainingTokens =>
+      (monthlyTokenLimit - tokensUsed).clamp(0, monthlyTokenLimit).toInt();
 }
 
 @immutable
@@ -1068,7 +1119,9 @@ class AiUsageSnapshot {
   final double estimatedCostThisMonthUsd;
   final int pagesProcessedThisMonth;
   final int filesProcessedThisMonth;
-  double get avgTokensPerRequest => aiRequestsThisMonth <= 0 ? 0 : (totalTokensThisMonth / aiRequestsThisMonth);
+  double get avgTokensPerRequest => aiRequestsThisMonth <= 0
+      ? 0
+      : (totalTokensThisMonth / aiRequestsThisMonth);
   final int failedAiRequestsThisMonth;
   final int usersNearAiLimit;
   final int usersOverAiLimit;
@@ -1154,7 +1207,10 @@ class UsageAnalyticsQuery {
 
 @immutable
 class UsageFeatureUsageRow {
-  const UsageFeatureUsageRow({required this.feature, required this.eventCount, required this.uniqueUsers});
+  const UsageFeatureUsageRow(
+      {required this.feature,
+      required this.eventCount,
+      required this.uniqueUsers});
   final String feature;
   final int eventCount;
   final int uniqueUsers;
@@ -1282,26 +1338,26 @@ enum FeatureFlagKey {
 
 extension FeatureFlagKeyX on FeatureFlagKey {
   String get label => switch (this) {
-    FeatureFlagKey.aiAssistant => 'AI assistant',
-    FeatureFlagKey.documentUploads => 'Document uploads',
-    FeatureFlagKey.export => 'Export',
-    FeatureFlagKey.timeline => 'Timeline',
-    FeatureFlagKey.bodyMap => 'Body map',
-    FeatureFlagKey.familyProfiles => 'Family profiles',
-    FeatureFlagKey.preventativeCare => 'Preventative care',
-    FeatureFlagKey.betaFeatures => 'Beta features',
-  };
+        FeatureFlagKey.aiAssistant => 'AI assistant',
+        FeatureFlagKey.documentUploads => 'Document uploads',
+        FeatureFlagKey.export => 'Export',
+        FeatureFlagKey.timeline => 'Timeline',
+        FeatureFlagKey.bodyMap => 'Body map',
+        FeatureFlagKey.familyProfiles => 'Family profiles',
+        FeatureFlagKey.preventativeCare => 'Preventative care',
+        FeatureFlagKey.betaFeatures => 'Beta features',
+      };
 
   String get apiKey => switch (this) {
-    FeatureFlagKey.aiAssistant => 'ai_assistant',
-    FeatureFlagKey.documentUploads => 'document_uploads',
-    FeatureFlagKey.export => 'export',
-    FeatureFlagKey.timeline => 'timeline',
-    FeatureFlagKey.bodyMap => 'body_map',
-    FeatureFlagKey.familyProfiles => 'family_profiles',
-    FeatureFlagKey.preventativeCare => 'preventative_care',
-    FeatureFlagKey.betaFeatures => 'beta_features',
-  };
+        FeatureFlagKey.aiAssistant => 'ai_assistant',
+        FeatureFlagKey.documentUploads => 'document_uploads',
+        FeatureFlagKey.export => 'export',
+        FeatureFlagKey.timeline => 'timeline',
+        FeatureFlagKey.bodyMap => 'body_map',
+        FeatureFlagKey.familyProfiles => 'family_profiles',
+        FeatureFlagKey.preventativeCare => 'preventative_care',
+        FeatureFlagKey.betaFeatures => 'beta_features',
+      };
 }
 
 @immutable
@@ -1349,12 +1405,14 @@ class FeatureFlagDefinition {
   final String description;
   final DateTime updatedAt;
 
-  FeatureFlagDefinition copyWith({bool? enabled, String? description, DateTime? updatedAt}) => FeatureFlagDefinition(
-    key: key,
-    enabled: enabled ?? this.enabled,
-    description: description ?? this.description,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
+  FeatureFlagDefinition copyWith(
+          {bool? enabled, String? description, DateTime? updatedAt}) =>
+      FeatureFlagDefinition(
+        key: key,
+        enabled: enabled ?? this.enabled,
+        description: description ?? this.description,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
 }
 
 @immutable
@@ -1413,7 +1471,8 @@ class UserEntitlements {
         storageLimitBytes: storageLimitBytes ?? this.storageLimitBytes,
         aiTokenLimitMonthly: aiTokenLimitMonthly ?? this.aiTokenLimitMonthly,
         profileLimit: profileLimit ?? this.profileLimit,
-        uploadLimit: clearUploadLimit ? null : (uploadLimit ?? this.uploadLimit),
+        uploadLimit:
+            clearUploadLimit ? null : (uploadLimit ?? this.uploadLimit),
         featureFlags: featureFlags ?? this.featureFlags,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -1462,7 +1521,14 @@ class DashboardQuery {
   final String? platform; // iOS/Android/Web
   final String? plan; // Free/Trial/Paid/Cancelled/etc
 
-  DashboardQuery copyWith({AdminDateRangePreset? range, String? country, bool clearCountry = false, String? platform, bool clearPlatform = false, String? plan, bool clearPlan = false}) =>
+  DashboardQuery copyWith(
+          {AdminDateRangePreset? range,
+          String? country,
+          bool clearCountry = false,
+          String? platform,
+          bool clearPlatform = false,
+          String? plan,
+          bool clearPlan = false}) =>
       DashboardQuery(
         range: range ?? this.range,
         country: clearCountry ? null : (country ?? this.country),
@@ -1499,7 +1565,11 @@ class CountryUsageRow {
 
 @immutable
 class AlertRow {
-  const AlertRow({required this.type, required this.count, required this.severity, required this.note});
+  const AlertRow(
+      {required this.type,
+      required this.count,
+      required this.severity,
+      required this.note});
 
   final String type;
   final int count;
@@ -1509,7 +1579,11 @@ class AlertRow {
 
 @immutable
 class SystemStatusCard {
-  const SystemStatusCard({required this.label, required this.status, required this.detail, required this.updatedAt});
+  const SystemStatusCard(
+      {required this.label,
+      required this.status,
+      required this.detail,
+      required this.updatedAt});
 
   final String label;
   final String status; // OK/Warn/Down
@@ -1597,7 +1671,8 @@ class StorageQuery {
 
   final AdminDateRangePreset range;
 
-  StorageQuery copyWith({AdminDateRangePreset? range}) => StorageQuery(range: range ?? this.range);
+  StorageQuery copyWith({AdminDateRangePreset? range}) =>
+      StorageQuery(range: range ?? this.range);
 }
 
 @immutable
@@ -1626,7 +1701,8 @@ class StorageHighUsageUserRow {
   final int failedUploadCount;
   final String accountStatus;
 
-  double get percentUsed => storageLimitBytes <= 0 ? 0 : (storageUsedBytes / storageLimitBytes);
+  double get percentUsed =>
+      storageLimitBytes <= 0 ? 0 : (storageUsedBytes / storageLimitBytes);
 }
 
 @immutable
@@ -1686,7 +1762,8 @@ class StorageUploadErrorRow {
   final String appVersion;
   final String errorCode;
   final String result;
-  final String fileSizeBucket; // e.g. '<1MB', '1–10MB', '10–50MB', '50–200MB', '>200MB'
+  final String
+      fileSizeBucket; // e.g. '<1MB', '1–10MB', '10–50MB', '50–200MB', '>200MB'
   final int storageUsedBytesAtTime;
 }
 
@@ -1759,41 +1836,48 @@ class AdminUser {
     DateTime? createdAt,
     DateTime? updatedAt,
     String? themePreference,
-  }) => AdminUser(
-    id: id ?? this.id,
-    email: email ?? this.email,
-    displayName: displayName ?? this.displayName,
-    role: role ?? this.role,
-    isActive: isActive ?? this.isActive,
-    requireStepUp: requireStepUp ?? this.requireStepUp,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    themePreference: themePreference ?? this.themePreference,
-  );
+  }) =>
+      AdminUser(
+        id: id ?? this.id,
+        email: email ?? this.email,
+        displayName: displayName ?? this.displayName,
+        role: role ?? this.role,
+        isActive: isActive ?? this.isActive,
+        requireStepUp: requireStepUp ?? this.requireStepUp,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        themePreference: themePreference ?? this.themePreference,
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'email': email,
-    if (displayName != null) 'display_name': displayName,
-    'role': role.name,
-    'is_active': isActive,
-    'require_step_up': requireStepUp,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt.toIso8601String(),
-    if (themePreference != null) 'theme_preference': themePreference,
-  };
+        'id': id,
+        'email': email,
+        if (displayName != null) 'display_name': displayName,
+        'role': role.name,
+        'is_active': isActive,
+        'require_step_up': requireStepUp,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        if (themePreference != null) 'theme_preference': themePreference,
+      };
 
   static AdminUser fromJson(Map<String, dynamic> json) => AdminUser(
-    id: (json['id'] ?? '').toString(),
-    email: (json['email'] ?? '').toString(),
-    displayName: (json['display_name'] as String?)?.trim().isEmpty == true ? null : (json['display_name'] as String?),
-    role: parseAdminRole((json['role'] ?? '').toString()) ?? AdminRole.readOnly,
-    isActive: json['is_active'] == true,
-    requireStepUp: json['require_step_up'] == true,
-    createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-    updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-    themePreference: (json['theme_preference'] ?? json['theme_mode'])?.toString(),
-  );
+        id: (json['id'] ?? '').toString(),
+        email: (json['email'] ?? '').toString(),
+        displayName: (json['display_name'] as String?)?.trim().isEmpty == true
+            ? null
+            : (json['display_name'] as String?),
+        role: parseAdminRole((json['role'] ?? '').toString()) ??
+            AdminRole.readOnly,
+        isActive: json['is_active'] == true,
+        requireStepUp: json['require_step_up'] == true,
+        createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+        updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+        themePreference:
+            (json['theme_preference'] ?? json['theme_mode'])?.toString(),
+      );
 }
 
 @immutable
@@ -1883,92 +1967,104 @@ class UserAccountSummary {
     String? subscriptionProvider,
     DateTime? createdAt,
     DateTime? updatedAt,
-  }) => UserAccountSummary(
-    userId: userId ?? this.userId,
-    email: clearEmail ? null : (email ?? this.email),
-    country: country ?? this.country,
-    plan: plan ?? this.plan,
-    accountStatus: accountStatus ?? this.accountStatus,
-    storageUsedBytes: storageUsedBytes ?? this.storageUsedBytes,
-    storageLimitBytes: storageLimitBytes ?? this.storageLimitBytes,
-    aiTokensThisMonth: aiTokensThisMonth ?? this.aiTokensThisMonth,
-    aiTokenLimitThisMonth: aiTokenLimitThisMonth ?? this.aiTokenLimitThisMonth,
-    profileCount: profileCount ?? this.profileCount,
-    recordCount: recordCount ?? this.recordCount,
-    documentCount: documentCount ?? this.documentCount,
-    appointmentCount: appointmentCount ?? this.appointmentCount,
-    medicationCount: medicationCount ?? this.medicationCount,
-    vaccinationCount: vaccinationCount ?? this.vaccinationCount,
-    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-    lastActiveAt: lastActiveAt ?? this.lastActiveAt,
-    platform: platform ?? this.platform,
-    appVersion: appVersion ?? this.appVersion,
-    failedSyncCount7d: failedSyncCount7d ?? this.failedSyncCount7d,
-    failedUploadCount7d: failedUploadCount7d ?? this.failedUploadCount7d,
-    lastKnownErrorCode: clearLastKnownErrorCode ? null : (lastKnownErrorCode ?? this.lastKnownErrorCode),
-    billingStatus: billingStatus ?? this.billingStatus,
-    subscriptionProvider: subscriptionProvider ?? this.subscriptionProvider,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-  );
+  }) =>
+      UserAccountSummary(
+        userId: userId ?? this.userId,
+        email: clearEmail ? null : (email ?? this.email),
+        country: country ?? this.country,
+        plan: plan ?? this.plan,
+        accountStatus: accountStatus ?? this.accountStatus,
+        storageUsedBytes: storageUsedBytes ?? this.storageUsedBytes,
+        storageLimitBytes: storageLimitBytes ?? this.storageLimitBytes,
+        aiTokensThisMonth: aiTokensThisMonth ?? this.aiTokensThisMonth,
+        aiTokenLimitThisMonth:
+            aiTokenLimitThisMonth ?? this.aiTokenLimitThisMonth,
+        profileCount: profileCount ?? this.profileCount,
+        recordCount: recordCount ?? this.recordCount,
+        documentCount: documentCount ?? this.documentCount,
+        appointmentCount: appointmentCount ?? this.appointmentCount,
+        medicationCount: medicationCount ?? this.medicationCount,
+        vaccinationCount: vaccinationCount ?? this.vaccinationCount,
+        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+        lastActiveAt: lastActiveAt ?? this.lastActiveAt,
+        platform: platform ?? this.platform,
+        appVersion: appVersion ?? this.appVersion,
+        failedSyncCount7d: failedSyncCount7d ?? this.failedSyncCount7d,
+        failedUploadCount7d: failedUploadCount7d ?? this.failedUploadCount7d,
+        lastKnownErrorCode: clearLastKnownErrorCode
+            ? null
+            : (lastKnownErrorCode ?? this.lastKnownErrorCode),
+        billingStatus: billingStatus ?? this.billingStatus,
+        subscriptionProvider: subscriptionProvider ?? this.subscriptionProvider,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
 
   Map<String, dynamic> toJson() => {
-    'user_id': userId,
-    if (email != null) 'email': email,
-    'country': country,
-    'plan': plan,
-    'account_status': accountStatus,
-    'storage_used_bytes': storageUsedBytes,
-    'storage_limit_bytes': storageLimitBytes,
-    'ai_tokens_this_month': aiTokensThisMonth,
-    'ai_token_limit_this_month': aiTokenLimitThisMonth,
-    'profile_count': profileCount,
-    'record_count': recordCount,
-    'document_count': documentCount,
-    'appointment_count': appointmentCount,
-    'medication_count': medicationCount,
-    'vaccination_count': vaccinationCount,
-    'last_sync_at': lastSyncAt?.toIso8601String(),
-    'last_active_at': lastActiveAt?.toIso8601String(),
-    'platform': platform,
-    'app_version': appVersion,
-    'failed_sync_count_7d': failedSyncCount7d,
-    'failed_upload_count_7d': failedUploadCount7d,
-    if (lastKnownErrorCode != null) 'last_known_error_code': lastKnownErrorCode,
-    'billing_status': billingStatus,
-    'subscription_provider': subscriptionProvider,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt.toIso8601String(),
-  };
+        'user_id': userId,
+        if (email != null) 'email': email,
+        'country': country,
+        'plan': plan,
+        'account_status': accountStatus,
+        'storage_used_bytes': storageUsedBytes,
+        'storage_limit_bytes': storageLimitBytes,
+        'ai_tokens_this_month': aiTokensThisMonth,
+        'ai_token_limit_this_month': aiTokenLimitThisMonth,
+        'profile_count': profileCount,
+        'record_count': recordCount,
+        'document_count': documentCount,
+        'appointment_count': appointmentCount,
+        'medication_count': medicationCount,
+        'vaccination_count': vaccinationCount,
+        'last_sync_at': lastSyncAt?.toIso8601String(),
+        'last_active_at': lastActiveAt?.toIso8601String(),
+        'platform': platform,
+        'app_version': appVersion,
+        'failed_sync_count_7d': failedSyncCount7d,
+        'failed_upload_count_7d': failedUploadCount7d,
+        if (lastKnownErrorCode != null)
+          'last_known_error_code': lastKnownErrorCode,
+        'billing_status': billingStatus,
+        'subscription_provider': subscriptionProvider,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+      };
 
-  static UserAccountSummary fromJson(Map<String, dynamic> json) => UserAccountSummary(
-    userId: (json['user_id'] ?? '').toString(),
-    email: json['email']?.toString(),
-    country: (json['country'] ?? '—').toString(),
-    plan: (json['plan'] ?? '—').toString(),
-    accountStatus: (json['account_status'] ?? 'unknown').toString(),
-    storageUsedBytes: (json['storage_used_bytes'] as num?)?.toInt() ?? 0,
-    storageLimitBytes: (json['storage_limit_bytes'] as num?)?.toInt() ?? 0,
-    aiTokensThisMonth: (json['ai_tokens_this_month'] as num?)?.toInt() ?? 0,
-    aiTokenLimitThisMonth: (json['ai_token_limit_this_month'] as num?)?.toInt() ?? 0,
-    profileCount: (json['profile_count'] as num?)?.toInt() ?? 0,
-    recordCount: (json['record_count'] as num?)?.toInt() ?? 0,
-    documentCount: (json['document_count'] as num?)?.toInt() ?? 0,
-    appointmentCount: (json['appointment_count'] as num?)?.toInt() ?? 0,
-    medicationCount: (json['medication_count'] as num?)?.toInt() ?? 0,
-    vaccinationCount: (json['vaccination_count'] as num?)?.toInt() ?? 0,
-    lastSyncAt: DateTime.tryParse((json['last_sync_at'] ?? '').toString()),
-    lastActiveAt: DateTime.tryParse((json['last_active_at'] ?? '').toString()),
-    platform: (json['platform'] ?? '—').toString(),
-    appVersion: (json['app_version'] ?? '—').toString(),
-    failedSyncCount7d: (json['failed_sync_count_7d'] as num?)?.toInt() ?? 0,
-    failedUploadCount7d: (json['failed_upload_count_7d'] as num?)?.toInt() ?? 0,
-    lastKnownErrorCode: json['last_known_error_code']?.toString(),
-    billingStatus: (json['billing_status'] ?? 'unknown').toString(),
-    subscriptionProvider: (json['subscription_provider'] ?? 'unknown').toString(),
-    createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-    updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-  );
+  static UserAccountSummary fromJson(Map<String, dynamic> json) =>
+      UserAccountSummary(
+        userId: (json['user_id'] ?? '').toString(),
+        email: json['email']?.toString(),
+        country: (json['country'] ?? '—').toString(),
+        plan: (json['plan'] ?? '—').toString(),
+        accountStatus: (json['account_status'] ?? 'unknown').toString(),
+        storageUsedBytes: (json['storage_used_bytes'] as num?)?.toInt() ?? 0,
+        storageLimitBytes: (json['storage_limit_bytes'] as num?)?.toInt() ?? 0,
+        aiTokensThisMonth: (json['ai_tokens_this_month'] as num?)?.toInt() ?? 0,
+        aiTokenLimitThisMonth:
+            (json['ai_token_limit_this_month'] as num?)?.toInt() ?? 0,
+        profileCount: (json['profile_count'] as num?)?.toInt() ?? 0,
+        recordCount: (json['record_count'] as num?)?.toInt() ?? 0,
+        documentCount: (json['document_count'] as num?)?.toInt() ?? 0,
+        appointmentCount: (json['appointment_count'] as num?)?.toInt() ?? 0,
+        medicationCount: (json['medication_count'] as num?)?.toInt() ?? 0,
+        vaccinationCount: (json['vaccination_count'] as num?)?.toInt() ?? 0,
+        lastSyncAt: DateTime.tryParse((json['last_sync_at'] ?? '').toString()),
+        lastActiveAt:
+            DateTime.tryParse((json['last_active_at'] ?? '').toString()),
+        platform: (json['platform'] ?? '—').toString(),
+        appVersion: (json['app_version'] ?? '—').toString(),
+        failedSyncCount7d: (json['failed_sync_count_7d'] as num?)?.toInt() ?? 0,
+        failedUploadCount7d:
+            (json['failed_upload_count_7d'] as num?)?.toInt() ?? 0,
+        lastKnownErrorCode: json['last_known_error_code']?.toString(),
+        billingStatus: (json['billing_status'] ?? 'unknown').toString(),
+        subscriptionProvider:
+            (json['subscription_provider'] ?? 'unknown').toString(),
+        createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+        updatedAt: DateTime.tryParse((json['updated_at'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+      );
 }
 
 @immutable
@@ -1978,7 +2074,9 @@ class UserListQuery {
   final String search;
   final UserListFilters filters;
 
-  UserListQuery copyWith({String? search, UserListFilters? filters}) => UserListQuery(search: search ?? this.search, filters: filters ?? this.filters);
+  UserListQuery copyWith({String? search, UserListFilters? filters}) =>
+      UserListQuery(
+          search: search ?? this.search, filters: filters ?? this.filters);
 }
 
 @immutable
@@ -2032,19 +2130,30 @@ class UserListFilters {
     bool clearCreatedRange = false,
     DateTimeRange? lastActiveRange,
     bool clearLastActiveRange = false,
-  }) => UserListFilters(
-    country: clearCountry ? null : (country ?? this.country),
-    plan: clearPlan ? null : (plan ?? this.plan),
-    accountStatus: clearAccountStatus ? null : (accountStatus ?? this.accountStatus),
-    platform: clearPlatform ? null : (platform ?? this.platform),
-    storageNearLimit: clearStorageNearLimit ? null : (storageNearLimit ?? this.storageNearLimit),
-    aiNearLimit: clearAiNearLimit ? null : (aiNearLimit ?? this.aiNearLimit),
-    failedSyncs: clearFailedSyncs ? null : (failedSyncs ?? this.failedSyncs),
-    failedUploads: clearFailedUploads ? null : (failedUploads ?? this.failedUploads),
-    billingFailed: clearBillingFailed ? null : (billingFailed ?? this.billingFailed),
-    createdRange: clearCreatedRange ? null : (createdRange ?? this.createdRange),
-    lastActiveRange: clearLastActiveRange ? null : (lastActiveRange ?? this.lastActiveRange),
-  );
+  }) =>
+      UserListFilters(
+        country: clearCountry ? null : (country ?? this.country),
+        plan: clearPlan ? null : (plan ?? this.plan),
+        accountStatus:
+            clearAccountStatus ? null : (accountStatus ?? this.accountStatus),
+        platform: clearPlatform ? null : (platform ?? this.platform),
+        storageNearLimit: clearStorageNearLimit
+            ? null
+            : (storageNearLimit ?? this.storageNearLimit),
+        aiNearLimit:
+            clearAiNearLimit ? null : (aiNearLimit ?? this.aiNearLimit),
+        failedSyncs:
+            clearFailedSyncs ? null : (failedSyncs ?? this.failedSyncs),
+        failedUploads:
+            clearFailedUploads ? null : (failedUploads ?? this.failedUploads),
+        billingFailed:
+            clearBillingFailed ? null : (billingFailed ?? this.billingFailed),
+        createdRange:
+            clearCreatedRange ? null : (createdRange ?? this.createdRange),
+        lastActiveRange: clearLastActiveRange
+            ? null
+            : (lastActiveRange ?? this.lastActiveRange),
+      );
 }
 
 @immutable
@@ -2192,55 +2301,65 @@ class AuditLogEntry {
     String? userAgent,
     String? result,
     DateTime? createdAt,
-  }) => AuditLogEntry(
-    id: id ?? this.id,
-    adminUserId: adminUserId ?? this.adminUserId,
-    targetUserId: targetUserId ?? this.targetUserId,
-    actionType: actionType ?? this.actionType,
-    previousValue: previousValue ?? this.previousValue,
-    newValue: newValue ?? this.newValue,
-    reason: reason ?? this.reason,
-    ticketReference: ticketReference ?? this.ticketReference,
-    ipAddress: ipAddress ?? this.ipAddress,
-    userAgent: userAgent ?? this.userAgent,
-    result: result ?? this.result,
-    createdAt: createdAt ?? this.createdAt,
-  );
+  }) =>
+      AuditLogEntry(
+        id: id ?? this.id,
+        adminUserId: adminUserId ?? this.adminUserId,
+        targetUserId: targetUserId ?? this.targetUserId,
+        actionType: actionType ?? this.actionType,
+        previousValue: previousValue ?? this.previousValue,
+        newValue: newValue ?? this.newValue,
+        reason: reason ?? this.reason,
+        ticketReference: ticketReference ?? this.ticketReference,
+        ipAddress: ipAddress ?? this.ipAddress,
+        userAgent: userAgent ?? this.userAgent,
+        result: result ?? this.result,
+        createdAt: createdAt ?? this.createdAt,
+      );
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'admin_user_id': adminUserId,
-    'target_user_id': targetUserId,
-    'action_type': actionType,
-    'prev': previousValue,
-    'next': newValue,
-    'reason': reason,
-    'ticket_id': ticketReference,
-    'ip': ipAddress,
-    'user_agent': userAgent,
-    'result': result,
-    'created_at': createdAt.toIso8601String(),
-  };
+        'id': id,
+        'admin_user_id': adminUserId,
+        'target_user_id': targetUserId,
+        'action_type': actionType,
+        'prev': previousValue,
+        'next': newValue,
+        'reason': reason,
+        'ticket_id': ticketReference,
+        'ip': ipAddress,
+        'user_agent': userAgent,
+        'result': result,
+        'created_at': createdAt.toIso8601String(),
+      };
 
   static AuditLogEntry fromJson(Map<String, dynamic> json) => AuditLogEntry(
-    id: (json['id'] ?? '').toString(),
-    adminUserId: (json['admin_user_id'] ?? '').toString(),
-    targetUserId: json['target_user_id']?.toString(),
-    actionType: (json['action_type'] ?? '').toString(),
-    previousValue: ((json['prev'] ?? json['previous_value']) as Map?)?.cast<String, dynamic>(),
-    newValue: ((json['next'] ?? json['new_value']) as Map?)?.cast<String, dynamic>(),
-    reason: json['reason']?.toString(),
-    ticketReference: (json['ticket_id'] ?? json['ticket_reference'])?.toString(),
-    ipAddress: (json['ip'] ?? json['ip_address'])?.toString(),
-    userAgent: json['user_agent']?.toString(),
-    result: (json['result'] ?? '').toString(),
-    createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
-  );
+        id: (json['id'] ?? '').toString(),
+        adminUserId: (json['admin_user_id'] ?? '').toString(),
+        targetUserId: json['target_user_id']?.toString(),
+        actionType: (json['action_type'] ?? '').toString(),
+        previousValue: ((json['prev'] ?? json['previous_value']) as Map?)
+            ?.cast<String, dynamic>(),
+        newValue: ((json['next'] ?? json['new_value']) as Map?)
+            ?.cast<String, dynamic>(),
+        reason: json['reason']?.toString(),
+        ticketReference:
+            (json['ticket_id'] ?? json['ticket_reference'])?.toString(),
+        ipAddress: (json['ip'] ?? json['ip_address'])?.toString(),
+        userAgent: json['user_agent']?.toString(),
+        result: (json['result'] ?? '').toString(),
+        createdAt: DateTime.tryParse((json['created_at'] ?? '').toString()) ??
+            DateTime.fromMillisecondsSinceEpoch(0, isUtc: true).toLocal(),
+      );
 }
 
 @immutable
 class AuditLogQuery {
-  const AuditLogQuery({this.adminUserId, this.targetUserId, this.actionType, this.result, this.createdRange});
+  const AuditLogQuery(
+      {this.adminUserId,
+      this.targetUserId,
+      this.actionType,
+      this.result,
+      this.createdRange});
   final String? adminUserId;
   final String? targetUserId;
   final String? actionType;
@@ -2260,11 +2379,14 @@ class AuditLogQuery {
     bool clearCreatedRange = false,
   }) =>
       AuditLogQuery(
-        adminUserId: clearAdminUserId ? null : (adminUserId ?? this.adminUserId),
-        targetUserId: clearTargetUserId ? null : (targetUserId ?? this.targetUserId),
+        adminUserId:
+            clearAdminUserId ? null : (adminUserId ?? this.adminUserId),
+        targetUserId:
+            clearTargetUserId ? null : (targetUserId ?? this.targetUserId),
         actionType: clearActionType ? null : (actionType ?? this.actionType),
         result: clearResult ? null : (result ?? this.result),
-        createdRange: clearCreatedRange ? null : (createdRange ?? this.createdRange),
+        createdRange:
+            clearCreatedRange ? null : (createdRange ?? this.createdRange),
       );
 }
 
@@ -2295,17 +2417,17 @@ class AdminAuditLogCreate {
   final String result;
 
   Map<String, dynamic> toInsertJson() => {
-    'admin_user_id': adminUserId,
-    if (targetUserId != null) 'target_user_id': targetUserId,
-    'action_type': actionType,
-    if (previousValue != null) 'prev': previousValue,
-    if (newValue != null) 'next': newValue,
-    if (reason != null) 'reason': reason,
-    if (ticketReference != null) 'ticket_id': ticketReference,
-    if (ipAddress != null) 'ip': ipAddress,
-    if (userAgent != null) 'user_agent': userAgent,
-    'result': result,
-  };
+        'admin_user_id': adminUserId,
+        if (targetUserId != null) 'target_user_id': targetUserId,
+        'action_type': actionType,
+        if (previousValue != null) 'prev': previousValue,
+        if (newValue != null) 'next': newValue,
+        if (reason != null) 'reason': reason,
+        if (ticketReference != null) 'ticket_id': ticketReference,
+        if (ipAddress != null) 'ip': ipAddress,
+        if (userAgent != null) 'user_agent': userAgent,
+        'result': result,
+      };
 }
 
 // ------------------------------
@@ -2352,16 +2474,22 @@ class SecurityChecklistSnapshot {
 // Website / CMS status models
 // ------------------------------
 
-enum WebsiteCmsTableOverallStatus { live, empty, missingUi, missingTable, error }
+enum WebsiteCmsTableOverallStatus {
+  live,
+  empty,
+  missingUi,
+  missingTable,
+  error
+}
 
 extension WebsiteCmsTableOverallStatusX on WebsiteCmsTableOverallStatus {
   String get label => switch (this) {
-    WebsiteCmsTableOverallStatus.live => 'Live',
-    WebsiteCmsTableOverallStatus.empty => 'Empty',
-    WebsiteCmsTableOverallStatus.missingUi => 'Missing UI',
-    WebsiteCmsTableOverallStatus.missingTable => 'Missing table',
-    WebsiteCmsTableOverallStatus.error => 'Error',
-  };
+        WebsiteCmsTableOverallStatus.live => 'Live',
+        WebsiteCmsTableOverallStatus.empty => 'Empty',
+        WebsiteCmsTableOverallStatus.missingUi => 'Missing UI',
+        WebsiteCmsTableOverallStatus.missingTable => 'Missing table',
+        WebsiteCmsTableOverallStatus.error => 'Error',
+      };
 }
 
 @immutable
@@ -2396,7 +2524,8 @@ class WebsiteCmsTableStatusRow {
 
 @immutable
 class WebsiteCmsStatusSnapshot {
-  const WebsiteCmsStatusSnapshot({required this.rows, required this.generatedAt});
+  const WebsiteCmsStatusSnapshot(
+      {required this.rows, required this.generatedAt});
   final List<WebsiteCmsTableStatusRow> rows;
   final DateTime generatedAt;
 }
@@ -2432,12 +2561,12 @@ SupportSessionStatus? parseSupportSessionStatus(String? value) {
 
 extension SupportSessionStatusX on SupportSessionStatus {
   String get label => switch (this) {
-    SupportSessionStatus.pending => 'pending',
-    SupportSessionStatus.active => 'active',
-    SupportSessionStatus.expired => 'expired',
-    SupportSessionStatus.closed => 'closed',
-    SupportSessionStatus.revoked => 'revoked',
-  };
+        SupportSessionStatus.pending => 'pending',
+        SupportSessionStatus.active => 'active',
+        SupportSessionStatus.expired => 'expired',
+        SupportSessionStatus.closed => 'closed',
+        SupportSessionStatus.revoked => 'revoked',
+      };
 }
 
 @immutable
@@ -2473,9 +2602,14 @@ class SupportQueueFilters {
   }) =>
       SupportQueueFilters(
         status: clearStatus ? null : (status ?? this.status),
-        consentStatus: clearConsentStatus ? null : (consentStatus ?? this.consentStatus),
-        assignedAdminId: clearAssignedAdminId ? null : (assignedAdminId ?? this.assignedAdminId),
-        onlyExpiringSoon: clearOnlyExpiringSoon ? null : (onlyExpiringSoon ?? this.onlyExpiringSoon),
+        consentStatus:
+            clearConsentStatus ? null : (consentStatus ?? this.consentStatus),
+        assignedAdminId: clearAssignedAdminId
+            ? null
+            : (assignedAdminId ?? this.assignedAdminId),
+        onlyExpiringSoon: clearOnlyExpiringSoon
+            ? null
+            : (onlyExpiringSoon ?? this.onlyExpiringSoon),
       );
 }
 
@@ -2628,15 +2762,20 @@ enum DiagnosticStatus {
 
 extension DiagnosticStatusX on DiagnosticStatus {
   String get label => switch (this) {
-    DiagnosticStatus.pass => 'pass',
-    DiagnosticStatus.warning => 'warning',
-    DiagnosticStatus.fail => 'fail',
-  };
+        DiagnosticStatus.pass => 'pass',
+        DiagnosticStatus.warning => 'warning',
+        DiagnosticStatus.fail => 'fail',
+      };
 }
 
 @immutable
 class DiagnosticCheck {
-  const DiagnosticCheck({required this.id, required this.title, required this.status, required this.explanation, required this.suggestedAction});
+  const DiagnosticCheck(
+      {required this.id,
+      required this.title,
+      required this.status,
+      required this.explanation,
+      required this.suggestedAction});
   final String id;
   final String title;
   final DiagnosticStatus status;
@@ -2646,7 +2785,8 @@ class DiagnosticCheck {
 
 @immutable
 class DiagnosticsReport {
-  const DiagnosticsReport({required this.userId, required this.generatedAt, required this.checks});
+  const DiagnosticsReport(
+      {required this.userId, required this.generatedAt, required this.checks});
   final String userId;
   final DateTime generatedAt;
   final List<DiagnosticCheck> checks;
@@ -2667,17 +2807,19 @@ enum SupportAction {
 
 extension SupportActionX on SupportAction {
   String get label => switch (this) {
-    SupportAction.resendVerificationEmail => 'Resend verification email',
-    SupportAction.forceLogout => 'Force logout',
-    SupportAction.revokeActiveSessions => 'Revoke active sessions',
-    SupportAction.extendTrial => 'Extend trial',
-    SupportAction.temporarilyIncreaseStorageLimit => 'Temporarily increase storage limit',
-    SupportAction.temporarilyIncreaseAiLimit => 'Temporarily increase AI limit',
-    SupportAction.suspendAccount => 'Suspend account',
-    SupportAction.unsuspendAccount => 'Unsuspend account',
-    SupportAction.addSupportNote => 'Add support note',
-    SupportAction.closeSupportSession => 'Close support session',
-  };
+        SupportAction.resendVerificationEmail => 'Resend verification email',
+        SupportAction.forceLogout => 'Force logout',
+        SupportAction.revokeActiveSessions => 'Revoke active sessions',
+        SupportAction.extendTrial => 'Extend trial',
+        SupportAction.temporarilyIncreaseStorageLimit =>
+          'Temporarily increase storage limit',
+        SupportAction.temporarilyIncreaseAiLimit =>
+          'Temporarily increase AI limit',
+        SupportAction.suspendAccount => 'Suspend account',
+        SupportAction.unsuspendAccount => 'Unsuspend account',
+        SupportAction.addSupportNote => 'Add support note',
+        SupportAction.closeSupportSession => 'Close support session',
+      };
 }
 
 @immutable
@@ -2716,11 +2858,11 @@ enum ServiceHealthStatus {
 
 extension ServiceHealthStatusX on ServiceHealthStatus {
   String get label => switch (this) {
-    ServiceHealthStatus.healthy => 'healthy',
-    ServiceHealthStatus.degraded => 'degraded',
-    ServiceHealthStatus.down => 'down',
-    ServiceHealthStatus.unknown => 'unknown',
-  };
+        ServiceHealthStatus.healthy => 'healthy',
+        ServiceHealthStatus.degraded => 'degraded',
+        ServiceHealthStatus.down => 'down',
+        ServiceHealthStatus.unknown => 'unknown',
+      };
 }
 
 enum SystemErrorSeverity {
@@ -2732,18 +2874,19 @@ enum SystemErrorSeverity {
 
 extension SystemErrorSeverityX on SystemErrorSeverity {
   String get label => switch (this) {
-    SystemErrorSeverity.info => 'info',
-    SystemErrorSeverity.warning => 'warning',
-    SystemErrorSeverity.error => 'error',
-    SystemErrorSeverity.critical => 'critical',
-  };
+        SystemErrorSeverity.info => 'info',
+        SystemErrorSeverity.warning => 'warning',
+        SystemErrorSeverity.error => 'error',
+        SystemErrorSeverity.critical => 'critical',
+      };
 }
 
 @immutable
 class SystemHealthQuery {
   const SystemHealthQuery({required this.range});
   final AdminDateRangePreset range;
-  SystemHealthQuery copyWith({AdminDateRangePreset? range}) => SystemHealthQuery(range: range ?? this.range);
+  SystemHealthQuery copyWith({AdminDateRangePreset? range}) =>
+      SystemHealthQuery(range: range ?? this.range);
 }
 
 @immutable
@@ -2766,6 +2909,7 @@ class SystemOverviewMetrics {
   final ServiceHealthStatus authStatus;
   final ServiceHealthStatus aiServiceStatus;
   final DateTime lastSuccessfulScheduledJob;
+
   /// Range [0..1]
   final double errorRateLast24h;
   final int failedUploadsLast24h;
@@ -2823,8 +2967,10 @@ class UploadHealthMetrics {
   });
 
   final int uploadAttempts;
+
   /// Range [0..1]
   final double uploadSuccessRate;
+
   /// Range [0..1]
   final double uploadFailureRate;
   final String averageUploadSizeBucket;
@@ -2845,8 +2991,10 @@ class AiServiceHealthMetrics {
   });
 
   final int aiRequests;
+
   /// Range [0..1]
   final double aiSuccessRate;
+
   /// Range [0..1]
   final double aiFailureRate;
   final int averageLatencyMs;
@@ -2869,6 +3017,7 @@ class AppVersionHealthRow {
   final String appVersion;
   final String platform;
   final int activeUsers;
+
   /// Range [0..1]
   final double errorRate;
   final int failedUploads;

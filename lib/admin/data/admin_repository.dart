@@ -10,7 +10,8 @@ abstract interface class AdminRepository {
   Future<void> createAuditLog({required AdminAuditLogCreate entry});
 
   /// Privacy-safe list of accounts. Email may be omitted depending on role.
-  Future<List<UserAccountSummary>> listUsers({required UserListQuery query, required int limit});
+  Future<List<UserAccountSummary>> listUsers(
+      {required UserListQuery query, required int limit});
 
   /// Privacy-safe user detail view.
   ///
@@ -25,19 +26,22 @@ abstract interface class AdminRepository {
   /// - Write an audit log entry
   Future<void> performUserAdminAction({required AdminActionRequest request});
 
-  Future<List<AuditLogEntry>> listAuditLogs({required AuditLogQuery query, required int limit});
+  Future<List<AuditLogEntry>> listAuditLogs(
+      {required AuditLogQuery query, required int limit});
 
   /// Admin-safe audit summary aggregates (counts only).
   Future<AuditSummarySnapshot> getAuditSummary();
 
   /// Support queue: privacy-safe support sessions (no health content).
-  Future<List<SupportSessionSummary>> listSupportSessions({required SupportQueueQuery query, required int limit});
+  Future<List<SupportSessionSummary>> listSupportSessions(
+      {required SupportQueueQuery query, required int limit});
 
   /// Admin-safe support summary aggregates (counts only).
   Future<SupportSummarySnapshot> getSupportSummary();
 
   /// Support session detail: account diagnostics + technical events only.
-  Future<SupportSessionDetail> getSupportSessionDetail({required String supportSessionId});
+  Future<SupportSessionDetail> getSupportSessionDetail(
+      {required String supportSessionId});
 
   /// Run a diagnostic checker for an account.
   ///
@@ -56,7 +60,8 @@ abstract interface class AdminRepository {
   ///
   /// IMPORTANT: This must be sourced from summary tables/views in Supabase.
   /// Never query raw health records directly from the admin site.
-  Future<DashboardSnapshot> getDashboardSnapshot({required DashboardQuery query});
+  Future<DashboardSnapshot> getDashboardSnapshot(
+      {required DashboardQuery query});
 
   // ------------------------------
   // Plans & permissions
@@ -90,7 +95,8 @@ abstract interface class AdminRepository {
   /// - Must be sourced from safe summary tables/views only.
   /// - Never return user-entered content (search queries, AI prompts/responses,
   ///   document names, record contents, etc.).
-  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot({required UsageAnalyticsQuery query});
+  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot(
+      {required UsageAnalyticsQuery query});
 
   // ------------------------------
   // Storage
@@ -135,7 +141,8 @@ abstract interface class AdminRepository {
   /// IMPORTANT:
   /// - Must be sourced from safe workflow tables/views only.
   /// - Must never return user-entered health content.
-  Future<ComplianceSnapshot> getComplianceSnapshot({required ComplianceQuery query});
+  Future<ComplianceSnapshot> getComplianceSnapshot(
+      {required ComplianceQuery query});
 
   /// Execute an auditable compliance action.
   ///
@@ -143,7 +150,8 @@ abstract interface class AdminRepository {
   /// - Require a reason
   /// - Write to admin_audit_log
   /// - Enforce RBAC server-side
-  Future<void> performComplianceAction({required ComplianceActionRequest request});
+  Future<void> performComplianceAction(
+      {required ComplianceActionRequest request});
 
   // ------------------------------
   // System health (privacy-safe)
@@ -155,7 +163,8 @@ abstract interface class AdminRepository {
   /// - Must be sourced from safe aggregate-only tables/views.
   /// - Must never return raw user input, medical data, file names, AI prompts,
   ///   AI responses, or search queries.
-  Future<SystemHealthSnapshot> getSystemHealthSnapshot({required SystemHealthQuery query});
+  Future<SystemHealthSnapshot> getSystemHealthSnapshot(
+      {required SystemHealthQuery query});
 
   // ------------------------------
   // Security checklist

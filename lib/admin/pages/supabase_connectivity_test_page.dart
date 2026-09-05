@@ -9,10 +9,12 @@ class SupabaseConnectivityTestPage extends StatefulWidget {
   const SupabaseConnectivityTestPage({super.key});
 
   @override
-  State<SupabaseConnectivityTestPage> createState() => _SupabaseConnectivityTestPageState();
+  State<SupabaseConnectivityTestPage> createState() =>
+      _SupabaseConnectivityTestPageState();
 }
 
-class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestPage> {
+class _SupabaseConnectivityTestPageState
+    extends State<SupabaseConnectivityTestPage> {
   bool? _supabaseInitialized;
   String? _supabaseInitDetail;
 
@@ -171,27 +173,37 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
         _supabaseInitialized = initOk;
         _supabaseInitDetail = initOk
             ? 'Client available'
-            : (client == null ? 'Supabase.instance.client threw / unavailable' : 'SupabaseConfig.isInitialized=false');
+            : (client == null
+                ? 'Supabase.instance.client threw / unavailable'
+                : 'SupabaseConfig.isInitialized=false');
       });
-      debugPrint('[SupabaseConnectivityTest] ${initOk ? 'success' : 'fail'}: supabase initialized');
+      debugPrint(
+          '[SupabaseConnectivityTest] ${initOk ? 'success' : 'fail'}: supabase initialized');
 
       // Test 2) URL sanity check
       debugPrint('[SupabaseConnectivityTest] starting: URL sanity check');
       try {
         final raw = SupabaseConfig.resolvedSupabaseProjectUrl;
         final parsed = Uri.parse(raw);
-        final ok = parsed.hasScheme && parsed.host.isNotEmpty && !raw.endsWith('/rest/v1') && !raw.contains(' ');
+        final ok = parsed.hasScheme &&
+            parsed.host.isNotEmpty &&
+            !raw.endsWith('/rest/v1') &&
+            !raw.contains(' ');
         setState(() {
           _urlSanityOk = ok;
-          _urlSanityDetail = ok ? 'OK (${parsed.scheme}://${parsed.host})' : 'Check URL format (must be project root, not /rest/v1)';
+          _urlSanityDetail = ok
+              ? 'OK (${parsed.scheme}://${parsed.host})'
+              : 'Check URL format (must be project root, not /rest/v1)';
         });
-        debugPrint('[SupabaseConnectivityTest] ${ok ? 'success' : 'fail'}: URL sanity check');
+        debugPrint(
+            '[SupabaseConnectivityTest] ${ok ? 'success' : 'fail'}: URL sanity check');
       } catch (e, st) {
         setState(() {
           _urlSanityOk = false;
           _urlSanityDetail = 'type=${e.runtimeType} msg=${e.toString()}';
         });
-        debugPrint('[SupabaseConnectivityTest] fail: URL sanity check: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: URL sanity check: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
@@ -207,7 +219,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _baseUrlExType = probe.exceptionType;
           _baseUrlExMsg = probe.message;
         });
-        debugPrint('[SupabaseConnectivityTest] ${probe.ok ? 'success' : 'fail'}: GET project URL status=${probe.statusCode} type=${probe.exceptionType}');
+        debugPrint(
+            '[SupabaseConnectivityTest] ${probe.ok ? 'success' : 'fail'}: GET project URL status=${probe.statusCode} type=${probe.exceptionType}');
       } catch (e, st) {
         setState(() {
           _baseUrlProbeOk = false;
@@ -215,20 +228,23 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _baseUrlExType = e.runtimeType.toString();
           _baseUrlExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: GET project URL: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: GET project URL: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
       // If we don't even have a client, remaining tests cannot run.
       if (client == null) {
-        debugPrint('[SupabaseConnectivityTest] aborting remaining tests: no Supabase client');
+        debugPrint(
+            '[SupabaseConnectivityTest] aborting remaining tests: no Supabase client');
         return;
       }
 
       // Test 4) Auth reachability check.
       debugPrint('[SupabaseConnectivityTest] starting: Auth health endpoint');
       try {
-        final authHealthUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
+        final authHealthUrl = Uri.parse(
+            '${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
         final authProbe = await httpProbe(authHealthUrl, method: 'GET');
         setState(() {
           _authSessionOk = authProbe.ok;
@@ -236,7 +252,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _authSessionExType = authProbe.exceptionType;
           _authSessionExMsg = authProbe.message;
         });
-        debugPrint('[SupabaseConnectivityTest] ${authProbe.ok ? 'success' : 'fail'}: Auth health status=${authProbe.statusCode} type=${authProbe.exceptionType}');
+        debugPrint(
+            '[SupabaseConnectivityTest] ${authProbe.ok ? 'success' : 'fail'}: Auth health status=${authProbe.statusCode} type=${authProbe.exceptionType}');
       } catch (e, st) {
         setState(() {
           _authSessionOk = false;
@@ -244,15 +261,19 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _authSessionExType = e.runtimeType.toString();
           _authSessionExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: Auth health endpoint: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: Auth health endpoint: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
       // Test 4b) Browser fetch GET (explicit).
-      debugPrint('[SupabaseConnectivityTest] starting: Browser fetch GET /auth/v1/health');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: Browser fetch GET /auth/v1/health');
       try {
-        final healthUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
-        final probe = await httpProbe(healthUrl, method: 'GET', headers: const {'accept': 'application/json'});
+        final healthUrl = Uri.parse(
+            '${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/health');
+        final probe = await httpProbe(healthUrl,
+            method: 'GET', headers: const {'accept': 'application/json'});
         setState(() {
           _browserFetchGetHealthOk = probe.ok;
           _browserFetchGetHealthStatus = probe.statusCode;
@@ -269,20 +290,24 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _browserFetchGetHealthExType = e.runtimeType.toString();
           _browserFetchGetHealthExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: Browser fetch GET /auth/v1/health: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: Browser fetch GET /auth/v1/health: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
       // Test 4c) OPTIONS preflight-style check for token endpoint.
-      debugPrint('[SupabaseConnectivityTest] starting: Browser fetch OPTIONS /auth/v1/token (preflight)');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: Browser fetch OPTIONS /auth/v1/token (preflight)');
       try {
-        final tokenUrl = Uri.parse('${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/token');
+        final tokenUrl = Uri.parse(
+            '${SupabaseConfig.resolvedSupabaseProjectUrl}/auth/v1/token');
         final probe = await httpProbe(
           tokenUrl,
           method: 'OPTIONS',
           headers: const {
             'access-control-request-method': 'POST',
-            'access-control-request-headers': 'apikey, authorization, content-type',
+            'access-control-request-headers':
+                'apikey, authorization, content-type',
           },
         );
         setState(() {
@@ -301,12 +326,14 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _browserFetchOptionsTokenExType = e.runtimeType.toString();
           _browserFetchOptionsTokenExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: Browser fetch OPTIONS /auth/v1/token: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: Browser fetch OPTIONS /auth/v1/token: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
       // Test 4d) Package/key compatibility check (safe).
-      debugPrint('[SupabaseConnectivityTest] starting: package/key compatibility check');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: package/key compatibility check');
       try {
         final key = SupabaseConfig.anonKey;
         final kind = _describeKeyKind(key);
@@ -317,9 +344,12 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _keyKind = kind;
           _keyFormatDetail = jwt
               ? 'Looks like JWT (3-part, eyJ…)'
-              : (kind.startsWith('sb_') ? 'Looks like sb_* publishable key' : 'Unrecognized key prefix');
+              : (kind.startsWith('sb_')
+                  ? 'Looks like sb_* publishable key'
+                  : 'Unrecognized key prefix');
         });
-        debugPrint('[SupabaseConnectivityTest] package/key check: kind=$kind jwt=$jwt');
+        debugPrint(
+            '[SupabaseConnectivityTest] package/key check: kind=$kind jwt=$jwt');
       } catch (e) {
         setState(() {
           _keyKind = 'error';
@@ -328,7 +358,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
       }
 
       // Test 5) REST query check (PostgREST).
-      debugPrint('[SupabaseConnectivityTest] starting: PostgREST admin_users query');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: PostgREST admin_users query');
       try {
         await client.from('admin_users').select('admin_user_id').limit(1);
         setState(() {
@@ -336,37 +367,44 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _restQueryExType = null;
           _restQueryExMsg = null;
         });
-        debugPrint('[SupabaseConnectivityTest] success: PostgREST admin_users query');
+        debugPrint(
+            '[SupabaseConnectivityTest] success: PostgREST admin_users query');
       } catch (e, st) {
         setState(() {
           _restQueryOk = false;
           _restQueryExType = e.runtimeType.toString();
           _restQueryExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: PostgREST admin_users query: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: PostgREST admin_users query: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
 
       // Test 5b) PostgREST “headers check” (safe inference).
-      debugPrint('[SupabaseConnectivityTest] starting: PostgREST headers check (expected)');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: PostgREST headers check (expected)');
       try {
         final hasKey = SupabaseConfig.anonKey.trim().isNotEmpty;
-        final hasSession = client.auth.currentSession?.accessToken.isNotEmpty ?? false;
+        final hasSession =
+            client.auth.currentSession?.accessToken.isNotEmpty ?? false;
         setState(() {
           _postgrestApikeyExpected = hasKey;
           _postgrestAuthHeaderExpected = hasSession;
         });
-        debugPrint('[SupabaseConnectivityTest] expected headers: apikey=$hasKey auth=$hasSession');
+        debugPrint(
+            '[SupabaseConnectivityTest] expected headers: apikey=$hasKey auth=$hasSession');
       } catch (e) {
         setState(() {
           _postgrestApikeyExpected = false;
           _postgrestAuthHeaderExpected = false;
         });
-        debugPrint('[SupabaseConnectivityTest] headers check failed: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] headers check failed: ${e.runtimeType}: $e');
       }
 
       // Test 6) SDK sign-in test (uses user input; never logs credentials).
-      debugPrint('[SupabaseConnectivityTest] starting: Supabase SDK signInWithPassword');
+      debugPrint(
+          '[SupabaseConnectivityTest] starting: Supabase SDK signInWithPassword');
       try {
         final email = _signInEmailController.text.trim();
         final password = _signInPasswordController.text;
@@ -377,10 +415,12 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             _sdkSignInReceivedHttpStatus = false;
             _sdkSignInStatus = null;
             _sdkSignInExType = 'InputValidation';
-            _sdkSignInExMsg = 'Enter an email + password to run this test. (Not stored or logged)';
+            _sdkSignInExMsg =
+                'Enter an email + password to run this test. (Not stored or logged)';
           });
         } else {
-          await client.auth.signInWithPassword(email: email, password: password);
+          await client.auth
+              .signInWithPassword(email: email, password: password);
           await client.auth.signOut();
           setState(() {
             _sdkSignInOk = true;
@@ -390,7 +430,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             _sdkSignInExMsg = null;
           });
         }
-        debugPrint('[SupabaseConnectivityTest] ${_sdkSignInOk == true ? 'success' : 'fail'}: SDK signInWithPassword');
+        debugPrint(
+            '[SupabaseConnectivityTest] ${_sdkSignInOk == true ? 'success' : 'fail'}: SDK signInWithPassword');
       } catch (e, st) {
         final status = _extractStatusCodeFromException(e);
         setState(() {
@@ -400,7 +441,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _sdkSignInExType = e.runtimeType.toString();
           _sdkSignInExMsg = e.toString();
         });
-        debugPrint('[SupabaseConnectivityTest] fail: SDK signInWithPassword: ${e.runtimeType}: $e');
+        debugPrint(
+            '[SupabaseConnectivityTest] fail: SDK signInWithPassword: ${e.runtimeType}: $e');
         if (kDebugMode) debugPrint(st.toString());
       }
     } catch (e, st) {
@@ -441,7 +483,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             child: Center(
               child: Text(
                 kReleaseMode ? 'RELEASE' : 'DEBUG',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: cs.onSurfaceVariant, fontWeight: FontWeight.w800),
               ),
             ),
           ),
@@ -458,12 +501,19 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             title: 'Config sanity',
             rows: [
               _KV('Project origin', safeProjectOrigin),
-              _KV('URL has unexpected /rest/v1 suffix', SupabaseConfig.resolvedSupabaseProjectUrl.endsWith('/rest/v1') ? 'yes (misconfigured)' : 'no'),
-              _KV('SupabaseConfig.isInitialized', SupabaseConfig.isInitialized.toString()),
+              _KV(
+                  'URL has unexpected /rest/v1 suffix',
+                  SupabaseConfig.resolvedSupabaseProjectUrl.endsWith('/rest/v1')
+                      ? 'yes (misconfigured)'
+                      : 'no'),
+              _KV('SupabaseConfig.isInitialized',
+                  SupabaseConfig.isInitialized.toString()),
               _KV('Supabase key kind (safe)', _keyKind ?? '—'),
               _KV('Key format detail (safe)', _keyFormatDetail ?? '—'),
-              _KV('supabase_flutter (constraint)', _supabaseFlutterConstraint ?? '—'),
-              _KV('Supabase.initialize param used', _initializeParamUsed ?? '—'),
+              _KV('supabase_flutter (constraint)',
+                  _supabaseFlutterConstraint ?? '—'),
+              _KV('Supabase.initialize param used',
+                  _initializeParamUsed ?? '—'),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -472,7 +522,10 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
             rows: [
               Text(
                 'To isolate “Failed to fetch” vs invalid credentials, you can run a sign-in attempt. This page does not log or display what you type. Prefer a throwaway test user.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
               ),
               const SizedBox(height: AppSpacing.md),
               TextField(
@@ -498,11 +551,16 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
                 child: FilledButton.icon(
                   onPressed: _isRunning ? null : _runConnectivityTests,
                   icon: _isRunning
-                      ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: cs.onPrimary))
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: cs.onPrimary))
                       : Icon(Icons.wifi_tethering, color: cs.onPrimary),
                   label: Text(
                     _isRunning ? 'Running…' : 'Run connectivity tests',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800),
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: cs.onPrimary, fontWeight: FontWeight.w800),
                   ),
                 ),
               ),
@@ -512,14 +570,22 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
           _InfoCard(
             title: 'Run status',
             rows: [
-              _KV('Run button clicked', _runClickCount > 0 ? 'yes ($_runClickCount)' : 'no'),
+              _KV('Run button clicked',
+                  _runClickCount > 0 ? 'yes ($_runClickCount)' : 'no'),
               _KV('State', _isRunning ? 'Running tests…' : 'Idle'),
-              _KV('Run started at', _runStartedAt == null ? '—' : _runStartedAt!.toIso8601String()),
+              _KV(
+                  'Run started at',
+                  _runStartedAt == null
+                      ? '—'
+                      : _runStartedAt!.toIso8601String()),
             ],
           ),
           if (_fatalErrorType != null || _fatalErrorMessage != null) ...[
             const SizedBox(height: AppSpacing.md),
-            _FatalErrorBox(type: _fatalErrorType, message: _fatalErrorMessage, stack: _fatalErrorStack),
+            _FatalErrorBox(
+                type: _fatalErrorType,
+                message: _fatalErrorMessage,
+                stack: _fatalErrorStack),
           ],
           const SizedBox(height: AppSpacing.md),
           _ResultCard(
@@ -528,7 +594,8 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
               _TestResultItem(
                 label: 'Supabase initialized',
                 ok: _supabaseInitialized,
-                detail: _supabaseInitialized == null ? null : _supabaseInitDetail,
+                detail:
+                    _supabaseInitialized == null ? null : _supabaseInitDetail,
               ),
               _TestResultItem(
                 label: 'URL sanity check',
@@ -538,12 +605,20 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
               _TestResultItem(
                 label: 'GET project URL',
                 ok: _baseUrlProbeOk,
-                detail: _baseUrlProbeOk == null ? null : (_baseUrlProbeOk! ? 'status=$_baseUrlStatus' : 'type=$_baseUrlExType msg=$_baseUrlExMsg'),
+                detail: _baseUrlProbeOk == null
+                    ? null
+                    : (_baseUrlProbeOk!
+                        ? 'status=$_baseUrlStatus'
+                        : 'type=$_baseUrlExType msg=$_baseUrlExMsg'),
               ),
               _TestResultItem(
                 label: 'Auth health endpoint (/auth/v1/health)',
                 ok: _authSessionOk,
-                detail: _authSessionOk == null ? null : (_authSessionOk! ? 'status=$_authHealthStatus' : 'type=$_authSessionExType msg=$_authSessionExMsg'),
+                detail: _authSessionOk == null
+                    ? null
+                    : (_authSessionOk!
+                        ? 'status=$_authHealthStatus'
+                        : 'type=$_authSessionExType msg=$_authSessionExMsg'),
               ),
               _TestResultItem(
                 label: 'Browser fetch GET (/auth/v1/health)',
@@ -566,12 +641,20 @@ class _SupabaseConnectivityTestPageState extends State<SupabaseConnectivityTestP
               _TestResultItem(
                 label: "PostgREST admin_users query",
                 ok: _restQueryOk,
-                detail: _restQueryOk == null ? null : (_restQueryOk! ? 'ok' : 'type=$_restQueryExType msg=$_restQueryExMsg'),
+                detail: _restQueryOk == null
+                    ? null
+                    : (_restQueryOk!
+                        ? 'ok'
+                        : 'type=$_restQueryExType msg=$_restQueryExMsg'),
               ),
               _TestResultItem(
                 label: 'PostgREST headers check (expected)',
-                ok: (_postgrestApikeyExpected == null || _postgrestAuthHeaderExpected == null) ? null : true,
-                detail: (_postgrestApikeyExpected == null || _postgrestAuthHeaderExpected == null)
+                ok: (_postgrestApikeyExpected == null ||
+                        _postgrestAuthHeaderExpected == null)
+                    ? null
+                    : true,
+                detail: (_postgrestApikeyExpected == null ||
+                        _postgrestAuthHeaderExpected == null)
                     ? null
                     : 'apikey header expected=${_postgrestApikeyExpected == true ? 'yes' : 'no'}; Authorization header expected=${_postgrestAuthHeaderExpected == true ? 'yes' : 'no'}',
               ),
@@ -617,7 +700,10 @@ class _BannerCard extends StatelessWidget {
           Expanded(
             child: Text(
               text,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onErrorContainer, fontWeight: FontWeight.w900, height: 1.35),
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: cs.onErrorContainer,
+                  fontWeight: FontWeight.w900,
+                  height: 1.35),
             ),
           ),
         ],
@@ -645,7 +731,11 @@ class _InfoCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text(title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: AppSpacing.md),
           ...rows,
         ],
@@ -673,9 +763,14 @@ class _ResultCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900)),
+          Text(title,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w900)),
           const SizedBox(height: AppSpacing.md),
-          ...items.map((e) => Padding(padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: e)),
+          ...items.map((e) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm), child: e)),
         ],
       ),
     );
@@ -722,10 +817,18 @@ class _TestResultItem extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w800)),
+                Text(label,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
                 if (detail != null) ...[
                   const SizedBox(height: 6),
-                  Text(detail!, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
+                  Text(detail!,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: cs.onSurfaceVariant, height: 1.35)),
                 ],
               ],
             ),
@@ -750,8 +853,19 @@ class _KV extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(width: 210, child: Text(k, style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))),
-          Expanded(child: Text(v, style: Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700))),
+          SizedBox(
+              width: 210,
+              child: Text(k,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(color: cs.onSurfaceVariant))),
+          Expanded(
+              child: Text(v,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w700))),
         ],
       ),
     );
@@ -783,18 +897,29 @@ class _FatalErrorBox extends StatelessWidget {
             children: [
               Icon(Icons.error_outline, color: cs.error),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text('Unexpected error', style: t.titleMedium?.copyWith(fontWeight: FontWeight.w900, color: cs.onErrorContainer))),
+              Expanded(
+                  child: Text('Unexpected error',
+                      style: t.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: cs.onErrorContainer))),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          if (type != null) Text('Type: $type', style: t.bodyMedium?.copyWith(color: cs.onErrorContainer, height: 1.35)),
+          if (type != null)
+            Text('Type: $type',
+                style: t.bodyMedium
+                    ?.copyWith(color: cs.onErrorContainer, height: 1.35)),
           if (message != null) ...[
             const SizedBox(height: 6),
-            Text('Message: $message', style: t.bodyMedium?.copyWith(color: cs.onErrorContainer, height: 1.35)),
+            Text('Message: $message',
+                style: t.bodyMedium
+                    ?.copyWith(color: cs.onErrorContainer, height: 1.35)),
           ],
           if (stack != null) ...[
             const SizedBox(height: AppSpacing.md),
-            Text('Stack (dev only):', style: t.bodySmall?.copyWith(color: cs.onErrorContainer, fontWeight: FontWeight.w800)),
+            Text('Stack (dev only):',
+                style: t.bodySmall?.copyWith(
+                    color: cs.onErrorContainer, fontWeight: FontWeight.w800)),
             const SizedBox(height: 6),
             Container(
               width: double.infinity,
@@ -804,7 +929,11 @@ class _FatalErrorBox extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppRadius.lg),
                 border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
               ),
-              child: Text(stack!, style: t.bodySmall?.copyWith(fontFamily: 'monospace', height: 1.25, color: cs.onSurfaceVariant)),
+              child: Text(stack!,
+                  style: t.bodySmall?.copyWith(
+                      fontFamily: 'monospace',
+                      height: 1.25,
+                      color: cs.onSurfaceVariant)),
             ),
           ],
         ],

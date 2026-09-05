@@ -1,10 +1,26 @@
--- CuraVault Control Site CMS foundation.
+-- Reconcile the Control Site marketing CMS with the existing live CMS backend.
 --
--- The Control Site manages draft/review/scheduled/published marketing content.
--- The public website must only read published content whose publish time has
--- arrived. It must never require service-role credentials.
+-- Context:
+-- - The linked project already has an older marketing CMS with
+--   marketing_pages, marketing_sections, marketing_blog_posts, and additional
+--   website tables.
+-- - The previous local CMS foundation migration was never applied remotely and
+--   assumed those tables were absent.
+-- - This migration is forward-only and additive. It preserves existing tables,
+--   columns, rows, and legacy website CMS tables, then adds the columns/tables
+--   required by the current Control Site workspace.
 
 create extension if not exists pgcrypto;
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
 
 create table if not exists public.marketing_media_assets (
   id uuid primary key default gen_random_uuid(),
@@ -16,8 +32,7 @@ create table if not exists public.marketing_media_assets (
   width integer,
   height integer,
   size_bytes bigint,
-  visibility text not null default 'private'
-    check (visibility in ('private', 'public')),
+  visibility text not null default 'private',
   focal_point jsonb not null default '{}'::jsonb,
   metadata jsonb not null default '{}'::jsonb,
   created_by uuid references public.admin_users (admin_user_id) on delete set null,
@@ -25,53 +40,6 @@ create table if not exists public.marketing_media_assets (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (storage_bucket, storage_path)
-);
-
-create table if not exists public.marketing_pages (
-  id uuid primary key default gen_random_uuid(),
-  slug text not null unique,
-  title text not null,
-  status text not null default 'draft'
-    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')),
-  template text not null default 'marketing_page',
-  excerpt text,
-  seo_title text,
-  seo_description text,
-  canonical_url text,
-  og_image_asset_id uuid references public.marketing_media_assets (id) on delete set null,
-  published_at timestamptz,
-  scheduled_for timestamptz,
-  archived_at timestamptz,
-  created_by uuid references public.admin_users (admin_user_id) on delete set null,
-  updated_by uuid references public.admin_users (admin_user_id) on delete set null,
-  published_by uuid references public.admin_users (admin_user_id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (slug = lower(slug)),
-  check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
-);
-
-create table if not exists public.marketing_sections (
-  id uuid primary key default gen_random_uuid(),
-  page_id uuid not null references public.marketing_pages (id) on delete cascade,
-  section_key text not null,
-  section_type text not null default 'content',
-  sort_order integer not null default 0,
-  status text not null default 'draft'
-    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')),
-  eyebrow text,
-  title text,
-  body text,
-  content_json jsonb not null default '{}'::jsonb,
-  media_asset_id uuid references public.marketing_media_assets (id) on delete set null,
-  created_by uuid references public.admin_users (admin_user_id) on delete set null,
-  updated_by uuid references public.admin_users (admin_user_id) on delete set null,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique (page_id, section_key),
-  unique (page_id, sort_order),
-  check (section_key = lower(section_key)),
-  check (section_key ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
 );
 
 create table if not exists public.marketing_blog_categories (
@@ -84,9 +52,7 @@ create table if not exists public.marketing_blog_categories (
   created_by uuid references public.admin_users (admin_user_id) on delete set null,
   updated_by uuid references public.admin_users (admin_user_id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (slug = lower(slug)),
-  check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.marketing_blog_tags (
@@ -96,23 +62,74 @@ create table if not exists public.marketing_blog_tags (
   created_by uuid references public.admin_users (admin_user_id) on delete set null,
   updated_by uuid references public.admin_users (admin_user_id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (slug = lower(slug)),
-  check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.marketing_pages (
+  id uuid primary key default gen_random_uuid(),
+  slug text not null unique,
+  title text not null,
+  status text not null default 'draft',
+  template text not null default 'marketing_page',
+  excerpt text,
+  seo_title text,
+  seo_description text,
+  og_title text,
+  og_description text,
+  og_image_url text,
+  canonical_url text,
+  content_json jsonb not null default '{}'::jsonb,
+  og_image_asset_id uuid references public.marketing_media_assets (id) on delete set null,
+  published_at timestamptz,
+  scheduled_for timestamptz,
+  archived_at timestamptz,
+  created_by uuid references public.admin_users (admin_user_id) on delete set null,
+  updated_by uuid references public.admin_users (admin_user_id) on delete set null,
+  published_by uuid references public.admin_users (admin_user_id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists public.marketing_sections (
+  id uuid primary key default gen_random_uuid(),
+  page_id uuid not null references public.marketing_pages (id) on delete cascade,
+  section_key text not null,
+  section_type text not null default 'content',
+  sort_order integer not null default 0,
+  status text not null default 'draft',
+  eyebrow text,
+  title text,
+  subtitle text,
+  body text,
+  media_url text,
+  cta_label text,
+  cta_url text,
+  is_enabled boolean not null default true,
+  settings_json jsonb not null default '{}'::jsonb,
+  content_json jsonb not null default '{}'::jsonb,
+  media_asset_id uuid references public.marketing_media_assets (id) on delete set null,
+  created_by uuid references public.admin_users (admin_user_id) on delete set null,
+  updated_by uuid references public.admin_users (admin_user_id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.marketing_blog_posts (
   id uuid primary key default gen_random_uuid(),
   slug text not null unique,
   title text not null,
-  status text not null default 'draft'
-    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')),
+  status text not null default 'draft',
   excerpt text,
   body_markdown text,
+  body_json jsonb not null default '{}'::jsonb,
   content_json jsonb not null default '{}'::jsonb,
+  author_name text,
+  category text,
+  tags text[],
   category_id uuid references public.marketing_blog_categories (id) on delete set null,
   seo_title text,
   seo_description text,
+  og_image_url text,
   canonical_url text,
   og_image_asset_id uuid references public.marketing_media_assets (id) on delete set null,
   published_at timestamptz,
@@ -122,9 +139,7 @@ create table if not exists public.marketing_blog_posts (
   updated_by uuid references public.admin_users (admin_user_id) on delete set null,
   published_by uuid references public.admin_users (admin_user_id) on delete set null,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  check (slug = lower(slug)),
-  check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$')
+  updated_at timestamptz not null default now()
 );
 
 create table if not exists public.marketing_blog_post_tags (
@@ -137,8 +152,7 @@ create table if not exists public.marketing_blog_post_tags (
 
 create table if not exists public.marketing_content_revisions (
   id uuid primary key default gen_random_uuid(),
-  resource_type text not null
-    check (resource_type in ('page', 'section', 'blog_post', 'blog_category', 'blog_tag', 'media_asset')),
+  resource_type text not null,
   resource_id uuid not null,
   revision_number integer not null,
   snapshot jsonb not null,
@@ -150,11 +164,10 @@ create table if not exists public.marketing_content_revisions (
 
 create table if not exists public.marketing_social_queue (
   id uuid primary key default gen_random_uuid(),
-  resource_type text not null check (resource_type in ('page', 'blog_post')),
+  resource_type text not null,
   resource_id uuid not null,
   channel text not null,
-  status text not null default 'draft'
-    check (status in ('draft', 'queued', 'sent', 'cancelled', 'failed')),
+  status text not null default 'draft',
   scheduled_for timestamptz,
   payload_json jsonb not null default '{}'::jsonb,
   created_by uuid references public.admin_users (admin_user_id) on delete set null,
@@ -163,15 +176,91 @@ create table if not exists public.marketing_social_queue (
   updated_at timestamptz not null default now()
 );
 
-create or replace function public.set_updated_at()
-returns trigger
-language plpgsql
-as $$
+alter table public.marketing_pages
+  add column if not exists template text not null default 'marketing_page',
+  add column if not exists excerpt text,
+  add column if not exists scheduled_for timestamptz,
+  add column if not exists archived_at timestamptz,
+  add column if not exists published_by uuid references public.admin_users (admin_user_id) on delete set null,
+  add column if not exists og_image_asset_id uuid references public.marketing_media_assets (id) on delete set null;
+
+alter table public.marketing_sections
+  add column if not exists status text not null default 'draft',
+  add column if not exists eyebrow text,
+  add column if not exists content_json jsonb not null default '{}'::jsonb,
+  add column if not exists media_asset_id uuid references public.marketing_media_assets (id) on delete set null,
+  add column if not exists created_by uuid references public.admin_users (admin_user_id) on delete set null,
+  add column if not exists updated_by uuid references public.admin_users (admin_user_id) on delete set null;
+
+alter table public.marketing_blog_posts
+  add column if not exists content_json jsonb not null default '{}'::jsonb,
+  add column if not exists category_id uuid references public.marketing_blog_categories (id) on delete set null,
+  add column if not exists canonical_url text,
+  add column if not exists scheduled_for timestamptz,
+  add column if not exists archived_at timestamptz,
+  add column if not exists published_by uuid references public.admin_users (admin_user_id) on delete set null,
+  add column if not exists og_image_asset_id uuid references public.marketing_media_assets (id) on delete set null;
+
+do $$
 begin
-  new.updated_at = now();
-  return new;
-end;
-$$;
+  alter table public.marketing_pages
+    drop constraint if exists marketing_pages_status_check;
+  alter table public.marketing_pages
+    add constraint marketing_pages_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
+
+  alter table public.marketing_sections
+    drop constraint if exists marketing_sections_status_check;
+  alter table public.marketing_sections
+    add constraint marketing_sections_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
+
+  alter table public.marketing_blog_posts
+    drop constraint if exists marketing_blog_posts_status_check;
+  alter table public.marketing_blog_posts
+    add constraint marketing_blog_posts_status_check
+    check (status in ('draft', 'review', 'scheduled', 'published', 'archived')) not valid;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'marketing_media_assets_visibility_check'
+      and conrelid = 'public.marketing_media_assets'::regclass
+  ) then
+    alter table public.marketing_media_assets
+      add constraint marketing_media_assets_visibility_check
+      check (visibility in ('private', 'public')) not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'marketing_content_revisions_resource_type_check'
+      and conrelid = 'public.marketing_content_revisions'::regclass
+  ) then
+    alter table public.marketing_content_revisions
+      add constraint marketing_content_revisions_resource_type_check
+      check (resource_type in ('page', 'section', 'blog_post', 'blog_category', 'blog_tag', 'media_asset')) not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'marketing_social_queue_resource_type_check'
+      and conrelid = 'public.marketing_social_queue'::regclass
+  ) then
+    alter table public.marketing_social_queue
+      add constraint marketing_social_queue_resource_type_check
+      check (resource_type in ('page', 'blog_post')) not valid;
+  end if;
+
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'marketing_social_queue_status_check'
+      and conrelid = 'public.marketing_social_queue'::regclass
+  ) then
+    alter table public.marketing_social_queue
+      add constraint marketing_social_queue_status_check
+      check (status in ('draft', 'queued', 'sent', 'cancelled', 'failed')) not valid;
+  end if;
+end $$;
 
 drop trigger if exists set_updated_at_marketing_media_assets on public.marketing_media_assets;
 create trigger set_updated_at_marketing_media_assets
@@ -219,7 +308,7 @@ create index if not exists marketing_sections_status_idx
   on public.marketing_sections (status);
 create index if not exists marketing_blog_posts_status_published_at_idx
   on public.marketing_blog_posts (status, published_at desc);
-create index if not exists marketing_blog_posts_category_idx
+create index if not exists marketing_blog_posts_category_id_idx
   on public.marketing_blog_posts (category_id);
 create index if not exists marketing_blog_post_tags_tag_idx
   on public.marketing_blog_post_tags (tag_id);
@@ -238,6 +327,16 @@ alter table public.marketing_blog_post_tags enable row level security;
 alter table public.marketing_content_revisions enable row level security;
 alter table public.marketing_social_queue enable row level security;
 
+revoke all on public.marketing_media_assets from anon, authenticated;
+revoke all on public.marketing_pages from anon, authenticated;
+revoke all on public.marketing_sections from anon, authenticated;
+revoke all on public.marketing_blog_categories from anon, authenticated;
+revoke all on public.marketing_blog_tags from anon, authenticated;
+revoke all on public.marketing_blog_posts from anon, authenticated;
+revoke all on public.marketing_blog_post_tags from anon, authenticated;
+revoke all on public.marketing_content_revisions from anon, authenticated;
+revoke all on public.marketing_social_queue from anon, authenticated;
+
 grant select on public.marketing_media_assets to anon, authenticated;
 grant select on public.marketing_pages to anon, authenticated;
 grant select on public.marketing_sections to anon, authenticated;
@@ -248,15 +347,22 @@ grant select on public.marketing_blog_post_tags to anon, authenticated;
 grant select on public.marketing_content_revisions to authenticated;
 grant select on public.marketing_social_queue to authenticated;
 
-grant insert, update on public.marketing_media_assets to authenticated;
-grant insert, update on public.marketing_pages to authenticated;
-grant insert, update on public.marketing_sections to authenticated;
-grant insert, update on public.marketing_blog_categories to authenticated;
-grant insert, update on public.marketing_blog_tags to authenticated;
-grant insert, update on public.marketing_blog_posts to authenticated;
-grant insert, update on public.marketing_blog_post_tags to authenticated;
-grant insert, update on public.marketing_content_revisions to authenticated;
-grant insert, update on public.marketing_social_queue to authenticated;
+grant insert, update, delete on public.marketing_media_assets to authenticated;
+grant insert, update, delete on public.marketing_pages to authenticated;
+grant insert, update, delete on public.marketing_sections to authenticated;
+grant insert, update, delete on public.marketing_blog_categories to authenticated;
+grant insert, update, delete on public.marketing_blog_tags to authenticated;
+grant insert, update, delete on public.marketing_blog_posts to authenticated;
+grant insert, update, delete on public.marketing_blog_post_tags to authenticated;
+grant insert on public.marketing_content_revisions to authenticated;
+grant insert, update, delete on public.marketing_social_queue to authenticated;
+
+drop policy if exists "marketing_pages_select_active_admin" on public.marketing_pages;
+drop policy if exists "marketing_pages_write_active_admin" on public.marketing_pages;
+drop policy if exists "marketing_sections_select_active_admin" on public.marketing_sections;
+drop policy if exists "marketing_sections_write_active_admin" on public.marketing_sections;
+drop policy if exists "marketing_blog_posts_select_active_admin" on public.marketing_blog_posts;
+drop policy if exists "marketing_blog_posts_write_active_admin" on public.marketing_blog_posts;
 
 drop policy if exists "marketing_media_public_published_read" on public.marketing_media_assets;
 create policy "marketing_media_public_published_read"
@@ -320,7 +426,7 @@ using (
   and exists (
     select 1
     from public.marketing_pages p
-    where p.id = page_id
+    where p.id = marketing_sections.page_id
       and p.status = 'published'
       and p.archived_at is null
       and p.published_at is not null
@@ -385,7 +491,7 @@ using (
   exists (
     select 1
     from public.marketing_blog_posts p
-    where p.id = post_id
+    where p.id = marketing_blog_post_tags.post_id
       and p.status = 'published'
       and p.archived_at is null
       and p.published_at is not null

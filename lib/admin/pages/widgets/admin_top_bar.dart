@@ -6,12 +6,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class AdminTopBar extends StatelessWidget {
-  const AdminTopBar({super.key, required this.isDesktop, required this.onMenuPressed});
+  const AdminTopBar(
+      {super.key, required this.isDesktop, required this.onMenuPressed});
 
   final bool isDesktop;
   final VoidCallback onMenuPressed;
 
-  static const String environment = String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'DEV');
+  static const String environment =
+      String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'DEV');
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,8 @@ class AdminTopBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
       decoration: BoxDecoration(
         color: context.tokens.surface,
-        border: Border(bottom: BorderSide(color: context.tokens.border, width: 1)),
+        border:
+            Border(bottom: BorderSide(color: context.tokens.border, width: 1)),
       ),
       child: Row(
         children: [
@@ -49,12 +52,18 @@ class AdminTopBar extends StatelessWidget {
               auth.signOut();
             },
             icon: Icon(Icons.logout, color: cs.onSurface),
-            label: Text('Logout', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurface)),
+            label: Text('Logout',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(color: cs.onSurface)),
             style: TextButton.styleFrom(
               splashFactory: NoSplash.splashFactory,
               foregroundColor: cs.onSurface,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg)),
             ),
           ),
         ],
@@ -74,8 +83,10 @@ class _EnvironmentBadge extends StatelessWidget {
     final bg = isProd ? cs.primaryContainer : cs.surfaceContainerHighest;
     final fg = isProd ? cs.onPrimaryContainer : cs.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
+      decoration:
+          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -88,7 +99,11 @@ class _EnvironmentBadge extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(value.toUpperCase(), style: Theme.of(context).textTheme.labelLarge?.copyWith(color: fg, fontWeight: FontWeight.w700)),
+          Text(value.toUpperCase(),
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: fg, fontWeight: FontWeight.w700)),
         ],
       ),
     );
@@ -123,8 +138,11 @@ class _UserChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
-      decoration: BoxDecoration(color: cs.surfaceContainerHighest, borderRadius: BorderRadius.circular(999)),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
+      decoration: BoxDecoration(
+          color: cs.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -136,11 +154,18 @@ class _UserChip extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(email, overflow: TextOverflow.ellipsis, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(email,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
                 Text(
                   _roleLabel(role),
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: cs.onSurfaceVariant.withValues(alpha: 0.85), height: 1.1),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: cs.onSurfaceVariant.withValues(alpha: 0.85),
+                      height: 1.1),
                 ),
               ],
             ),

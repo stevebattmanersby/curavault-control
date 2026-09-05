@@ -65,7 +65,8 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     try {
       final client = ControlSupabaseClient.tryGet();
       if (client == null) {
-        throw StateError('Supabase client unavailable (not initialized or blocked by security guard).');
+        throw StateError(
+            'Supabase client unavailable (not initialized or blocked by security guard).');
       }
 
       // Verify public.is_active_admin() is callable and returns a boolean.
@@ -100,16 +101,22 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     }
   }
 
-  Future<_RpcTestResult> _callRpc(SupabaseClient client, String functionName) async {
+  Future<_RpcTestResult> _callRpc(
+      SupabaseClient client, String functionName) async {
     final startedAt = DateTime.now();
     try {
       final res = await client.rpc(functionName);
       final rowCount = _safeRowCount(res);
       final keys = _safePayloadKeys(res);
-      return _RpcTestResult.ok(rowCount: rowCount, payloadKeys: keys, durationMs: DateTime.now().difference(startedAt).inMilliseconds);
+      return _RpcTestResult.ok(
+          rowCount: rowCount,
+          payloadKeys: keys,
+          durationMs: DateTime.now().difference(startedAt).inMilliseconds);
     } catch (e) {
       debugPrint('AdminDataTest: RPC $functionName failed: $e');
-      return _RpcTestResult.err(safeMessage: _safeErrorMessage(e), durationMs: DateTime.now().difference(startedAt).inMilliseconds);
+      return _RpcTestResult.err(
+          safeMessage: _safeErrorMessage(e),
+          durationMs: DateTime.now().difference(startedAt).inMilliseconds);
     }
   }
 
@@ -147,7 +154,8 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
     return _truncate(e.toString(), 220);
   }
 
-  String _truncate(String s, int max) => s.length <= max ? s : '${s.substring(0, max)}…';
+  String _truncate(String s, int max) =>
+      s.length <= max ? s : '${s.substring(0, max)}…';
 
   @override
   Widget build(BuildContext context) {
@@ -163,20 +171,29 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
         title: 'Admin Data Test',
         subtitle: 'Access denied.',
         child: AdminCard(
-          child: Text('You must be an authenticated active admin to view this page.', style: Theme.of(context).textTheme.bodyMedium),
+          child: Text(
+              'You must be an authenticated active admin to view this page.',
+              style: Theme.of(context).textTheme.bodyMedium),
         ),
       );
     }
 
     return AdminPageScaffold(
       title: 'Admin Data Test',
-      subtitle: 'Dev-only: verifies admin-safe reporting RPCs (row counts only).',
+      subtitle:
+          'Dev-only: verifies admin-safe reporting RPCs (row counts only).',
       actions: [
         FilledButton.icon(
           onPressed: _isLoading ? null : _run,
           icon: Icon(Icons.refresh, color: cs.onPrimary),
-          label: Text('Run tests', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800)),
-          style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+          label: Text('Run tests',
+              style: Theme.of(context)
+                  .textTheme
+                  .labelLarge
+                  ?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w800)),
+          style: FilledButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg))),
         ),
       ],
       child: ListView(
@@ -185,7 +202,10 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
             AdminCard(
               child: Text(
                 'This is a dev-only page. Build is not in debug mode, so tests are disabled.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
             )
           else
@@ -195,11 +215,19 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
                   Container(
                     width: 40,
                     height: 40,
-                    decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.lg), gradient: LinearGradient(colors: [cs.primary, cs.tertiary])),
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        gradient:
+                            LinearGradient(colors: [cs.primary, cs.tertiary])),
                     child: Icon(Icons.data_usage, color: cs.onPrimary),
                   ),
                   const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text('Session + gate checks', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                  Expanded(
+                      child: Text('Session + gate checks',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800))),
                 ],
               ),
               child: Column(
@@ -209,7 +237,11 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
                   const SizedBox(height: AppSpacing.sm),
                   _InfoRow(label: 'admin role', value: _roleLabel(auth.role)),
                   const SizedBox(height: AppSpacing.md),
-                  Text('public.is_active_admin()', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900)),
+                  Text('public.is_active_admin()',
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleSmall
+                          ?.copyWith(fontWeight: FontWeight.w900)),
                   const SizedBox(height: AppSpacing.sm),
                   if (_activeAdminError != null)
                     _Pill(
@@ -220,10 +252,18 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
                     )
                   else
                     _Pill(
-                      icon: (_isActiveAdmin == true) ? Icons.check_circle_outline : Icons.help_outline,
-                      label: (_isActiveAdmin == null) ? 'not checked' : (_isActiveAdmin == true ? 'true' : 'false'),
-                      background: (_isActiveAdmin == true) ? cs.primaryContainer : cs.surfaceContainerHighest,
-                      foreground: (_isActiveAdmin == true) ? cs.onPrimaryContainer : cs.onSurfaceVariant,
+                      icon: (_isActiveAdmin == true)
+                          ? Icons.check_circle_outline
+                          : Icons.help_outline,
+                      label: (_isActiveAdmin == null)
+                          ? 'not checked'
+                          : (_isActiveAdmin == true ? 'true' : 'false'),
+                      background: (_isActiveAdmin == true)
+                          ? cs.primaryContainer
+                          : cs.surfaceContainerHighest,
+                      foreground: (_isActiveAdmin == true)
+                          ? cs.onPrimaryContainer
+                          : cs.onSurfaceVariant,
                     ),
                 ],
               ),
@@ -232,13 +272,22 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
           AdminCard(
             header: Row(
               children: [
-                Expanded(child: Text('Reporting RPC tests', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
+                Expanded(
+                    child: Text('Reporting RPC tests',
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800))),
                 if (kDebugMode)
                   _Pill(
                     icon: _isLoading ? Icons.hourglass_bottom : Icons.bolt,
                     label: _isLoading ? 'running…' : 'ready',
-                    background: _isLoading ? cs.surfaceContainerHighest : cs.secondaryContainer,
-                    foreground: _isLoading ? cs.onSurfaceVariant : cs.onSecondaryContainer,
+                    background: _isLoading
+                        ? cs.surfaceContainerHighest
+                        : cs.secondaryContainer,
+                    foreground: _isLoading
+                        ? cs.onSurfaceVariant
+                        : cs.onSecondaryContainer,
                   ),
               ],
             ),
@@ -257,28 +306,54 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
             AdminCard(
               header: Row(
                 children: [
-                  Expanded(child: Text('RPC payload keys (debug-only)', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800))),
-                  Text('Field names only', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Expanded(
+                      child: Text('RPC payload keys (debug-only)',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800))),
+                  Text('Field names only',
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: _rpcNames.keys.map((label) {
                   final r = _results[label];
-                  final keys = (r == null || !r.isOk) ? const <String>[] : r.payloadKeys;
+                  final keys =
+                      (r == null || !r.isOk) ? const <String>[] : r.payloadKeys;
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w800)),
+                        Text(label,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(fontWeight: FontWeight.w800)),
                         const SizedBox(height: 8),
                         if (r == null)
-                          Text('not run', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                          Text('not run',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant))
                         else if (!r.isOk)
-                          Text('RPC failed (keys unavailable).', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                          Text('RPC failed (keys unavailable).',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant))
                         else if (keys.isEmpty)
-                          Text('No rows returned (no keys).', style: Theme.of(context).textTheme.bodySmall?.copyWith(color: cs.onSurfaceVariant))
+                          Text('No rows returned (no keys).',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(color: cs.onSurfaceVariant))
                         else
                           Wrap(
                             spacing: 8,
@@ -286,13 +361,23 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
                             children: [
                               for (final k in keys)
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: cs.surfaceContainerHighest.withValues(alpha: 0.45),
+                                    color: cs.surfaceContainerHighest
+                                        .withValues(alpha: 0.45),
                                     borderRadius: BorderRadius.circular(999),
-                                    border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                                    border: Border.all(
+                                        color: cs.outlineVariant
+                                            .withValues(alpha: 0.35)),
                                   ),
-                                  child: Text(k, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, fontWeight: FontWeight.w700)),
+                                  child: Text(k,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                              color: cs.onSurfaceVariant,
+                                              fontWeight: FontWeight.w700)),
                                 ),
                             ],
                           ),
@@ -307,7 +392,10 @@ class _AdminDataTestPageState extends State<AdminDataTestPage> {
           AdminCard(
             child: Text(
               'Privacy guardrails: this page only reports PASS/FAIL and row counts. It never renders the RPC payload, and it must never expose raw health content (names, values, documents, AI prompts/responses, search text).',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
             ),
           ),
         ],
@@ -349,12 +437,20 @@ class _RpcRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _Pill(icon: icon, label: label, background: badgeBg, foreground: badgeFg),
+          _Pill(
+              icon: icon,
+              label: label,
+              background: badgeBg,
+              foreground: badgeFg),
           const SizedBox(width: AppSpacing.md),
-          Expanded(child: Text(trailing, style: t.bodyMedium?.copyWith(color: cs.onSurface, height: 1.25))),
+          Expanded(
+              child: Text(trailing,
+                  style: t.bodyMedium
+                      ?.copyWith(color: cs.onSurface, height: 1.25))),
           if (result != null) ...[
             const SizedBox(width: AppSpacing.md),
-            Text('${result!.durationMs}ms', style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+            Text('${result!.durationMs}ms',
+                style: t.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
           ],
         ],
       ),
@@ -363,7 +459,11 @@ class _RpcRow extends StatelessWidget {
 }
 
 class _Pill extends StatelessWidget {
-  const _Pill({required this.icon, required this.label, required this.background, required this.foreground});
+  const _Pill(
+      {required this.icon,
+      required this.label,
+      required this.background,
+      required this.foreground});
   final IconData icon;
   final String label;
   final Color background;
@@ -373,14 +473,18 @@ class _Pill extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
-      decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(999)),
+      padding:
+          const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 8),
+      decoration: BoxDecoration(
+          color: background, borderRadius: BorderRadius.circular(999)),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 18, color: foreground),
           const SizedBox(width: 8),
-          Text(label, style: t.labelLarge?.copyWith(color: foreground, fontWeight: FontWeight.w800)),
+          Text(label,
+              style: t.labelLarge
+                  ?.copyWith(color: foreground, fontWeight: FontWeight.w800)),
         ],
       ),
     );
@@ -398,25 +502,49 @@ class _InfoRow extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     return Row(
       children: [
-        SizedBox(width: 110, child: Text(label, style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+        SizedBox(
+            width: 110,
+            child: Text(label,
+                style: t.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
         const SizedBox(width: AppSpacing.sm),
-        Expanded(child: Text(value, style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
+        Expanded(
+            child: Text(value,
+                style: t.titleSmall?.copyWith(fontWeight: FontWeight.w700))),
       ],
     );
   }
 }
 
 class _RpcTestResult {
-  const _RpcTestResult._({required this.isOk, required this.rowCount, required this.payloadKeys, required this.safeMessage, required this.durationMs});
+  const _RpcTestResult._(
+      {required this.isOk,
+      required this.rowCount,
+      required this.payloadKeys,
+      required this.safeMessage,
+      required this.durationMs});
   final bool isOk;
   final int rowCount;
   final List<String> payloadKeys;
   final String safeMessage;
   final int durationMs;
 
-  factory _RpcTestResult.ok({required int rowCount, required List<String> payloadKeys, required int durationMs}) =>
-      _RpcTestResult._(isOk: true, rowCount: rowCount, payloadKeys: payloadKeys, safeMessage: '', durationMs: durationMs);
+  factory _RpcTestResult.ok(
+          {required int rowCount,
+          required List<String> payloadKeys,
+          required int durationMs}) =>
+      _RpcTestResult._(
+          isOk: true,
+          rowCount: rowCount,
+          payloadKeys: payloadKeys,
+          safeMessage: '',
+          durationMs: durationMs);
 
-  factory _RpcTestResult.err({required String safeMessage, required int durationMs}) =>
-      _RpcTestResult._(isOk: false, rowCount: 0, payloadKeys: const [], safeMessage: safeMessage, durationMs: durationMs);
+  factory _RpcTestResult.err(
+          {required String safeMessage, required int durationMs}) =>
+      _RpcTestResult._(
+          isOk: false,
+          rowCount: 0,
+          payloadKeys: const [],
+          safeMessage: safeMessage,
+          durationMs: durationMs);
 }

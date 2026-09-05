@@ -12,7 +12,11 @@ import 'package:flutter/material.dart';
 /// - Shows only operational metadata (source kind, RPC/view name, row counts, timestamps)
 /// - Shows only admin-safe error messages
 class AdminOwnerDataSourcePanel extends StatelessWidget {
-  const AdminOwnerDataSourcePanel({super.key, required this.store, required this.dataSourceKey, required this.title});
+  const AdminOwnerDataSourcePanel(
+      {super.key,
+      required this.store,
+      required this.dataSourceKey,
+      required this.title});
 
   final AdminStore store;
   final AdminDataSourceKey dataSourceKey;
@@ -21,7 +25,9 @@ class AdminOwnerDataSourcePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final admin = store.currentAdmin;
-    if (admin == null || admin.role != AdminRole.owner) return const SizedBox.shrink();
+    if (admin == null || admin.role != AdminRole.owner) {
+      return const SizedBox.shrink();
+    }
 
     final status = store.dataSource(dataSourceKey);
     final cs = Theme.of(context).colorScheme;
@@ -32,8 +38,18 @@ class AdminOwnerDataSourcePanel extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(width: 160, child: Text(k, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
-            Expanded(child: SelectableText(v, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: valueColor ?? cs.onSurface, fontWeight: FontWeight.w700))),
+            SizedBox(
+                width: 160,
+                child: Text(k,
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant))),
+            Expanded(
+                child: SelectableText(v,
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                        color: valueColor ?? cs.onSurface,
+                        fontWeight: FontWeight.w700))),
           ],
         ),
       );
@@ -46,7 +62,9 @@ class AdminOwnerDataSourcePanel extends StatelessWidget {
       AdminDataSourceKind.error => 'error',
     };
 
-    final refreshed = status.lastRefreshedAt == null ? '—' : formatDateTimeShort(status.lastRefreshedAt);
+    final refreshed = status.lastRefreshedAt == null
+        ? '—'
+        : formatDateTimeShort(status.lastRefreshedAt);
     final rowCount = status.rowCount?.toString() ?? '—';
 
     final tone = switch (status.kind) {
@@ -59,7 +77,11 @@ class AdminOwnerDataSourcePanel extends StatelessWidget {
     return AdminCard(
       header: Row(
         children: [
-          Text('$title • Data source status', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800)),
+          Text('$title • Data source status',
+              style: Theme.of(context)
+                  .textTheme
+                  .titleMedium
+                  ?.copyWith(fontWeight: FontWeight.w800)),
           const Spacer(),
           AdminDataSourceBadge(status: status),
         ],
@@ -85,7 +107,12 @@ class AdminOwnerDataSourcePanel extends StatelessWidget {
                 children: [
                   Icon(Icons.error_outline, color: cs.error),
                   const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(status.safeErrorMessage!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4))),
+                  Expanded(
+                      child: Text(status.safeErrorMessage!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.copyWith(height: 1.4))),
                 ],
               ),
             ),

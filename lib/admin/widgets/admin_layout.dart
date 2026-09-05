@@ -7,7 +7,12 @@ class AdminBreakpoints {
 }
 
 class AdminPageScaffold extends StatelessWidget {
-  const AdminPageScaffold({super.key, required this.title, this.subtitle, required this.child, this.actions});
+  const AdminPageScaffold(
+      {super.key,
+      required this.title,
+      this.subtitle,
+      required this.child,
+      this.actions});
 
   final String title;
   final String? subtitle;
@@ -18,7 +23,8 @@ class AdminPageScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -28,10 +34,16 @@ class AdminPageScaffold extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title, style: textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    Text(title,
+                        style: textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.w700)),
                     if (subtitle != null) ...[
                       const SizedBox(height: 6),
-                      Text(subtitle!, style: textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
+                      Text(subtitle!,
+                          style: textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant)),
                     ],
                   ],
                 ),
@@ -48,7 +60,12 @@ class AdminPageScaffold extends StatelessWidget {
 }
 
 class AdminCard extends StatelessWidget {
-  const AdminCard({super.key, required this.child, this.padding, this.header, this.aiEmphasis = false});
+  const AdminCard(
+      {super.key,
+      required this.child,
+      this.padding,
+      this.header,
+      this.aiEmphasis = false});
 
   final Widget? header;
   final Widget child;
@@ -58,13 +75,17 @@ class AdminCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final reduceMotion = MediaQuery.of(context).disableAnimations || MediaQuery.of(context).accessibleNavigation;
-    final borderColor = aiEmphasis ? tokens.borderGlow.withValues(alpha: 0.75) : tokens.border;
+    final reduceMotion = MediaQuery.of(context).disableAnimations ||
+        MediaQuery.of(context).accessibleNavigation;
+    final borderColor =
+        aiEmphasis ? tokens.borderGlow.withValues(alpha: 0.75) : tokens.border;
     final shadows = aiEmphasis ? tokens.glowShadow : tokens.cardShadow;
-    final cardColor = tokens.surfaceElevated.withValues(alpha: aiEmphasis ? 0.68 : 1);
+    final cardColor =
+        tokens.surfaceElevated.withValues(alpha: aiEmphasis ? 0.68 : 1);
 
     return AnimatedContainer(
-      duration: reduceMotion ? Duration.zero : const Duration(milliseconds: 220),
+      duration:
+          reduceMotion ? Duration.zero : const Duration(milliseconds: 220),
       curve: Curves.easeOut,
       decoration: BoxDecoration(
         color: cardColor,
@@ -77,7 +98,10 @@ class AdminCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (header != null) ...[header!, const SizedBox(height: AppSpacing.sm)],
+            if (header != null) ...[
+              header!,
+              const SizedBox(height: AppSpacing.sm)
+            ],
             child,
           ],
         ),
@@ -87,7 +111,12 @@ class AdminCard extends StatelessWidget {
 }
 
 class MetricTile extends StatelessWidget {
-  const MetricTile({super.key, required this.label, required this.value, this.deltaLabel, this.icon});
+  const MetricTile(
+      {super.key,
+      required this.label,
+      required this.value,
+      this.deltaLabel,
+      this.icon});
 
   final String label;
   final String value;
@@ -118,12 +147,18 @@ class MetricTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant)),
+                Text(label,
+                    style: textTheme.labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant)),
                 const SizedBox(height: 6),
-                Text(value, style: textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                Text(value,
+                    style: textTheme.titleLarge
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 if (deltaLabel != null) ...[
                   const SizedBox(height: 6),
-                  Text(deltaLabel!, style: textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                  Text(deltaLabel!,
+                      style: textTheme.labelMedium
+                          ?.copyWith(color: cs.onSurfaceVariant)),
                 ],
               ],
             ),

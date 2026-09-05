@@ -11,8 +11,67 @@ import 'package:curavault_admin/theme.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+enum WebsiteCmsSection {
+  status,
+  pages,
+  blog,
+  seo,
+  pricing,
+  faqs,
+  testimonials,
+  campaigns,
+  assets;
+
+  String get title => switch (this) {
+        WebsiteCmsSection.status => 'Website CMS',
+        WebsiteCmsSection.pages => 'Website • Pages',
+        WebsiteCmsSection.blog => 'Website • Blog',
+        WebsiteCmsSection.seo => 'Website • SEO',
+        WebsiteCmsSection.pricing => 'Website • Pricing',
+        WebsiteCmsSection.faqs => 'Website • FAQs',
+        WebsiteCmsSection.testimonials => 'Website • Testimonials',
+        WebsiteCmsSection.campaigns => 'Website • Campaigns',
+        WebsiteCmsSection.assets => 'Website • Assets',
+      };
+
+  String get subtitle => switch (this) {
+        WebsiteCmsSection.status =>
+          'Manage public website content. Public access is limited to published content only.',
+        WebsiteCmsSection.pages =>
+          'Manage marketing pages. Unpublished drafts are never exposed publicly.',
+        WebsiteCmsSection.blog =>
+          'Create and publish blog posts. Avoid unverified medical or compliance claims.',
+        WebsiteCmsSection.seo =>
+          'Global SEO defaults, sitemap toggles, and schema settings.',
+        WebsiteCmsSection.pricing =>
+          'Manage pricing plans shown on the public marketing website.',
+        WebsiteCmsSection.faqs =>
+          'FAQ categories and entries for the marketing site.',
+        WebsiteCmsSection.testimonials => 'Customer testimonials library.',
+        WebsiteCmsSection.campaigns =>
+          'Create campaign landing overlays without code changes.',
+        WebsiteCmsSection.assets =>
+          'Upload and manage public website media assets.',
+      };
+
+  String get tableName => switch (this) {
+        WebsiteCmsSection.status => 'marketing_tables',
+        WebsiteCmsSection.pages => 'marketing_pages',
+        WebsiteCmsSection.blog => 'marketing_blog_posts',
+        WebsiteCmsSection.seo => 'marketing_seo_settings',
+        WebsiteCmsSection.pricing => 'marketing_pricing_plans',
+        WebsiteCmsSection.faqs => 'marketing_faqs',
+        WebsiteCmsSection.testimonials => 'marketing_testimonials',
+        WebsiteCmsSection.campaigns => 'marketing_campaigns',
+        WebsiteCmsSection.assets => 'marketing_media_assets',
+      };
+}
+
 class WebsiteCmsStatusPage extends StatelessWidget {
-  const WebsiteCmsStatusPage({super.key});
+  const WebsiteCmsStatusPage(
+      {super.key, this.section = WebsiteCmsSection.status});
+
+  final WebsiteCmsSection section;
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +83,29 @@ class WebsiteCmsStatusPage extends StatelessWidget {
     final canManage = AdminRbac.canManageMarketingCms(role);
 
     return AdminPageScaffold(
-      title: 'Website CMS',
-      subtitle:
-          'Manage marketing pages and blog drafts. Public website access is limited to published content only.',
+      title: section.title,
+      subtitle: section.subtitle,
       actions: [
         AdminDataSourceBadge(
             status: store.dataSource(AdminDataSourceKey.websiteCms)),
         const SizedBox(width: AppSpacing.sm),
+        if (section == WebsiteCmsSection.pages && canManage) ...[
+          FilledButton.icon(
+            onPressed: () => _openPageEditor(context),
+            icon: const Icon(Icons.add),
+            label: const Text('Create'),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+        if (section == WebsiteCmsSection.blog && canManage) ...[
+          FilledButton.icon(
+            onPressed: () => _openBlogEditor(context,
+                categories: cms?.categories ?? const []),
+            icon: const Icon(Icons.add),
+            label: const Text('Create'),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
         IconButton(
           onPressed: () => context.read<AdminStore>().refreshWebsiteCmsStatus(),
           icon: Icon(Icons.refresh,
@@ -64,7 +139,10 @@ class WebsiteCmsStatusPage extends StatelessWidget {
                   : cms == null || snap == null
                       ? const _EmptyWebsiteCmsState()
                       : _WebsiteCmsWorkspace(
-                          snapshot: snap, cms: cms, canManage: canManage),
+                          snapshot: snap,
+                          cms: cms,
+                          canManage: canManage,
+                          section: section),
     );
   }
 }
@@ -74,11 +152,13 @@ class _WebsiteCmsWorkspace extends StatefulWidget {
     required this.snapshot,
     required this.cms,
     required this.canManage,
+    required this.section,
   });
 
   final WebsiteCmsStatusSnapshot snapshot;
   final MarketingCmsSnapshot cms;
   final bool canManage;
+  final WebsiteCmsSection section;
 
   @override
   State<_WebsiteCmsWorkspace> createState() => _WebsiteCmsWorkspaceState();
@@ -90,6 +170,31 @@ class _WebsiteCmsWorkspaceState extends State<_WebsiteCmsWorkspace> {
   @override
   Widget build(BuildContext context) {
     final cms = widget.cms;
+    final section = widget.section;
+
+    if (section == WebsiteCmsSection.pages) {
+      return _WebsiteSectionShell(
+        section: section,
+        snapshot: widget.snapshot,
+        child: _PagesTab(cms: cms, canManage: widget.canManage, compact: true),
+      );
+    }
+
+    if (section == WebsiteCmsSection.blog) {
+      return _WebsiteSectionShell(
+        section: section,
+        snapshot: widget.snapshot,
+        child: _BlogTab(cms: cms, canManage: widget.canManage, compact: true),
+      );
+    }
+
+    if (section != WebsiteCmsSection.status) {
+      return _WebsiteSectionShell(
+        section: section,
+        snapshot: widget.snapshot,
+        child: _PlannedWebsiteSection(section: section),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -159,30 +264,225 @@ class _WebsiteCmsWorkspaceState extends State<_WebsiteCmsWorkspace> {
   }
 }
 
+class _WebsiteSectionShell extends StatelessWidget {
+  const _WebsiteSectionShell(
+      {required this.section, required this.snapshot, required this.child});
+
+  final WebsiteCmsSection section;
+  final WebsiteCmsStatusSnapshot snapshot;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = _statusRowForSection(snapshot, section);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _WebsiteSectionStatusCard(section: section, row: row),
+        const SizedBox(height: AppSpacing.lg),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _WebsiteSectionStatusCard extends StatelessWidget {
+  const _WebsiteSectionStatusCard({required this.section, required this.row});
+
+  final WebsiteCmsSection section;
+  final WebsiteCmsTableStatusRow? row;
+
+  @override
+  Widget build(BuildContext context) {
+    final err = (row?.safeErrorMessage ?? '').trim();
+    final rowCount = row?.rowCount;
+    final refreshed = row?.latestUpdatedAt;
+    final status = row?.status ?? WebsiteCmsTableOverallStatus.missingTable;
+    return AdminCard(
+      header: Row(
+        children: [
+          Expanded(
+              child: Text(
+                  '${_marketingLabelForSection(section)} • Data source status',
+                  style: Theme.of(context)
+                      .textTheme
+                      .titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800))),
+          _TableStatusChip(status: status),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _StatusLine(
+              label: 'data source',
+              value: row?.exists == true ? 'live' : 'error'),
+          _StatusLine(
+              label: 'table / query name',
+              value: row?.tableName ?? section.tableName),
+          _StatusLine(
+              label: 'row count',
+              value: rowCount == null
+                  ? '-'
+                  : AdminFormatters.compactInt(rowCount)),
+          _StatusLine(
+              label: 'last refreshed',
+              value: refreshed == null
+                  ? '-'
+                  : AdminFormatters.dateTime(refreshed)),
+          if (err.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(err,
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: Theme.of(context).colorScheme.error)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusLine extends StatelessWidget {
+  const _StatusLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          SizedBox(
+              width: 160,
+              child: Text(label,
+                  style: textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700))),
+          Expanded(
+              child: Text(value,
+                  style: textTheme.bodyMedium
+                      ?.copyWith(fontWeight: FontWeight.w800),
+                  overflow: TextOverflow.ellipsis)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PlannedWebsiteSection extends StatelessWidget {
+  const _PlannedWebsiteSection({required this.section});
+
+  final WebsiteCmsSection section;
+
+  @override
+  Widget build(BuildContext context) {
+    final copy = _plannedCopyForSection(section);
+    return _EmptyPanel(
+        icon: _iconForSection(section), title: copy.$1, body: copy.$2);
+  }
+}
+
+WebsiteCmsTableStatusRow? _statusRowForSection(
+    WebsiteCmsStatusSnapshot snapshot, WebsiteCmsSection section) {
+  for (final row in snapshot.rows) {
+    if (row.tableName == section.tableName) return row;
+  }
+  return null;
+}
+
+String _marketingLabelForSection(WebsiteCmsSection section) =>
+    switch (section) {
+      WebsiteCmsSection.pages => 'Marketing pages',
+      WebsiteCmsSection.blog => 'Marketing blog posts',
+      WebsiteCmsSection.seo => 'Global SEO settings',
+      WebsiteCmsSection.pricing => 'Pricing plans',
+      WebsiteCmsSection.faqs => 'Marketing FAQs',
+      WebsiteCmsSection.testimonials => 'Marketing testimonials',
+      WebsiteCmsSection.campaigns => 'Marketing campaigns',
+      WebsiteCmsSection.assets => 'Marketing assets',
+      WebsiteCmsSection.status => 'Marketing CMS',
+    };
+
+IconData _iconForSection(WebsiteCmsSection section) => switch (section) {
+      WebsiteCmsSection.pages => Icons.web_asset_outlined,
+      WebsiteCmsSection.blog => Icons.article_outlined,
+      WebsiteCmsSection.seo => Icons.manage_search_outlined,
+      WebsiteCmsSection.pricing => Icons.sell_outlined,
+      WebsiteCmsSection.faqs => Icons.quiz_outlined,
+      WebsiteCmsSection.testimonials => Icons.reviews_outlined,
+      WebsiteCmsSection.campaigns => Icons.campaign_outlined,
+      WebsiteCmsSection.assets => Icons.photo_library_outlined,
+      WebsiteCmsSection.status => Icons.web_outlined,
+    };
+
+(String, String) _plannedCopyForSection(WebsiteCmsSection section) =>
+    switch (section) {
+      WebsiteCmsSection.seo => (
+          'SEO settings ready',
+          'Global SEO defaults, sitemap settings, and schema controls are connected to the live CMS table.'
+        ),
+      WebsiteCmsSection.pricing => (
+          'No pricing plans yet',
+          'Create plan copy for the marketing website when subscription messaging is ready.'
+        ),
+      WebsiteCmsSection.faqs => (
+          'No FAQs yet',
+          'FAQ categories and entries can be managed here when content is ready.'
+        ),
+      WebsiteCmsSection.testimonials => (
+          'No testimonials yet',
+          'Customer testimonials can be reviewed and published here without exposing medical content.'
+        ),
+      WebsiteCmsSection.campaigns => (
+          'No campaigns yet',
+          'Create campaign landing overlays with UTM, schedule, and section controls.'
+        ),
+      WebsiteCmsSection.assets => (
+          'No assets yet',
+          'Upload and manage public marketing images, icons, and media assets.'
+        ),
+      WebsiteCmsSection.pages ||
+      WebsiteCmsSection.blog ||
+      WebsiteCmsSection.status =>
+        (
+          'No content yet',
+          'Create content from the page action when you are ready.'
+        ),
+    };
+
 class _PagesTab extends StatelessWidget {
-  const _PagesTab({required this.cms, required this.canManage});
+  const _PagesTab(
+      {required this.cms, required this.canManage, this.compact = false});
 
   final MarketingCmsSnapshot cms;
   final bool canManage;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _TabHeader(
-          title: 'Pages',
-          body: canManage
-              ? 'Create draft pages, manage page sections, and publish only when reviewed.'
-              : 'Read-only CMS inspection.',
-          action: canManage
-              ? FilledButton.icon(
-                  onPressed: () => _openPageEditor(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('New page'),
-                )
-              : null,
-        ),
-        const SizedBox(height: AppSpacing.md),
+        if (!compact) ...[
+          _TabHeader(
+            title: 'Pages',
+            body: canManage
+                ? 'Create draft pages, manage page sections, and publish only when reviewed.'
+                : 'Read-only CMS inspection.',
+            action: canManage
+                ? FilledButton.icon(
+                    onPressed: () => _openPageEditor(context),
+                    icon: const Icon(Icons.add),
+                    label: const Text('New page'),
+                  )
+                : null,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         Expanded(
           child: cms.pages.isEmpty
               ? _EmptyPanel(
@@ -212,30 +512,34 @@ class _PagesTab extends StatelessWidget {
 }
 
 class _BlogTab extends StatelessWidget {
-  const _BlogTab({required this.cms, required this.canManage});
+  const _BlogTab(
+      {required this.cms, required this.canManage, this.compact = false});
 
   final MarketingCmsSnapshot cms;
   final bool canManage;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _TabHeader(
-          title: 'Blog',
-          body: canManage
-              ? 'Prepare launch posts, SEO summaries, and publication status.'
-              : 'Read-only blog inspection.',
-          action: canManage
-              ? FilledButton.icon(
-                  onPressed: () =>
-                      _openBlogEditor(context, categories: cms.categories),
-                  icon: const Icon(Icons.add),
-                  label: const Text('New post'),
-                )
-              : null,
-        ),
-        const SizedBox(height: AppSpacing.md),
+        if (!compact) ...[
+          _TabHeader(
+            title: 'Blog',
+            body: canManage
+                ? 'Prepare launch posts, SEO summaries, and publication status.'
+                : 'Read-only blog inspection.',
+            action: canManage
+                ? FilledButton.icon(
+                    onPressed: () =>
+                        _openBlogEditor(context, categories: cms.categories),
+                    icon: const Icon(Icons.add),
+                    label: const Text('New post'),
+                  )
+                : null,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         Expanded(
           child: cms.blogPosts.isEmpty
               ? _EmptyPanel(

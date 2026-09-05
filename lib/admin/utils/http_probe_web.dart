@@ -9,7 +9,8 @@ import 'package:flutter/foundation.dart';
 /// Minimal HTTP probe for Flutter Web.
 ///
 /// Uses `dart:html` directly to avoid adding dependencies.
-Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD', Map<String, String>? headers}) async {
+Future<HttpProbeResult> httpProbe(Uri url,
+    {String method = 'HEAD', Map<String, String>? headers}) async {
   try {
     final res = await html.HttpRequest.request(
       url.toString(),
@@ -22,6 +23,9 @@ Future<HttpProbeResult> httpProbe(Uri url, {String method = 'HEAD', Map<String, 
   } catch (e) {
     // Common in sandboxed/blocked contexts: "ClientException: Failed to fetch".
     debugPrint('httpProbe($method $url) failed: $e');
-    return HttpProbeResult(ok: false, exceptionType: e.runtimeType.toString(), message: e.toString());
+    return HttpProbeResult(
+        ok: false,
+        exceptionType: e.runtimeType.toString(),
+        message: e.toString());
   }
 }

@@ -25,7 +25,8 @@ class AdminThemeStore extends ChangeNotifier {
   AdminAuthStore? _auth;
   late final SupabaseAdminQueries _queries;
 
-  AdminThemeStore({SupabaseAdminQueries? queries}) : _queries = queries ?? SupabaseAdminQueries();
+  AdminThemeStore({SupabaseAdminQueries? queries})
+      : _queries = queries ?? SupabaseAdminQueries();
 
   Future<void> bootstrap({required AdminAuthStore auth}) async {
     _auth = auth;

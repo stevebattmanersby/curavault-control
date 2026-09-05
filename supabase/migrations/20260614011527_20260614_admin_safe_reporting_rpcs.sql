@@ -7,10 +7,6 @@
 
 begin;
 
--- ----------------------------------------------------------
--- Helpers (graceful handling for missing relations)
--- ----------------------------------------------------------
-
 create or replace function public._admin_safe_count(_qualified_table text)
 returns bigint
 language plpgsql
@@ -24,7 +20,6 @@ begin
   if to_regclass(_qualified_table) is null then
     return 0;
   end if;
-
   execute format('select count(*)::bigint from %s', _qualified_table) into _count;
   return coalesce(_count, 0);
 exception
@@ -32,10 +27,6 @@ exception
     return 0;
 end;
 $$;
-
--- ----------------------------------------------------------
--- 1) Dashboard metrics (single row)
--- ----------------------------------------------------------
 
 create or replace function public.admin_get_dashboard_metrics()
 returns table (
@@ -69,7 +60,6 @@ begin
 
   return query
   select
-    -- auth.users is readable here because of SECURITY DEFINER
     (select count(*)::bigint from auth.users) as total_auth_users,
     public._admin_safe_count('public.admin_users') as total_admin_users,
     (select count(*)::bigint from public.admin_users where is_active = true) as active_admin_users,
@@ -91,10 +81,6 @@ end;
 $$;
 
 grant execute on function public.admin_get_dashboard_metrics() to authenticated;
-
--- ----------------------------------------------------------
--- 2) Per-user usage summary (one row per auth user)
--- ----------------------------------------------------------
 
 create or replace function public.admin_get_user_usage_summary()
 returns table (
@@ -124,66 +110,19 @@ begin
     raise exception 'not_authorized';
   end if;
 
-  -- NOTE: This function intentionally returns ONLY identifiers + counts + timestamps.
-  -- It never returns names, titles, notes, document filenames, or any medical values.
-
   return query
   with
-    profiles as (
-      select user_id, count(*)::bigint as c
-      from public.user_profiles
-      group by user_id
-    ),
-    family as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.family_members
-      group by owner_user_id
-    ),
-    records as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.medical_records
-      group by owner_user_id
-    ),
-    appts as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.appointments
-      group by owner_user_id
-    ),
-    meds as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.medications
-      group by owner_user_id
-    ),
-    vax as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.vaccinations
-      group by owner_user_id
-    ),
-    bp as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.blood_pressure_readings
-      group by owner_user_id
-    ),
-    docs as (
-      select owner_user_id as user_id, count(*)::bigint as c
-      from public.medical_documents
-      group by owner_user_id
-    ),
-    usage as (
-      select user_id, count(*)::bigint as c
-      from public.usage_events
-      group by user_id
-    ),
-    ent as (
-      select user_id, count(*)::bigint as c
-      from public.user_entitlements
-      group by user_id
-    ),
-    subs as (
-      select user_id, count(*)::bigint as c
-      from public.subscription_events
-      group by user_id
-    )
+    profiles as (select user_id, count(*)::bigint as c from public.user_profiles group by user_id),
+    family as (select owner_user_id as user_id, count(*)::bigint as c from public.family_members group by owner_user_id),
+    records as (select owner_user_id as user_id, count(*)::bigint as c from public.medical_records group by owner_user_id),
+    appts as (select owner_user_id as user_id, count(*)::bigint as c from public.appointments group by owner_user_id),
+    meds as (select owner_user_id as user_id, count(*)::bigint as c from public.medications group by owner_user_id),
+    vax as (select owner_user_id as user_id, count(*)::bigint as c from public.vaccinations group by owner_user_id),
+    bp as (select owner_user_id as user_id, count(*)::bigint as c from public.blood_pressure_readings group by owner_user_id),
+    docs as (select owner_user_id as user_id, count(*)::bigint as c from public.medical_documents group by owner_user_id),
+    usage as (select user_id, count(*)::bigint as c from public.usage_events group by user_id),
+    ent as (select user_id, count(*)::bigint as c from public.user_entitlements group by user_id),
+    subs as (select user_id, count(*)::bigint as c from public.subscription_events group by user_id)
   select
     u.id as user_id,
     u.email,
@@ -218,10 +157,6 @@ $$;
 
 grant execute on function public.admin_get_user_usage_summary() to authenticated;
 
--- ----------------------------------------------------------
--- 3) Usage events summary (aggregated)
--- ----------------------------------------------------------
-
 create or replace function public.admin_get_usage_events_summary()
 returns table (
   event_name text,
@@ -247,8 +182,6 @@ begin
     return;
   end if;
 
-  -- IMPORTANT: Only extracts controlled metadata keys from `properties`.
-  -- It does NOT return free-form properties payloads.
   return query
   select
     ue.event_key as event_name,
@@ -266,10 +199,6 @@ end;
 $$;
 
 grant execute on function public.admin_get_usage_events_summary() to authenticated;
-
--- ----------------------------------------------------------
--- 4) Billing summary (aggregated)
--- ----------------------------------------------------------
 
 create or replace function public.admin_get_billing_summary()
 returns table (
@@ -295,10 +224,6 @@ begin
     return;
   end if;
 
-  -- Source of truth: public.user_entitlements
-  -- - plan: user_entitlements.plan (or plan_key)
-  -- - billing_status: user_entitlements.subscription_status
-  -- - subscription_provider: user_entitlements.source_platform
   return query
   select
     coalesce(nullif(e.plan, ''), nullif(e.plan_key, ''), 'unknown') as plan,
@@ -317,3 +242,4 @@ $$;
 grant execute on function public.admin_get_billing_summary() to authenticated;
 
 commit;
+;

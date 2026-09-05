@@ -17,7 +17,8 @@ class CompliancePage extends StatefulWidget {
   State<CompliancePage> createState() => _CompliancePageState();
 }
 
-class _CompliancePageState extends State<CompliancePage> with SingleTickerProviderStateMixin {
+class _CompliancePageState extends State<CompliancePage>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
   @override
@@ -45,18 +46,26 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminOwnerDataSourcePanel(store: store, dataSourceKey: AdminDataSourceKey.compliance, title: 'Compliance'),
+          AdminOwnerDataSourcePanel(
+              store: store,
+              dataSourceKey: AdminDataSourceKey.compliance,
+              title: 'Compliance'),
           const SizedBox(height: 12),
           Row(
             children: [
-              Expanded(child: Text('Compliance', style: Theme.of(context).textTheme.headlineMedium)),
+              Expanded(
+                  child: Text('Compliance',
+                      style: Theme.of(context).textTheme.headlineMedium)),
               AdminDataSourceBadge(status: status),
             ],
           ),
           const SizedBox(height: 6),
           Text(
             'Track privacy, deletion, export, consent, and admin-access workflows. No health content is shown.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
           const SizedBox(height: 14),
           _ComplianceToolbar(role: role),
@@ -64,7 +73,15 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
           if (status.kind == AdminDataSourceKind.notInstrumented)
             const Expanded(child: AdminNotInstrumentedPanel())
           else if (status.kind == AdminDataSourceKind.error)
-            Expanded(child: Center(child: Text(status.safeErrorMessage ?? 'Failed to load compliance data.', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant))))
+            Expanded(
+                child: Center(
+                    child: Text(
+                        status.safeErrorMessage ??
+                            'Failed to load compliance data.',
+                        style: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.copyWith(color: cs.onSurfaceVariant))))
           else ...[
             TabBar(
               controller: _tabController,
@@ -87,18 +104,38 @@ class _CompliancePageState extends State<CompliancePage> with SingleTickerProvid
                 decoration: BoxDecoration(
                   color: cs.surface,
                   borderRadius: BorderRadius.circular(AppRadius.xl),
-                  border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+                  border: Border.all(
+                      color: cs.outlineVariant.withValues(alpha: 0.35)),
                 ),
                 child: TabBarView(
                   controller: _tabController,
                   children: [
-                    _ComplianceOverviewTab(overview: snap?.overview, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
-                    _ExportRequestsTab(rows: snap?.exportRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
-                    _DeletionRequestsTab(rows: snap?.deletionRequests ?? const [], isLoading: store.isComplianceLoading, role: role),
-                    _ConsentRecordsTab(rows: snap?.consentRecords ?? const [], isLoading: store.isComplianceLoading),
-                    _SupportAccessRecordsTab(rows: snap?.supportAccessRecords ?? const [], isLoading: store.isComplianceLoading, role: role),
-                    _PolicyAcceptanceTab(rows: snap?.privacyTermsAcceptances ?? const [], isLoading: store.isComplianceLoading),
-                    _RetentionTab(metrics: snap?.retention, isLoading: store.isComplianceLoading, generatedAt: snap?.generatedAt),
+                    _ComplianceOverviewTab(
+                        overview: snap?.overview,
+                        isLoading: store.isComplianceLoading,
+                        generatedAt: snap?.generatedAt),
+                    _ExportRequestsTab(
+                        rows: snap?.exportRequests ?? const [],
+                        isLoading: store.isComplianceLoading,
+                        role: role),
+                    _DeletionRequestsTab(
+                        rows: snap?.deletionRequests ?? const [],
+                        isLoading: store.isComplianceLoading,
+                        role: role),
+                    _ConsentRecordsTab(
+                        rows: snap?.consentRecords ?? const [],
+                        isLoading: store.isComplianceLoading),
+                    _SupportAccessRecordsTab(
+                        rows: snap?.supportAccessRecords ?? const [],
+                        isLoading: store.isComplianceLoading,
+                        role: role),
+                    _PolicyAcceptanceTab(
+                        rows: snap?.privacyTermsAcceptances ?? const [],
+                        isLoading: store.isComplianceLoading),
+                    _RetentionTab(
+                        metrics: snap?.retention,
+                        isLoading: store.isComplianceLoading,
+                        generatedAt: snap?.generatedAt),
                   ],
                 ),
               ),
@@ -150,14 +187,19 @@ class _ComplianceToolbar extends StatelessWidget {
             decoration: BoxDecoration(
               color: cs.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+              border:
+                  Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.lock_outline, size: 16, color: cs.onSurfaceVariant),
                 const SizedBox(width: 8),
-                Text('Email hidden for this role', style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text('Email hidden for this role',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -195,7 +237,8 @@ class _RangeSheet extends StatelessWidget {
 }
 
 class _PillButton extends StatelessWidget {
-  const _PillButton({required this.icon, required this.label, required this.onPressed});
+  const _PillButton(
+      {required this.icon, required this.label, required this.onPressed});
   final IconData icon;
   final String label;
   final VoidCallback onPressed;
@@ -217,7 +260,10 @@ class _PillButton extends StatelessWidget {
 }
 
 class _ComplianceOverviewTab extends StatelessWidget {
-  const _ComplianceOverviewTab({required this.overview, required this.isLoading, required this.generatedAt});
+  const _ComplianceOverviewTab(
+      {required this.overview,
+      required this.isLoading,
+      required this.generatedAt});
   final ComplianceOverviewMetrics? overview;
   final bool isLoading;
   final DateTime? generatedAt;
@@ -233,17 +279,49 @@ class _ComplianceOverviewTab extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            final cols = constraints.maxWidth >= 1200 ? 4 : constraints.maxWidth >= 860 ? 3 : 2;
+            final cols = constraints.maxWidth >= 1200
+                ? 4
+                : constraints.maxWidth >= 860
+                    ? 3
+                    : 2;
             final cards = <Widget>[
-              _MetricCard(label: 'Open deletion requests', value: o?.openDeletionRequests ?? 0, icon: Icons.delete_outline),
-              _MetricCard(label: 'Completed deletions', value: o?.completedDeletionRequests ?? 0, icon: Icons.check_circle_outline),
-              _MetricCard(label: 'Failed deletions', value: o?.failedDeletionRequests ?? 0, icon: Icons.error_outline, emphasize: true),
-              _MetricCard(label: 'Open export requests', value: o?.openExportRequests ?? 0, icon: Icons.download_outlined),
-              _MetricCard(label: 'Completed exports', value: o?.completedExportRequests ?? 0, icon: Icons.verified_outlined),
-              _MetricCard(label: 'Active support sessions', value: o?.activeSupportSessions ?? 0, icon: Icons.support_agent_outlined),
-              _MetricCard(label: 'Expired support sessions', value: o?.expiredSupportSessions ?? 0, icon: Icons.timer_off_outlined),
-              _MetricCard(label: 'Recent admin actions', value: o?.recentAdminActions ?? 0, icon: Icons.manage_history_outlined),
-              _MetricCard(label: 'Users pending deletion', value: o?.usersPendingDeletion ?? 0, icon: Icons.person_remove_outlined),
+              _MetricCard(
+                  label: 'Open deletion requests',
+                  value: o?.openDeletionRequests ?? 0,
+                  icon: Icons.delete_outline),
+              _MetricCard(
+                  label: 'Completed deletions',
+                  value: o?.completedDeletionRequests ?? 0,
+                  icon: Icons.check_circle_outline),
+              _MetricCard(
+                  label: 'Failed deletions',
+                  value: o?.failedDeletionRequests ?? 0,
+                  icon: Icons.error_outline,
+                  emphasize: true),
+              _MetricCard(
+                  label: 'Open export requests',
+                  value: o?.openExportRequests ?? 0,
+                  icon: Icons.download_outlined),
+              _MetricCard(
+                  label: 'Completed exports',
+                  value: o?.completedExportRequests ?? 0,
+                  icon: Icons.verified_outlined),
+              _MetricCard(
+                  label: 'Active support sessions',
+                  value: o?.activeSupportSessions ?? 0,
+                  icon: Icons.support_agent_outlined),
+              _MetricCard(
+                  label: 'Expired support sessions',
+                  value: o?.expiredSupportSessions ?? 0,
+                  icon: Icons.timer_off_outlined),
+              _MetricCard(
+                  label: 'Recent admin actions',
+                  value: o?.recentAdminActions ?? 0,
+                  icon: Icons.manage_history_outlined),
+              _MetricCard(
+                  label: 'Users pending deletion',
+                  value: o?.usersPendingDeletion ?? 0,
+                  icon: Icons.person_remove_outlined),
             ];
             return _Grid(cols: cols, children: cards);
           },
@@ -254,7 +332,8 @@ class _ComplianceOverviewTab extends StatelessWidget {
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Row(
             children: [
@@ -263,7 +342,10 @@ class _ComplianceOverviewTab extends StatelessWidget {
               Expanded(
                 child: Text(
                   'All compliance views are aggregate/metadata-only. Do not add any health content to this section.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant),
                 ),
               ),
             ],
@@ -275,7 +357,8 @@ class _ComplianceOverviewTab extends StatelessWidget {
 }
 
 class _ExportRequestsTab extends StatelessWidget {
-  const _ExportRequestsTab({required this.rows, required this.isLoading, required this.role});
+  const _ExportRequestsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<DataExportRequestRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -288,7 +371,9 @@ class _ExportRequestsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        _TabHeader(title: 'Data Export Requests', subtitle: 'Track export workflows without exposing user content.'),
+        _TabHeader(
+            title: 'Data Export Requests',
+            subtitle: 'Track export workflows without exposing user content.'),
         _LoadingBanner(isLoading: isLoading, generatedAt: null),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -296,7 +381,8 @@ class _ExportRequestsTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 1100),
             child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHighest),
+              headingRowColor:
+                  WidgetStatePropertyAll(cs.surfaceContainerHighest),
               columns: [
                 const DataColumn(label: Text('Request ID')),
                 const DataColumn(label: Text('User ID')),
@@ -322,7 +408,9 @@ class _ExportRequestsTab extends StatelessWidget {
                       DataCell(Text(r.verifiedBy ?? '—')),
                       DataCell(Text(r.failureReason ?? '—')),
                       // PRIVACY: never render free-text notes in the control site UI.
-                      DataCell(Text(r.notes?.trim().isNotEmpty == true ? 'Present (redacted)' : '—')),
+                      DataCell(Text(r.notes?.trim().isNotEmpty == true
+                          ? 'Present (redacted)'
+                          : '—')),
                       DataCell(_ExportActionsCell(row: r, role: role)),
                     ],
                   ),
@@ -336,7 +424,8 @@ class _ExportRequestsTab extends StatelessWidget {
 }
 
 class _DeletionRequestsTab extends StatelessWidget {
-  const _DeletionRequestsTab({required this.rows, required this.isLoading, required this.role});
+  const _DeletionRequestsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<DeletionRequestRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -349,7 +438,10 @@ class _DeletionRequestsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        _TabHeader(title: 'Deletion Requests', subtitle: 'Track account deletion workflows without exposing health content.'),
+        _TabHeader(
+            title: 'Deletion Requests',
+            subtitle:
+                'Track account deletion workflows without exposing health content.'),
         _LoadingBanner(isLoading: isLoading, generatedAt: null),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -357,7 +449,8 @@ class _DeletionRequestsTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 1200),
             child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHighest),
+              headingRowColor:
+                  WidgetStatePropertyAll(cs.surfaceContainerHighest),
               columns: [
                 const DataColumn(label: Text('Request ID')),
                 const DataColumn(label: Text('User ID')),
@@ -407,7 +500,10 @@ class _ConsentRecordsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        _TabHeader(title: 'Consent Records', subtitle: 'Consent metadata only (type/version/timestamps/source).'),
+        _TabHeader(
+            title: 'Consent Records',
+            subtitle:
+                'Consent metadata only (type/version/timestamps/source).'),
         _LoadingBanner(isLoading: isLoading, generatedAt: null),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -415,7 +511,8 @@ class _ConsentRecordsTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 1050),
             child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHighest),
+              headingRowColor:
+                  WidgetStatePropertyAll(cs.surfaceContainerHighest),
               columns: const [
                 DataColumn(label: Text('User ID')),
                 DataColumn(label: Text('Consent type')),
@@ -448,7 +545,8 @@ class _ConsentRecordsTab extends StatelessWidget {
 }
 
 class _SupportAccessRecordsTab extends StatelessWidget {
-  const _SupportAccessRecordsTab({required this.rows, required this.isLoading, required this.role});
+  const _SupportAccessRecordsTab(
+      {required this.rows, required this.isLoading, required this.role});
   final List<SupportAccessRecordRow> rows;
   final bool isLoading;
   final AdminRole role;
@@ -460,7 +558,9 @@ class _SupportAccessRecordsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        _TabHeader(title: 'Support Access Records', subtitle: 'Track admin support-access windows (consent + expiry).'),
+        _TabHeader(
+            title: 'Support Access Records',
+            subtitle: 'Track admin support-access windows (consent + expiry).'),
         _LoadingBanner(isLoading: isLoading, generatedAt: null),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -468,7 +568,8 @@ class _SupportAccessRecordsTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 1150),
             child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHighest),
+              headingRowColor:
+                  WidgetStatePropertyAll(cs.surfaceContainerHighest),
               columns: const [
                 DataColumn(label: Text('User ID')),
                 DataColumn(label: Text('Admin user')),
@@ -486,8 +587,10 @@ class _SupportAccessRecordsTab extends StatelessWidget {
                       DataCell(Text(r.userId)),
                       DataCell(Text(r.adminUser)),
                       DataCell(Text(r.consentGranted ? 'Yes' : 'No')),
-                      DataCell(Text(AdminFormatters.dateTime(r.consentGrantedAt))),
-                      DataCell(Text(AdminFormatters.dateTime(r.accessExpiresAt))),
+                      DataCell(
+                          Text(AdminFormatters.dateTime(r.consentGrantedAt))),
+                      DataCell(
+                          Text(AdminFormatters.dateTime(r.accessExpiresAt))),
                       DataCell(_StatusChip(status: r.status)),
                       DataCell(Text(r.ticketReference ?? '—')),
                       DataCell(_SupportAccessActionsCell(row: r, role: role)),
@@ -514,7 +617,9 @@ class _PolicyAcceptanceTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
       children: [
-        _TabHeader(title: 'Privacy/Terms Version Acceptance', subtitle: 'Only version numbers and timestamps.'),
+        _TabHeader(
+            title: 'Privacy/Terms Version Acceptance',
+            subtitle: 'Only version numbers and timestamps.'),
         _LoadingBanner(isLoading: isLoading, generatedAt: null),
         const SizedBox(height: 12),
         SingleChildScrollView(
@@ -522,7 +627,8 @@ class _PolicyAcceptanceTab extends StatelessWidget {
           child: ConstrainedBox(
             constraints: const BoxConstraints(minWidth: 980),
             child: DataTable(
-              headingRowColor: WidgetStatePropertyAll(cs.surfaceContainerHighest),
+              headingRowColor:
+                  WidgetStatePropertyAll(cs.surfaceContainerHighest),
               columns: const [
                 DataColumn(label: Text('User ID')),
                 DataColumn(label: Text('Privacy policy version')),
@@ -551,7 +657,10 @@ class _PolicyAcceptanceTab extends StatelessWidget {
 }
 
 class _RetentionTab extends StatelessWidget {
-  const _RetentionTab({required this.metrics, required this.isLoading, required this.generatedAt});
+  const _RetentionTab(
+      {required this.metrics,
+      required this.isLoading,
+      required this.generatedAt});
   final RetentionMonitoringMetrics? metrics;
   final bool isLoading;
   final DateTime? generatedAt;
@@ -565,22 +674,40 @@ class _RetentionTab extends StatelessWidget {
       children: [
         _LoadingBanner(isLoading: isLoading, generatedAt: generatedAt),
         const SizedBox(height: 14),
-        _RetentionRow(label: 'Usage logs due for deletion', value: m == null ? '—' : formatCompactInt(m.usageLogsDueForDeletion)),
-        _RetentionRow(label: 'Support notes due for deletion', value: m == null ? '—' : formatCompactInt(m.supportNotesDueForDeletion)),
-        _RetentionRow(label: 'Expired support sessions', value: m == null ? '—' : formatCompactInt(m.expiredSupportSessions)),
-        _RetentionRow(label: 'Old diagnostic logs', value: m == null ? '—' : formatCompactInt(m.oldDiagnosticLogs)),
-        _RetentionRow(label: 'Old raw events', value: m == null ? '—' : formatCompactInt(m.oldRawEvents)),
+        _RetentionRow(
+            label: 'Usage logs due for deletion',
+            value:
+                m == null ? '—' : formatCompactInt(m.usageLogsDueForDeletion)),
+        _RetentionRow(
+            label: 'Support notes due for deletion',
+            value: m == null
+                ? '—'
+                : formatCompactInt(m.supportNotesDueForDeletion)),
+        _RetentionRow(
+            label: 'Expired support sessions',
+            value:
+                m == null ? '—' : formatCompactInt(m.expiredSupportSessions)),
+        _RetentionRow(
+            label: 'Old diagnostic logs',
+            value: m == null ? '—' : formatCompactInt(m.oldDiagnosticLogs)),
+        _RetentionRow(
+            label: 'Old raw events',
+            value: m == null ? '—' : formatCompactInt(m.oldRawEvents)),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(AppRadius.lg),
-            border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
+            border:
+                Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
           ),
           child: Text(
             'Retention monitoring is metadata-only and should be backed by server-side deletion jobs and safe summary views.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: cs.onSurfaceVariant),
           ),
         ),
       ],
@@ -600,8 +727,14 @@ class _RetentionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Row(
         children: [
-          Expanded(child: Text(label, style: Theme.of(context).textTheme.titleSmall)),
-          Text(value, style: Theme.of(context).textTheme.titleSmall?.copyWith(color: cs.onSurfaceVariant)),
+          Expanded(
+              child:
+                  Text(label, style: Theme.of(context).textTheme.titleSmall)),
+          Text(value,
+              style: Theme.of(context)
+                  .textTheme
+                  .titleSmall
+                  ?.copyWith(color: cs.onSurfaceVariant)),
         ],
       ),
     );
@@ -626,7 +759,11 @@ class _TabHeader extends StatelessWidget {
               children: [
                 Text(title, style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 4),
-                Text(subtitle, style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+                Text(subtitle,
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant)),
               ],
             ),
           ),
@@ -654,16 +791,30 @@ class _LoadingBanner extends StatelessWidget {
       child: Row(
         children: [
           if (isLoading) ...[
-            SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: cs.primary)),
+            SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: cs.primary)),
             const SizedBox(width: 10),
-            Expanded(child: Text('Refreshing…', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+            Expanded(
+                child: Text('Refreshing…',
+                    style: Theme.of(context)
+                        .textTheme
+                        .labelLarge
+                        ?.copyWith(color: cs.onSurfaceVariant))),
           ] else ...[
             Icon(Icons.schedule, size: 18, color: cs.onSurfaceVariant),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                generatedAt == null ? 'Showing latest snapshot.' : 'Generated ${AdminFormatters.relativeTime(generatedAt!)}',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant),
+                generatedAt == null
+                    ? 'Showing latest snapshot.'
+                    : 'Generated ${AdminFormatters.relativeTime(generatedAt!)}',
+                style: Theme.of(context)
+                    .textTheme
+                    .labelLarge
+                    ?.copyWith(color: cs.onSurfaceVariant),
               ),
             ),
           ],
@@ -674,7 +825,11 @@ class _LoadingBanner extends StatelessWidget {
 }
 
 class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value, required this.icon, this.emphasize = false});
+  const _MetricCard(
+      {required this.label,
+      required this.value,
+      required this.icon,
+      this.emphasize = false});
   final String label;
   final int value;
   final IconData icon;
@@ -686,7 +841,9 @@ class _MetricCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: emphasize ? cs.errorContainer.withValues(alpha: 0.25) : cs.surfaceContainerHighest,
+        color: emphasize
+            ? cs.errorContainer.withValues(alpha: 0.25)
+            : cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35)),
       ),
@@ -697,11 +854,20 @@ class _MetricCard extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: cs.onSurfaceVariant),
               const SizedBox(width: 10),
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onSurfaceVariant))),
+              Expanded(
+                  child: Text(label,
+                      style: Theme.of(context)
+                          .textTheme
+                          .labelLarge
+                          ?.copyWith(color: cs.onSurfaceVariant))),
             ],
           ),
           const SizedBox(height: 10),
-          Text(formatCompactInt(value), style: Theme.of(context).textTheme.headlineSmall?.copyWith(color: cs.onSurface)),
+          Text(formatCompactInt(value),
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(color: cs.onSurface)),
         ],
       ),
     );
@@ -723,8 +889,11 @@ class _Grid extends StatelessWidget {
             for (var j = 0; j < cols; j++)
               Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: j == cols - 1 ? 0 : 12, bottom: 12),
-                  child: i + j < children.length ? children[i + j] : const SizedBox.shrink(),
+                  padding: EdgeInsets.only(
+                      right: j == cols - 1 ? 0 : 12, bottom: 12),
+                  child: i + j < children.length
+                      ? children[i + j]
+                      : const SizedBox.shrink(),
                 ),
               ),
           ],
@@ -744,18 +913,37 @@ class _StatusChip extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final normalized = status.trim().toLowerCase();
     final (bg, fg) = switch (normalized) {
-      'completed' || 'done' => (cs.primaryContainer.withValues(alpha: 0.55), cs.onPrimaryContainer),
-      'failed' => (cs.errorContainer.withValues(alpha: 0.65), cs.onErrorContainer),
-      'in_progress' || 'inprogress' => (cs.tertiaryContainer.withValues(alpha: 0.55), cs.onTertiaryContainer),
-      'active' => (cs.secondaryContainer.withValues(alpha: 0.55), cs.onSecondaryContainer),
+      'completed' || 'done' => (
+          cs.primaryContainer.withValues(alpha: 0.55),
+          cs.onPrimaryContainer
+        ),
+      'failed' => (
+          cs.errorContainer.withValues(alpha: 0.65),
+          cs.onErrorContainer
+        ),
+      'in_progress' || 'inprogress' => (
+          cs.tertiaryContainer.withValues(alpha: 0.55),
+          cs.onTertiaryContainer
+        ),
+      'active' => (
+          cs.secondaryContainer.withValues(alpha: 0.55),
+          cs.onSecondaryContainer
+        ),
       'expired' => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
-      'closed' || 'revoked' => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
+      'closed' || 'revoked' => (
+          cs.surfaceContainerHighest,
+          cs.onSurfaceVariant
+        ),
       _ => (cs.surfaceContainerHighest, cs.onSurfaceVariant),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999), border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
-      child: Text(normalized, style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg)),
+      decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: cs.outlineVariant.withValues(alpha: 0.35))),
+      child: Text(normalized,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: fg)),
     );
   }
 }
@@ -784,94 +972,102 @@ class _ExportActionsCell extends StatelessWidget {
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Mark export in progress',
-                summary: 'This marks the request as being processed. A reason is required and will be audit-logged.',
+                summary:
+                    'This marks the request as being processed. A reason is required and will be audit-logged.',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.inProgress.label,
                 confirmLabel: 'Mark in progress',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.markExportInProgress,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.markExportInProgress,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
             case 'complete':
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Mark export complete',
-                summary: 'Only mark complete once the export has been verified. A reason is required and will be audit-logged.',
+                summary:
+                    'Only mark complete once the export has been verified. A reason is required and will be audit-logged.',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.completed.label,
                 confirmLabel: 'Mark complete',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.markExportComplete,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.markExportComplete,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
             case 'fail':
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Record failure reason',
-                summary: 'This marks the request as failed. Use the reason field for the failure reason (audit logged).',
+                summary:
+                    'This marks the request as failed. Use the reason field for the failure reason (audit logged).',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.failed.label,
                 confirmLabel: 'Record failure',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.recordFailureReason,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.recordFailureReason,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
             case 'note':
-              final note = await _TextEntrySheet.show(context, title: 'Add compliance note', label: 'Note', hint: 'Add a short compliance note (no health content)…');
+              final note = await _TextEntrySheet.show(context,
+                  title: 'Add compliance note',
+                  label: 'Note',
+                  hint: 'Add a short compliance note (no health content)…');
               if (note == null) return;
               if (!context.mounted) return;
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Confirm note',
-                summary: 'Reason is required and will be audit-logged. The note will be attached to this request.',
+                summary:
+                    'Reason is required and will be audit-logged. The note will be attached to this request.',
                 previousValue: row.notes ?? '—',
                 newValue: note,
                 confirmLabel: 'Add note',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.addComplianceNote,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                      parameters: {'note': note},
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.addComplianceNote,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                  parameters: {'note': note},
+                ),
+              );
           }
         } catch (e) {
           debugPrint('Export action failed: $e');
-          messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
+          messenger.showSnackBar(
+              const SnackBar(content: Text('Action failed. See logs.')));
         }
       },
       itemBuilder: (context) => const [
@@ -908,69 +1104,73 @@ class _DeletionActionsCell extends StatelessWidget {
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Mark deletion in progress',
-                summary: 'This marks the request as being processed. A reason is required and will be audit-logged.',
+                summary:
+                    'This marks the request as being processed. A reason is required and will be audit-logged.',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.inProgress.label,
                 confirmLabel: 'Mark in progress',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.markDeletionInProgress,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.markDeletionInProgress,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
             case 'complete':
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Mark deletion complete',
-                summary: 'Only mark complete once the deletion workflow has been verified. A reason is required.',
+                summary:
+                    'Only mark complete once the deletion workflow has been verified. A reason is required.',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.completed.label,
                 confirmLabel: 'Mark complete',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.markDeletionComplete,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.markDeletionComplete,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
             case 'fail':
               final conf = await AdminChangeConfirmSheet.show(
                 context,
                 title: 'Record failure reason',
-                summary: 'This marks the request as failed. Use the reason field for the failure reason (audit logged).',
+                summary:
+                    'This marks the request as failed. Use the reason field for the failure reason (audit logged).',
                 previousValue: row.status.label,
                 newValue: ComplianceRequestStatus.failed.label,
                 confirmLabel: 'Record failure',
               );
               if (conf == null) return;
               await store.performComplianceAction(
-                    ComplianceActionRequest(
-                      actorAdminId: admin.id,
-                      actorRole: admin.role,
-                      userId: row.userId,
-                      action: ComplianceAction.recordFailureReason,
-                      reason: conf.reason,
-                      ticketReference: conf.ticketReference,
-                      requestId: row.requestId,
-                    ),
-                  );
+                ComplianceActionRequest(
+                  actorAdminId: admin.id,
+                  actorRole: admin.role,
+                  userId: row.userId,
+                  action: ComplianceAction.recordFailureReason,
+                  reason: conf.reason,
+                  ticketReference: conf.ticketReference,
+                  requestId: row.requestId,
+                ),
+              );
           }
         } catch (e) {
           debugPrint('Deletion action failed: $e');
-          messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
+          messenger.showSnackBar(
+              const SnackBar(content: Text('Action failed. See logs.')));
         }
       },
       itemBuilder: (context) => const [
@@ -990,9 +1190,12 @@ class _SupportAccessActionsCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final canAct = role == AdminRole.owner || role == AdminRole.compliance || role == AdminRole.support;
+    final canAct = role == AdminRole.owner ||
+        role == AdminRole.compliance ||
+        role == AdminRole.support;
     if (!canAct) return const Text('—');
-    final id = row.ticketReference ?? '${row.userId}:${row.adminUser}:${row.accessExpiresAt?.millisecondsSinceEpoch ?? 0}';
+    final id = row.ticketReference ??
+        '${row.userId}:${row.adminUser}:${row.accessExpiresAt?.millisecondsSinceEpoch ?? 0}';
 
     return OutlinedButton.icon(
       onPressed: row.status.toLowerCase() == 'active'
@@ -1005,26 +1208,28 @@ class _SupportAccessActionsCell extends StatelessWidget {
                 final conf = await AdminChangeConfirmSheet.show(
                   context,
                   title: 'Close support access',
-                  summary: 'This immediately closes the access window. A reason is required and will be audit-logged.',
+                  summary:
+                      'This immediately closes the access window. A reason is required and will be audit-logged.',
                   previousValue: row.status,
                   newValue: 'closed',
                   confirmLabel: 'Close access',
                 );
                 if (conf == null) return;
                 await store.performComplianceAction(
-                      ComplianceActionRequest(
-                        actorAdminId: admin.id,
-                        actorRole: admin.role,
-                        userId: row.userId,
-                        action: ComplianceAction.closeSupportAccess,
-                        reason: conf.reason,
-                        ticketReference: conf.ticketReference,
-                        requestId: id,
-                      ),
-                    );
+                  ComplianceActionRequest(
+                    actorAdminId: admin.id,
+                    actorRole: admin.role,
+                    userId: row.userId,
+                    action: ComplianceAction.closeSupportAccess,
+                    reason: conf.reason,
+                    ticketReference: conf.ticketReference,
+                    requestId: id,
+                  ),
+                );
               } catch (e) {
                 debugPrint('Close support access failed: $e');
-                messenger.showSnackBar(const SnackBar(content: Text('Action failed. See logs.')));
+                messenger.showSnackBar(
+                    const SnackBar(content: Text('Action failed. See logs.')));
               }
             }
           : null,
@@ -1035,7 +1240,8 @@ class _SupportAccessActionsCell extends StatelessWidget {
 }
 
 class _TextEntrySheet extends StatefulWidget {
-  const _TextEntrySheet({required this.title, required this.label, required this.hint});
+  const _TextEntrySheet(
+      {required this.title, required this.label, required this.hint});
   final String title;
   final String label;
   final String hint;
@@ -1051,7 +1257,8 @@ class _TextEntrySheet extends StatefulWidget {
         isScrollControlled: true,
         showDragHandle: true,
         builder: (context) => Padding(
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          padding:
+              EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
           child: _TextEntrySheet(title: title, label: label, hint: hint),
         ),
       );
@@ -1094,7 +1301,10 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
             TextField(
               controller: _controller,
               maxLines: 4,
-              decoration: InputDecoration(labelText: widget.label, hintText: widget.hint, errorText: _error),
+              decoration: InputDecoration(
+                  labelText: widget.label,
+                  hintText: widget.hint,
+                  errorText: _error),
               onChanged: (_) {
                 if (_error != null) setState(() => _error = null);
               },
@@ -1105,14 +1315,16 @@ class _TextEntrySheetState extends State<_TextEntrySheet> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    child: Text('Cancel', style: TextStyle(color: cs.onSurface)),
+                    child:
+                        Text('Cancel', style: TextStyle(color: cs.onSurface)),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: FilledButton(
                     onPressed: _submit,
-                    child: Text('Continue', style: TextStyle(color: cs.onPrimary)),
+                    child:
+                        Text('Continue', style: TextStyle(color: cs.onPrimary)),
                   ),
                 ),
               ],

@@ -4,6 +4,7 @@ import 'package:curavault_admin/admin/pages/audit_logs_page.dart';
 import 'package:curavault_admin/admin/pages/billing_page.dart';
 import 'package:curavault_admin/admin/pages/compliance_page.dart';
 import 'package:curavault_admin/admin/pages/dashboard_page.dart';
+import 'package:curavault_admin/admin/pages/development_control_page.dart';
 import 'package:curavault_admin/admin/pages/loading_page.dart';
 import 'package:curavault_admin/admin/pages/login_page.dart';
 import 'package:curavault_admin/admin/pages/plans_permissions_page.dart';
@@ -59,11 +60,14 @@ class AppRouter {
         }
 
         bool isAuthFreePath(String p) {
-          final normalized = p.endsWith('/') && p.length > 1 ? p.substring(0, p.length - 1) : p;
+          final normalized = p.endsWith('/') && p.length > 1
+              ? p.substring(0, p.length - 1)
+              : p;
           return normalized == AppRoutes.login ||
               normalized == AppRoutes.resetPassword ||
               normalized == AppRoutes.setPassword ||
-              (enableDevRoutes && normalized == AppRoutes.supabaseConnectivityTest);
+              (enableDevRoutes &&
+                  normalized == AppRoutes.supabaseConnectivityTest);
         }
 
         final isAuthFree = isAuthFreePath(path) || isAuthFreePath(matched);
@@ -81,7 +85,9 @@ class AppRouter {
         if (matched == AppRoutes.loading) {
           final target = !auth.isSignedIn
               ? AppRoutes.login
-              : (!auth.isAuthorized ? AppRoutes.unauthorized : AppRoutes.dashboard);
+              : (!auth.isAuthorized
+                  ? AppRoutes.unauthorized
+                  : AppRoutes.dashboard);
           trace('leaving /loading => $target');
           return target;
         }
@@ -100,18 +106,25 @@ class AppRouter {
           // to be reachable even if the current session isn't allow-listed.
           final target = isAuthFree
               ? null
-              : (matched == AppRoutes.unauthorized ? null : AppRoutes.unauthorized);
+              : (matched == AppRoutes.unauthorized
+                  ? null
+                  : AppRoutes.unauthorized);
           trace('signed in but not authorized => ${target ?? 'allow'}');
           return target;
         }
 
         // Authorized admins should never land on login/loading/unauthorized.
-        if (matched == AppRoutes.login || matched == AppRoutes.loading || matched == AppRoutes.unauthorized) {
+        if (matched == AppRoutes.login ||
+            matched == AppRoutes.loading ||
+            matched == AppRoutes.unauthorized) {
           trace('authorized but on auth gate page => ${AppRoutes.dashboard}');
           return AppRoutes.dashboard;
         }
 
-        if (!enableDevRoutes && (matched == AppRoutes.supabaseConnectivityTest || matched == AppRoutes.adminTest || matched == AppRoutes.adminDataTest)) {
+        if (!enableDevRoutes &&
+            (matched == AppRoutes.supabaseConnectivityTest ||
+                matched == AppRoutes.adminTest ||
+                matched == AppRoutes.adminDataTest)) {
           trace('dev route blocked in release => ${AppRoutes.unauthorized}');
           return AppRoutes.unauthorized;
         }
@@ -137,74 +150,263 @@ class AppRouter {
         return null;
       },
       routes: [
-        GoRoute(path: AppRoutes.loading, name: 'loading', builder: (context, state) => const LoadingPage()),
-        GoRoute(path: AppRoutes.login, name: 'login', builder: (context, state) => const LoginPage()),
-        GoRoute(path: AppRoutes.resetPassword, name: 'resetPassword', builder: (context, state) => const ResetPasswordPage()),
-        GoRoute(path: AppRoutes.setPassword, name: 'setPassword', builder: (context, state) => const SetPasswordPage()),
+        GoRoute(
+            path: AppRoutes.loading,
+            name: 'loading',
+            builder: (context, state) => const LoadingPage()),
+        GoRoute(
+            path: AppRoutes.login,
+            name: 'login',
+            builder: (context, state) => const LoginPage()),
+        GoRoute(
+            path: AppRoutes.resetPassword,
+            name: 'resetPassword',
+            builder: (context, state) => const ResetPasswordPage()),
+        GoRoute(
+            path: AppRoutes.setPassword,
+            name: 'setPassword',
+            builder: (context, state) => const SetPasswordPage()),
         GoRoute(
           path: AppRoutes.supabaseConnectivityTest,
           name: 'supabaseConnectivityTest',
-          builder: (context, state) => enableDevRoutes ? const SupabaseConnectivityTestPage() : const UnauthorizedPage(),
+          builder: (context, state) => enableDevRoutes
+              ? const SupabaseConnectivityTestPage()
+              : const UnauthorizedPage(),
         ),
-        GoRoute(path: AppRoutes.unauthorized, name: 'unauthorized', builder: (context, state) => const UnauthorizedPage()),
+        GoRoute(
+            path: AppRoutes.unauthorized,
+            name: 'unauthorized',
+            builder: (context, state) => const UnauthorizedPage()),
         ShellRoute(
-          builder: (context, state, child) => AdminShell(currentLocation: state.uri.toString(), child: child),
+          builder: (context, state, child) =>
+              AdminShell(currentLocation: state.uri.toString(), child: child),
           routes: [
-            GoRoute(path: AppRoutes.dashboard, name: 'dashboard', pageBuilder: (context, state) => const NoTransitionPage(child: DashboardPage())),
+            GoRoute(
+                path: AppRoutes.dashboard,
+                name: 'dashboard',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: DashboardPage())),
             GoRoute(
               path: AppRoutes.adminTest,
               name: 'adminTest',
-              pageBuilder: (context, state) => NoTransitionPage(child: enableDevRoutes ? const AdminTestPage() : const UnauthorizedPage()),
+              pageBuilder: (context, state) => NoTransitionPage(
+                  child: enableDevRoutes
+                      ? const AdminTestPage()
+                      : const UnauthorizedPage()),
             ),
             GoRoute(
               path: AppRoutes.adminDataTest,
               name: 'adminDataTest',
-              pageBuilder: (context, state) => NoTransitionPage(child: enableDevRoutes ? const AdminDataTestPage() : const UnauthorizedPage()),
+              pageBuilder: (context, state) => NoTransitionPage(
+                  child: enableDevRoutes
+                      ? const AdminDataTestPage()
+                      : const UnauthorizedPage()),
             ),
             GoRoute(
               path: AppRoutes.users,
               name: 'users',
-              pageBuilder: (context, state) => const NoTransitionPage(child: UsersPage()),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: UsersPage()),
               routes: [
                 GoRoute(
                   path: ':userId',
                   name: 'userDetail',
-                  pageBuilder: (context, state) => NoTransitionPage(child: UserDetailPage(userId: state.pathParameters['userId'] ?? '')),
+                  pageBuilder: (context, state) => NoTransitionPage(
+                      child: UserDetailPage(
+                          userId: state.pathParameters['userId'] ?? '')),
                 ),
               ],
             ),
             GoRoute(
               path: AppRoutes.support,
               name: 'support',
-              pageBuilder: (context, state) => const NoTransitionPage(child: SupportQueuePage()),
+              pageBuilder: (context, state) =>
+                  const NoTransitionPage(child: SupportQueuePage()),
               routes: [
                 GoRoute(
                   path: 'diagnostics',
                   name: 'diagnostics',
                   pageBuilder: (context, state) {
                     final userId = state.uri.queryParameters['userId'];
-                    return NoTransitionPage(child: DiagnosticsCheckerPage(initialUserId: userId));
+                    return NoTransitionPage(
+                        child: DiagnosticsCheckerPage(initialUserId: userId));
                   },
                 ),
                 GoRoute(
                   path: ':supportSessionId',
                   name: 'supportSessionDetail',
-                  pageBuilder: (context, state) => NoTransitionPage(child: SupportSessionDetailPage(supportSessionId: state.pathParameters['supportSessionId'] ?? '')),
+                  pageBuilder: (context, state) => NoTransitionPage(
+                      child: SupportSessionDetailPage(
+                          supportSessionId:
+                              state.pathParameters['supportSessionId'] ?? '')),
                 ),
               ],
             ),
-            GoRoute(path: AppRoutes.plansPermissions, name: 'plansPermissions', pageBuilder: (context, state) => const NoTransitionPage(child: PlansPermissionsPage())),
-            GoRoute(path: AppRoutes.usageAnalytics, name: 'usageAnalytics', pageBuilder: (context, state) => const NoTransitionPage(child: UsageAnalyticsPage())),
-            GoRoute(path: AppRoutes.storage, name: 'storage', pageBuilder: (context, state) => const NoTransitionPage(child: StoragePage())),
-            GoRoute(path: AppRoutes.aiUsage, name: 'aiUsage', pageBuilder: (context, state) => const NoTransitionPage(child: AiUsagePage())),
-            GoRoute(path: AppRoutes.billing, name: 'billing', pageBuilder: (context, state) => const NoTransitionPage(child: BillingPage())),
-            GoRoute(path: AppRoutes.compliance, name: 'compliance', pageBuilder: (context, state) => const NoTransitionPage(child: CompliancePage())),
-            GoRoute(path: AppRoutes.systemHealth, name: 'systemHealth', pageBuilder: (context, state) => const NoTransitionPage(child: SystemHealthPage())),
-            GoRoute(path: AppRoutes.websiteStatus, name: 'websiteStatus', pageBuilder: (context, state) => const NoTransitionPage(child: WebsiteCmsStatusPage())),
-            GoRoute(path: AppRoutes.productionReadiness, name: 'productionReadiness', pageBuilder: (context, state) => const NoTransitionPage(child: ProductionReadinessPage())),
-            GoRoute(path: AppRoutes.auditLogs, name: 'auditLogs', pageBuilder: (context, state) => const NoTransitionPage(child: AuditLogsPage())),
-            GoRoute(path: AppRoutes.securityChecklist, name: 'securityChecklist', pageBuilder: (context, state) => const NoTransitionPage(child: SecurityChecklistPage())),
-            GoRoute(path: AppRoutes.settings, name: 'settings', pageBuilder: (context, state) => const NoTransitionPage(child: SettingsPage())),
+            GoRoute(
+                path: AppRoutes.plansPermissions,
+                name: 'plansPermissions',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: PlansPermissionsPage())),
+            GoRoute(
+                path: AppRoutes.usageAnalytics,
+                name: 'usageAnalytics',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: UsageAnalyticsPage())),
+            GoRoute(
+                path: AppRoutes.storage,
+                name: 'storage',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: StoragePage())),
+            GoRoute(
+                path: AppRoutes.aiUsage,
+                name: 'aiUsage',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: AiUsagePage())),
+            GoRoute(
+                path: AppRoutes.billing,
+                name: 'billing',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: BillingPage())),
+            GoRoute(
+                path: AppRoutes.compliance,
+                name: 'compliance',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: CompliancePage())),
+            GoRoute(
+                path: AppRoutes.systemHealth,
+                name: 'systemHealth',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: SystemHealthPage())),
+            GoRoute(
+                path: AppRoutes.developmentOverview,
+                name: 'developmentOverview',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DevelopmentControlPage(
+                        section: DevelopmentSection.overview))),
+            GoRoute(
+                path: AppRoutes.developmentPrompts,
+                name: 'developmentPrompts',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DevelopmentControlPage(
+                        section: DevelopmentSection.prompts))),
+            GoRoute(
+                path: AppRoutes.developmentReviews,
+                name: 'developmentReviews',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DevelopmentControlPage(
+                        section: DevelopmentSection.reviews))),
+            GoRoute(
+                path: AppRoutes.developmentReleases,
+                name: 'developmentReleases',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DevelopmentControlPage(
+                        section: DevelopmentSection.releases))),
+            GoRoute(
+                path: AppRoutes.developmentEvidence,
+                name: 'developmentEvidence',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: DevelopmentEvidencePage())),
+            GoRoute(
+                path: AppRoutes.developmentRuns,
+                name: 'developmentRuns',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: DevelopmentRunsPage()),
+                routes: [
+                  GoRoute(
+                      path: ':runId',
+                      name: 'developmentRunDetail',
+                      pageBuilder: (context, state) => NoTransitionPage(
+                          child: DevelopmentRunDetailPage(
+                              runId: state.pathParameters['runId'] ?? ''))),
+                ]),
+            GoRoute(
+                path: AppRoutes.developmentTasks,
+                name: 'developmentTasks',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: DevelopmentControlPage(
+                        section: DevelopmentSection.tasks)),
+                routes: [
+                  GoRoute(
+                      path: ':taskId',
+                      name: 'developmentTaskDetail',
+                      pageBuilder: (context, state) => NoTransitionPage(
+                          child: DevelopmentTaskDetailPage(
+                              taskId: state.pathParameters['taskId'] ?? ''))),
+                ]),
+            GoRoute(
+                path: AppRoutes.websiteStatus,
+                name: 'websiteStatus',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.status))),
+            GoRoute(
+                path: AppRoutes.websitePages,
+                name: 'websitePages',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.pages))),
+            GoRoute(
+                path: AppRoutes.websiteBlog,
+                name: 'websiteBlog',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child:
+                        WebsiteCmsStatusPage(section: WebsiteCmsSection.blog))),
+            GoRoute(
+                path: AppRoutes.websiteSeo,
+                name: 'websiteSeo',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child:
+                        WebsiteCmsStatusPage(section: WebsiteCmsSection.seo))),
+            GoRoute(
+                path: AppRoutes.websitePricing,
+                name: 'websitePricing',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.pricing))),
+            GoRoute(
+                path: AppRoutes.websiteFaqs,
+                name: 'websiteFaqs',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child:
+                        WebsiteCmsStatusPage(section: WebsiteCmsSection.faqs))),
+            GoRoute(
+                path: AppRoutes.websiteTestimonials,
+                name: 'websiteTestimonials',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.testimonials))),
+            GoRoute(
+                path: AppRoutes.websiteCampaigns,
+                name: 'websiteCampaigns',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.campaigns))),
+            GoRoute(
+                path: AppRoutes.websiteAssets,
+                name: 'websiteAssets',
+                pageBuilder: (context, state) => const NoTransitionPage(
+                    child: WebsiteCmsStatusPage(
+                        section: WebsiteCmsSection.assets))),
+            GoRoute(
+                path: AppRoutes.productionReadiness,
+                name: 'productionReadiness',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: ProductionReadinessPage())),
+            GoRoute(
+                path: AppRoutes.auditLogs,
+                name: 'auditLogs',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: AuditLogsPage())),
+            GoRoute(
+                path: AppRoutes.securityChecklist,
+                name: 'securityChecklist',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: SecurityChecklistPage())),
+            GoRoute(
+                path: AppRoutes.settings,
+                name: 'settings',
+                pageBuilder: (context, state) =>
+                    const NoTransitionPage(child: SettingsPage())),
           ],
         ),
         GoRoute(path: '/', redirect: (_, __) => AppRoutes.dashboard),
@@ -232,7 +434,22 @@ class AppRoutes {
   static const String billing = '/billing';
   static const String compliance = '/compliance';
   static const String systemHealth = '/system-health';
+  static const String developmentOverview = '/development';
+  static const String developmentTasks = '/development/tasks';
+  static const String developmentPrompts = '/development/prompts';
+  static const String developmentReviews = '/development/reviews';
+  static const String developmentReleases = '/development/releases';
+  static const String developmentEvidence = '/development/evidence';
+  static const String developmentRuns = '/development/runs';
   static const String websiteStatus = '/website/status';
+  static const String websitePages = '/website/pages';
+  static const String websiteBlog = '/website/blog';
+  static const String websiteSeo = '/website/seo';
+  static const String websitePricing = '/website/pricing';
+  static const String websiteFaqs = '/website/faqs';
+  static const String websiteTestimonials = '/website/testimonials';
+  static const String websiteCampaigns = '/website/campaigns';
+  static const String websiteAssets = '/website/assets';
   static const String productionReadiness = '/production-readiness';
   static const String auditLogs = '/audit-logs';
   static const String securityChecklist = '/security-checklist';

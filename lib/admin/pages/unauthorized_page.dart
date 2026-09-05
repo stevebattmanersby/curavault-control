@@ -38,13 +38,22 @@ class UnauthorizedPage extends StatelessWidget {
                       child: Icon(Icons.block, color: cs.onErrorContainer),
                     ),
                     const SizedBox(width: AppSpacing.md),
-                    Expanded(child: Text('Access denied', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800))),
+                    Expanded(
+                        child: Text('Access denied',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w800))),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  auth.accessDeniedReason ?? 'Your account does not have permission to use the CuraVault Control Site.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
+                  auth.accessDeniedReason ??
+                      'Your account does not have permission to use the CuraVault Control Site.',
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: cs.onSurfaceVariant, height: 1.4),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Wrap(
@@ -54,15 +63,27 @@ class UnauthorizedPage extends StatelessWidget {
                     FilledButton.icon(
                       onPressed: auth.isSignedIn ? auth.signOut : null,
                       icon: Icon(Icons.logout, color: cs.onPrimary),
-                      label: Text('Logout', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: cs.onPrimary, fontWeight: FontWeight.w700)),
-                      style: FilledButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg))),
+                      label: Text('Logout',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelLarge
+                              ?.copyWith(
+                                  color: cs.onPrimary,
+                                  fontWeight: FontWeight.w700)),
+                      style: FilledButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.lg))),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   'If you believe this is an error, contact an owner to add/activate your account in admin_users.',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelMedium
+                      ?.copyWith(color: cs.onSurfaceVariant, height: 1.3),
                 ),
               ],
             ),

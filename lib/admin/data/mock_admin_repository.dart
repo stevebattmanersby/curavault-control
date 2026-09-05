@@ -17,15 +17,20 @@ class MockAdminRepository implements AdminRepository {
 
   final List<AuditLogEntry> _auditLogs = [];
 
-  late final List<SupportSessionSummary> _supportSessions = _buildSupportSessions();
+  late final List<SupportSessionSummary> _supportSessions =
+      _buildSupportSessions();
   late final List<FeatureFlagDefinition> _featureFlags = _buildFeatureFlags();
   late final List<LimitOverrideRow> _limitOverrides = _buildLimitOverrides();
 
-  late final List<DataExportRequestRow> _exportRequests = _buildExportRequests();
-  late final List<DeletionRequestRow> _deletionRequests = _buildDeletionRequests();
+  late final List<DataExportRequestRow> _exportRequests =
+      _buildExportRequests();
+  late final List<DeletionRequestRow> _deletionRequests =
+      _buildDeletionRequests();
   late final List<ConsentRecordRow> _consentRecords = _buildConsentRecords();
-  late final List<SupportAccessRecordRow> _supportAccessRecords = _buildSupportAccessRecords();
-  late final List<PrivacyTermsAcceptanceRow> _policyAcceptances = _buildPolicyAcceptances();
+  late final List<SupportAccessRecordRow> _supportAccessRecords =
+      _buildSupportAccessRecords();
+  late final List<PrivacyTermsAcceptanceRow> _policyAcceptances =
+      _buildPolicyAcceptances();
 
   static String _pseudonymize(String raw) {
     // Deterministic, non-reversible pseudonym for UI tables.
@@ -48,14 +53,47 @@ class MockAdminRepository implements AdminRepository {
   List<FeatureFlagDefinition> _buildFeatureFlags() {
     final t = _now;
     return [
-      FeatureFlagDefinition(key: FeatureFlagKey.aiAssistant, enabled: true, description: 'Enable AI assistant surfaces (no content exposure in control site).', updatedAt: t.subtract(const Duration(days: 2))),
-      FeatureFlagDefinition(key: FeatureFlagKey.documentUploads, enabled: true, description: 'Allow document uploads in consumer app.', updatedAt: t.subtract(const Duration(days: 5))),
-      FeatureFlagDefinition(key: FeatureFlagKey.export, enabled: true, description: 'Enable exports (consumer app + compliance workflows).', updatedAt: t.subtract(const Duration(days: 7))),
-      FeatureFlagDefinition(key: FeatureFlagKey.timeline, enabled: true, description: 'Timeline UI module.', updatedAt: t.subtract(const Duration(days: 9))),
-      FeatureFlagDefinition(key: FeatureFlagKey.bodyMap, enabled: false, description: 'Body map module (gated beta).', updatedAt: t.subtract(const Duration(days: 3))),
-      FeatureFlagDefinition(key: FeatureFlagKey.familyProfiles, enabled: true, description: 'Family profiles feature.', updatedAt: t.subtract(const Duration(days: 14))),
-      FeatureFlagDefinition(key: FeatureFlagKey.preventativeCare, enabled: false, description: 'Preventative care insights module.', updatedAt: t.subtract(const Duration(days: 10))),
-      FeatureFlagDefinition(key: FeatureFlagKey.betaFeatures, enabled: true, description: 'General beta access (UI gated).', updatedAt: t.subtract(const Duration(days: 1))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.aiAssistant,
+          enabled: true,
+          description:
+              'Enable AI assistant surfaces (no content exposure in control site).',
+          updatedAt: t.subtract(const Duration(days: 2))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.documentUploads,
+          enabled: true,
+          description: 'Allow document uploads in consumer app.',
+          updatedAt: t.subtract(const Duration(days: 5))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.export,
+          enabled: true,
+          description: 'Enable exports (consumer app + compliance workflows).',
+          updatedAt: t.subtract(const Duration(days: 7))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.timeline,
+          enabled: true,
+          description: 'Timeline UI module.',
+          updatedAt: t.subtract(const Duration(days: 9))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.bodyMap,
+          enabled: false,
+          description: 'Body map module (gated beta).',
+          updatedAt: t.subtract(const Duration(days: 3))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.familyProfiles,
+          enabled: true,
+          description: 'Family profiles feature.',
+          updatedAt: t.subtract(const Duration(days: 14))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.preventativeCare,
+          enabled: false,
+          description: 'Preventative care insights module.',
+          updatedAt: t.subtract(const Duration(days: 10))),
+      FeatureFlagDefinition(
+          key: FeatureFlagKey.betaFeatures,
+          enabled: true,
+          description: 'General beta access (UI gated).',
+          updatedAt: t.subtract(const Duration(days: 1))),
     ];
   }
 
@@ -99,19 +137,30 @@ class MockAdminRepository implements AdminRepository {
       final created = t.subtract(Duration(hours: 2 + (i * 7)));
       final expires = switch (status) {
         SupportSessionStatus.active => created.add(const Duration(minutes: 45)),
-        SupportSessionStatus.pending => created.add(const Duration(minutes: 20)),
-        SupportSessionStatus.expired => created.add(const Duration(minutes: 15)),
+        SupportSessionStatus.pending =>
+          created.add(const Duration(minutes: 20)),
+        SupportSessionStatus.expired =>
+          created.add(const Duration(minutes: 15)),
         SupportSessionStatus.closed => created.add(const Duration(minutes: 30)),
-        SupportSessionStatus.revoked => created.add(const Duration(minutes: 30)),
+        SupportSessionStatus.revoked =>
+          created.add(const Duration(minutes: 30)),
       };
       return SupportSessionSummary(
         supportSessionId: 'ss_${2000 + i}',
         userId: 'usr_${(100000 + (i % 30)).toString()}',
         email: (i % 3 == 0) ? 'user${i % 30}@example.com' : null,
         ticketReference: (i % 4 == 0) ? 'SUP-${9000 + i}' : null,
-        consentStatus: (i % 9 == 0) ? 'missing' : (i % 7 == 0) ? 'revoked' : 'on_file',
+        consentStatus: (i % 9 == 0)
+            ? 'missing'
+            : (i % 7 == 0)
+                ? 'revoked'
+                : 'on_file',
         status: status,
-        assignedAdmin: (i % 5 == 0) ? 'admin_01' : (i % 2 == 0) ? 'admin_03' : null,
+        assignedAdmin: (i % 5 == 0)
+            ? 'admin_01'
+            : (i % 2 == 0)
+                ? 'admin_03'
+                : null,
         createdAt: created,
         accessExpiresAt: expires,
         updatedAt: created.add(Duration(minutes: 2 + (i % 18))),
@@ -130,8 +179,12 @@ class MockAdminRepository implements AdminRepository {
         _ => ComplianceRequestStatus.open,
       };
       final requested = t.subtract(Duration(days: 1 + (i % 25), hours: i % 18));
-      final completedAt = (status == ComplianceRequestStatus.completed) ? requested.add(Duration(hours: 5 + (i % 10))) : null;
-      final failureReason = (status == ComplianceRequestStatus.failed) ? (i % 2 == 0 ? 'Upstream job timeout' : 'Missing verification step') : null;
+      final completedAt = (status == ComplianceRequestStatus.completed)
+          ? requested.add(Duration(hours: 5 + (i % 10)))
+          : null;
+      final failureReason = (status == ComplianceRequestStatus.failed)
+          ? (i % 2 == 0 ? 'Upstream job timeout' : 'Missing verification step')
+          : null;
       return DataExportRequestRow(
         requestId: 'exp_${9000 + i}',
         userId: 'usr_${100000 + (i % 80)}',
@@ -139,11 +192,14 @@ class MockAdminRepository implements AdminRepository {
         status: status,
         requestedAt: requested,
         completedAt: completedAt,
-        verifiedBy: (status == ComplianceRequestStatus.completed) ? ((i % 3 == 0) ? 'admin_01' : 'admin_09') : null,
+        verifiedBy: (status == ComplianceRequestStatus.completed)
+            ? ((i % 3 == 0) ? 'admin_01' : 'admin_09')
+            : null,
         failureReason: failureReason,
         notes: (i % 7 == 0) ? 'User requested export for portability.' : null,
       );
-    })..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    })
+      ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
   }
 
   List<DeletionRequestRow> _buildDeletionRequests() {
@@ -157,10 +213,17 @@ class MockAdminRepository implements AdminRepository {
         4 => ComplianceRequestStatus.failed,
         _ => ComplianceRequestStatus.open,
       };
-      final requested = t.subtract(Duration(days: 2 + (i % 35), hours: (i * 3) % 24));
-      final completedAt = (status == ComplianceRequestStatus.completed) ? requested.add(Duration(days: 1 + (i % 4))) : null;
+      final requested =
+          t.subtract(Duration(days: 2 + (i % 35), hours: (i * 3) % 24));
+      final completedAt = (status == ComplianceRequestStatus.completed)
+          ? requested.add(Duration(days: 1 + (i % 4)))
+          : null;
       final retentionException = (i % 11 == 0);
-      final failedReason = (status == ComplianceRequestStatus.failed) ? (retentionException ? 'Retention exception: billing dispute hold' : 'Workflow job failed') : null;
+      final failedReason = (status == ComplianceRequestStatus.failed)
+          ? (retentionException
+              ? 'Retention exception: billing dispute hold'
+              : 'Workflow job failed')
+          : null;
       return DeletionRequestRow(
         requestId: 'del_${7000 + i}',
         userId: 'usr_${100050 + (i % 90)}',
@@ -170,19 +233,30 @@ class MockAdminRepository implements AdminRepository {
         completedAt: completedAt,
         failedReason: failedReason,
         retentionException: retentionException,
-        verifiedBy: (status == ComplianceRequestStatus.completed) ? ((i % 3 == 0) ? 'admin_01' : 'admin_09') : null,
+        verifiedBy: (status == ComplianceRequestStatus.completed)
+            ? ((i % 3 == 0) ? 'admin_01' : 'admin_09')
+            : null,
       );
-    })..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
+    })
+      ..sort((a, b) => b.requestedAt.compareTo(a.requestedAt));
   }
 
   List<ConsentRecordRow> _buildConsentRecords() {
     final t = _now;
-    final types = const ['support_access', 'terms', 'privacy_policy', 'analytics_opt_in'];
+    final types = const [
+      'support_access',
+      'terms',
+      'privacy_policy',
+      'analytics_opt_in'
+    ];
     final sources = const ['in_app', 'web', 'support_flow'];
     final countries = const ['US', 'CA', 'GB', 'DE', 'AU', 'SG'];
     return List.generate(60, (i) {
-      final accepted = t.subtract(Duration(days: _rng.nextInt(120), hours: _rng.nextInt(24)));
-      final revoked = (_rng.nextDouble() < 0.08) ? accepted.add(Duration(days: 2 + _rng.nextInt(25))) : null;
+      final accepted = t
+          .subtract(Duration(days: _rng.nextInt(120), hours: _rng.nextInt(24)));
+      final revoked = (_rng.nextDouble() < 0.08)
+          ? accepted.add(Duration(days: 2 + _rng.nextInt(25)))
+          : null;
       return ConsentRecordRow(
         userId: 'usr_${100000 + (i % 120)}',
         consentType: types[i % types.length],
@@ -192,20 +266,35 @@ class MockAdminRepository implements AdminRepository {
         source: sources[i % sources.length],
         country: countries[(i * 7) % countries.length],
       );
-    })..sort((a, b) => b.acceptedAt.compareTo(a.acceptedAt));
+    })
+      ..sort((a, b) => b.acceptedAt.compareTo(a.acceptedAt));
   }
 
   List<SupportAccessRecordRow> _buildSupportAccessRecords() {
     final t = _now;
-    final statuses = const ['pending', 'active', 'expired', 'closed', 'revoked'];
+    final statuses = const [
+      'pending',
+      'active',
+      'expired',
+      'closed',
+      'revoked'
+    ];
     return List.generate(40, (i) {
       final status = statuses[i % statuses.length];
-      final granted = status == 'active' || status == 'expired' || status == 'closed';
-      final grantedAt = granted ? t.subtract(Duration(hours: 1 + (i * 9))) : null;
-      final expiresAt = (status == 'active' || status == 'expired') ? (grantedAt?.add(const Duration(minutes: 45))) : null;
+      final granted =
+          status == 'active' || status == 'expired' || status == 'closed';
+      final grantedAt =
+          granted ? t.subtract(Duration(hours: 1 + (i * 9))) : null;
+      final expiresAt = (status == 'active' || status == 'expired')
+          ? (grantedAt?.add(const Duration(minutes: 45)))
+          : null;
       return SupportAccessRecordRow(
         userId: 'usr_${100000 + (i % 90)}',
-        adminUser: (i % 3 == 0) ? 'admin_01' : (i % 2 == 0) ? 'admin_03' : 'admin_09',
+        adminUser: (i % 3 == 0)
+            ? 'admin_01'
+            : (i % 2 == 0)
+                ? 'admin_03'
+                : 'admin_09',
         consentGranted: granted,
         consentGrantedAt: grantedAt,
         accessExpiresAt: expiresAt,
@@ -219,7 +308,8 @@ class MockAdminRepository implements AdminRepository {
     final t = _now;
     final countries = const ['US', 'CA', 'GB', 'DE', 'AU', 'SG'];
     return List.generate(80, (i) {
-      final accepted = t.subtract(Duration(days: _rng.nextInt(220), hours: _rng.nextInt(24)));
+      final accepted = t
+          .subtract(Duration(days: _rng.nextInt(220), hours: _rng.nextInt(24)));
       return PrivacyTermsAcceptanceRow(
         userId: 'usr_${99000 + i}',
         privacyPolicyVersion: '2025.${1 + (i % 6)}',
@@ -227,7 +317,8 @@ class MockAdminRepository implements AdminRepository {
         acceptedAt: accepted,
         country: countries[i % countries.length],
       );
-    })..sort((a, b) => b.acceptedAt.compareTo(a.acceptedAt));
+    })
+      ..sort((a, b) => b.acceptedAt.compareTo(a.acceptedAt));
   }
 
   @override
@@ -276,8 +367,10 @@ class MockAdminRepository implements AdminRepository {
       ...entry.toInsertJson(),
       if (redactedPrev != null) 'prev': redactedPrev,
       if (redactedNew != null) 'next': redactedNew,
-      if (entry.ipAddress == null && AdminClientContext.ipAddress != null) 'ip': AdminClientContext.ipAddress,
-      if (entry.userAgent == null && AdminClientContext.userAgent != null) 'user_agent': AdminClientContext.userAgent,
+      if (entry.ipAddress == null && AdminClientContext.ipAddress != null)
+        'ip': AdminClientContext.ipAddress,
+      if (entry.userAgent == null && AdminClientContext.userAgent != null)
+        'user_agent': AdminClientContext.userAgent,
       'created_at': now.toUtc().toIso8601String(),
     };
 
@@ -303,7 +396,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<SystemHealthSnapshot> getSystemHealthSnapshot({required SystemHealthQuery query}) async {
+  Future<SystemHealthSnapshot> getSystemHealthSnapshot(
+      {required SystemHealthQuery query}) async {
     final t = _now;
 
     final api = _randomStatus(healthyBias: 0.86);
@@ -318,7 +412,8 @@ class MockAdminRepository implements AdminRepository {
       storageStatus: storage,
       authStatus: auth,
       aiServiceStatus: ai,
-      lastSuccessfulScheduledJob: t.subtract(Duration(minutes: 14 + _rng.nextInt(90))),
+      lastSuccessfulScheduledJob:
+          t.subtract(Duration(minutes: 14 + _rng.nextInt(90))),
       errorRateLast24h: (0.002 + _rng.nextDouble() * 0.014).clamp(0.0, 1.0),
       failedUploadsLast24h: 8 + _rng.nextInt(120),
       failedSyncsLast24h: 5 + _rng.nextInt(90),
@@ -339,9 +434,20 @@ class MockAdminRepository implements AdminRepository {
       final err = _rng.nextInt(max(1, (req * 0.02).round()));
       final avg = 70 + _rng.nextInt(420);
       final p95 = avg + 90 + _rng.nextInt(900);
-      final status = (err / req) > 0.03 ? ServiceHealthStatus.degraded : ServiceHealthStatus.healthy;
-      final lastFail = (err > 0 && _rng.nextDouble() < 0.75) ? t.subtract(Duration(minutes: 10 + _rng.nextInt(700))) : null;
-      return ApiHealthEndpointRow(endpointName: name, requestCount: req, errorCount: err, avgLatencyMs: avg, p95LatencyMs: p95, lastFailureAt: lastFail, status: status);
+      final status = (err / req) > 0.03
+          ? ServiceHealthStatus.degraded
+          : ServiceHealthStatus.healthy;
+      final lastFail = (err > 0 && _rng.nextDouble() < 0.75)
+          ? t.subtract(Duration(minutes: 10 + _rng.nextInt(700)))
+          : null;
+      return ApiHealthEndpointRow(
+          endpointName: name,
+          requestCount: req,
+          errorCount: err,
+          avgLatencyMs: avg,
+          p95LatencyMs: p95,
+          lastFailureAt: lastFail,
+          status: status);
     }).toList()
       ..sort((a, b) => b.errorCount.compareTo(a.errorCount));
 
@@ -359,7 +465,12 @@ class MockAdminRepository implements AdminRepository {
       uploadAttempts: uploadAttempts,
       uploadSuccessRate: (1 - failureRate).clamp(0.0, 1.0),
       uploadFailureRate: failureRate,
-      averageUploadSizeBucket: ['<1MB', '1–5MB', '5–25MB', '25–100MB'][_rng.nextInt(4)],
+      averageUploadSizeBucket: [
+        '<1MB',
+        '1–5MB',
+        '5–25MB',
+        '25–100MB'
+      ][_rng.nextInt(4)],
       storageErrors: 5 + _rng.nextInt(90),
       permissionErrors: 1 + _rng.nextInt(40),
       timeoutErrors: 6 + _rng.nextInt(120),
@@ -394,13 +505,38 @@ class MockAdminRepository implements AdminRepository {
       final failedUp = (errRate * active * 0.25).round() + _rng.nextInt(12);
       final failedSy = (errRate * active * 0.20).round() + _rng.nextInt(10);
       final recommend = v[0] == '1.8.9' || errRate > 0.018;
-      return AppVersionHealthRow(appVersion: v[0], platform: v[1], activeUsers: active, errorRate: errRate, failedUploads: failedUp, failedSyncs: failedSy, upgradeRecommended: recommend);
+      return AppVersionHealthRow(
+          appVersion: v[0],
+          platform: v[1],
+          activeUsers: active,
+          errorRate: errRate,
+          failedUploads: failedUp,
+          failedSyncs: failedSy,
+          upgradeRecommended: recommend);
     }).toList()
       ..sort((a, b) => b.activeUsers.compareTo(a.activeUsers));
 
-    final featureAreas = const ['auth', 'sync', 'upload', 'ai', 'billing', 'compliance', 'notifications', 'onboarding'];
+    final featureAreas = const [
+      'auth',
+      'sync',
+      'upload',
+      'ai',
+      'billing',
+      'compliance',
+      'notifications',
+      'onboarding'
+    ];
     final platforms = const ['iOS', 'Android', 'Web'];
-    final errorCodes = const ['E_AUTH_401', 'E_SYNC_CONFLICT', 'E_UPLOAD_TIMEOUT', 'E_STORAGE_QUOTA', 'E_AI_RATE_LIMIT', 'E_AI_UPSTREAM', 'E_DB_TIMEOUT', 'E_NETWORK'];
+    final errorCodes = const [
+      'E_AUTH_401',
+      'E_SYNC_CONFLICT',
+      'E_UPLOAD_TIMEOUT',
+      'E_STORAGE_QUOTA',
+      'E_AI_RATE_LIMIT',
+      'E_AI_UPSTREAM',
+      'E_DB_TIMEOUT',
+      'E_NETWORK'
+    ];
     final results = const ['recovered', 'retrying', 'failed'];
 
     final logs = List.generate(60, (i) {
@@ -413,7 +549,9 @@ class MockAdminRepository implements AdminRepository {
       };
       final ts = t.subtract(Duration(minutes: 8 + (i * (2 + _rng.nextInt(8)))));
       final platform = platforms[(i + 1) % platforms.length];
-      final appV = (platform == 'Web') ? 'web' : (i % 4 == 0 ? '1.8.9' : (i % 2 == 0 ? '1.9.1' : '1.9.2'));
+      final appV = (platform == 'Web')
+          ? 'web'
+          : (i % 4 == 0 ? '1.8.9' : (i % 2 == 0 ? '1.9.1' : '1.9.2'));
       return SystemErrorLogRow(
         timestamp: ts,
         errorCode: errorCodes[(i * 3) % errorCodes.length],
@@ -424,7 +562,8 @@ class MockAdminRepository implements AdminRepository {
         result: results[(i + 2) % results.length],
         severity: severity,
       );
-    })..sort((a, b) => b.timestamp.compareTo(a.timestamp));
+    })
+      ..sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
     return SystemHealthSnapshot(
       query: query,
@@ -440,7 +579,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<List<UserAccountSummary>> listUsers({required UserListQuery query, required int limit}) async {
+  Future<List<UserAccountSummary>> listUsers(
+      {required UserListQuery query, required int limit}) async {
     final t = _now;
     final base = List.generate(
       max(30, limit),
@@ -450,18 +590,22 @@ class MockAdminRepository implements AdminRepository {
         final plan = (i % 4 == 0)
             ? 'Enterprise'
             : (i % 4 == 1)
-            ? 'Team'
-            : (i % 4 == 2)
-            ? 'Pro'
-            : 'Free';
-        final status = (i % 11 == 0) ? 'suspended' : (i % 7 == 0) ? 'locked' : 'active';
-         final aiLimit = switch (plan) {
-           'Enterprise' => 5000000,
-           'Team' => 2000000,
-           'Pro' => 1000000,
-           _ => 200000,
-         };
-         return UserAccountSummary(
+                ? 'Team'
+                : (i % 4 == 2)
+                    ? 'Pro'
+                    : 'Free';
+        final status = (i % 11 == 0)
+            ? 'suspended'
+            : (i % 7 == 0)
+                ? 'locked'
+                : 'active';
+        final aiLimit = switch (plan) {
+          'Enterprise' => 5000000,
+          'Team' => 2000000,
+          'Pro' => 1000000,
+          _ => 200000,
+        };
+        return UserAccountSummary(
           userId: 'usr_${(100000 + i).toString()}',
           email: (i % 3 == 0) ? 'user$i@example.com' : null,
           country: ['US', 'CA', 'GB', 'DE', 'AU', 'SG'][i % 6],
@@ -470,7 +614,7 @@ class MockAdminRepository implements AdminRepository {
           storageUsedBytes: used,
           storageLimitBytes: limitBytes,
           aiTokensThisMonth: 5000 + _rng.nextInt(800000),
-           aiTokenLimitThisMonth: aiLimit,
+          aiTokenLimitThisMonth: aiLimit,
           profileCount: 1 + _rng.nextInt(4),
           recordCount: 5 + _rng.nextInt(120),
           documentCount: 0 + _rng.nextInt(50),
@@ -478,14 +622,20 @@ class MockAdminRepository implements AdminRepository {
           medicationCount: 0 + _rng.nextInt(30),
           vaccinationCount: 0 + _rng.nextInt(25),
           lastSyncAt: t.subtract(Duration(hours: _rng.nextInt(24 * 15))),
-           lastActiveAt: t.subtract(Duration(hours: _rng.nextInt(24 * 7))),
+          lastActiveAt: t.subtract(Duration(hours: _rng.nextInt(24 * 7))),
           platform: ['iOS', 'Android', 'Web'][i % 3],
           appVersion: ['2.6.1', '2.7.0', '2.7.1'][i % 3],
-           failedSyncCount7d: _rng.nextInt(12),
-           failedUploadCount7d: _rng.nextInt(10),
-           lastKnownErrorCode: (i % 8 == 0) ? 'SYNC_TIMEOUT' : null,
-           billingStatus: (i % 5 == 0) ? 'past_due' : 'active',
-           subscriptionProvider: (i % 4 == 0) ? 'apple' : (i % 4 == 1) ? 'google' : (i % 4 == 2) ? 'stripe' : 'none',
+          failedSyncCount7d: _rng.nextInt(12),
+          failedUploadCount7d: _rng.nextInt(10),
+          lastKnownErrorCode: (i % 8 == 0) ? 'SYNC_TIMEOUT' : null,
+          billingStatus: (i % 5 == 0) ? 'past_due' : 'active',
+          subscriptionProvider: (i % 4 == 0)
+              ? 'apple'
+              : (i % 4 == 1)
+                  ? 'google'
+                  : (i % 4 == 2)
+                      ? 'stripe'
+                      : 'none',
           createdAt: t.subtract(Duration(days: 365 - i)),
           updatedAt: t.subtract(Duration(hours: i)),
         );
@@ -495,30 +645,62 @@ class MockAdminRepository implements AdminRepository {
     final q = query.search.trim().toLowerCase();
     var filtered = q.isEmpty
         ? base
-        : base.where((u) => u.userId.toLowerCase().contains(q) || (u.email?.toLowerCase().contains(q) ?? false)).toList();
+        : base
+            .where((u) =>
+                u.userId.toLowerCase().contains(q) ||
+                (u.email?.toLowerCase().contains(q) ?? false))
+            .toList();
 
     final f = query.filters;
-    if (f.country != null) filtered = filtered.where((u) => u.country == f.country).toList();
-    if (f.plan != null) filtered = filtered.where((u) => u.plan == f.plan).toList();
-    if (f.accountStatus != null) filtered = filtered.where((u) => u.accountStatus == f.accountStatus).toList();
-    if (f.platform != null) filtered = filtered.where((u) => u.platform == f.platform).toList();
+    if (f.country != null) {
+      filtered = filtered.where((u) => u.country == f.country).toList();
+    }
+    if (f.plan != null) {
+      filtered = filtered.where((u) => u.plan == f.plan).toList();
+    }
+    if (f.accountStatus != null) {
+      filtered =
+          filtered.where((u) => u.accountStatus == f.accountStatus).toList();
+    }
+    if (f.platform != null) {
+      filtered = filtered.where((u) => u.platform == f.platform).toList();
+    }
     if (f.storageNearLimit == true) {
-      filtered = filtered.where((u) => u.storageLimitBytes > 0 && (u.storageUsedBytes / u.storageLimitBytes) >= 0.85).toList();
+      filtered = filtered
+          .where((u) =>
+              u.storageLimitBytes > 0 &&
+              (u.storageUsedBytes / u.storageLimitBytes) >= 0.85)
+          .toList();
     }
     if (f.aiNearLimit == true) {
-      filtered = filtered.where((u) => u.aiTokenLimitThisMonth > 0 && (u.aiTokensThisMonth / u.aiTokenLimitThisMonth) >= 0.85).toList();
+      filtered = filtered
+          .where((u) =>
+              u.aiTokenLimitThisMonth > 0 &&
+              (u.aiTokensThisMonth / u.aiTokenLimitThisMonth) >= 0.85)
+          .toList();
     }
-    if (f.failedSyncs == true) filtered = filtered.where((u) => u.failedSyncCount7d > 0).toList();
-    if (f.failedUploads == true) filtered = filtered.where((u) => u.failedUploadCount7d > 0).toList();
-    if (f.billingFailed == true) filtered = filtered.where((u) => u.billingStatus == 'past_due').toList();
+    if (f.failedSyncs == true) {
+      filtered = filtered.where((u) => u.failedSyncCount7d > 0).toList();
+    }
+    if (f.failedUploads == true) {
+      filtered = filtered.where((u) => u.failedUploadCount7d > 0).toList();
+    }
+    if (f.billingFailed == true) {
+      filtered = filtered.where((u) => u.billingStatus == 'past_due').toList();
+    }
     if (f.createdRange != null) {
-      filtered = filtered.where((u) => !u.createdAt.isBefore(f.createdRange!.start) && !u.createdAt.isAfter(f.createdRange!.end)).toList();
+      filtered = filtered
+          .where((u) =>
+              !u.createdAt.isBefore(f.createdRange!.start) &&
+              !u.createdAt.isAfter(f.createdRange!.end))
+          .toList();
     }
     if (f.lastActiveRange != null) {
       filtered = filtered.where((u) {
         final la = u.lastActiveAt;
         if (la == null) return false;
-        return !la.isBefore(f.lastActiveRange!.start) && !la.isAfter(f.lastActiveRange!.end);
+        return !la.isBefore(f.lastActiveRange!.start) &&
+            !la.isAfter(f.lastActiveRange!.end);
       }).toList();
     }
 
@@ -529,8 +711,11 @@ class MockAdminRepository implements AdminRepository {
   Future<UserAccountDetail> getUserDetail({required String userId}) async {
     // Start from the same safe summary as listUsers, then expand with additional
     // non-health diagnostics.
-    final list = await listUsers(query: const UserListQuery(search: '', filters: UserListFilters()), limit: 200);
-    final u = list.firstWhere((x) => x.userId == userId, orElse: () => list.first);
+    final list = await listUsers(
+        query: const UserListQuery(search: '', filters: UserListFilters()),
+        limit: 200);
+    final u =
+        list.firstWhere((x) => x.userId == userId, orElse: () => list.first);
     final now = _now;
     return UserAccountDetail(
       userId: u.userId,
@@ -573,10 +758,15 @@ class MockAdminRepository implements AdminRepository {
         _ => 3,
       },
       uploadLimit: null,
-      openSupportSessions: (u.failedSyncCount7d > 0 || u.failedUploadCount7d > 0) ? 1 : 0,
+      openSupportSessions:
+          (u.failedSyncCount7d > 0 || u.failedUploadCount7d > 0) ? 1 : 0,
       consentStatus: 'on_file',
-      ticketReference: (u.billingStatus == 'past_due') ? 'BILL-${1000 + _rng.nextInt(900)}' : null,
-      supportNotes: (u.failedSyncCount7d > 3) ? 'User reports intermittent background sync failures.' : null,
+      ticketReference: (u.billingStatus == 'past_due')
+          ? 'BILL-${1000 + _rng.nextInt(900)}'
+          : null,
+      supportNotes: (u.failedSyncCount7d > 3)
+          ? 'User reports intermittent background sync failures.'
+          : null,
     );
   }
 
@@ -585,7 +775,8 @@ class MockAdminRepository implements AdminRepository {
   // ------------------------------
 
   @override
-  Future<AiUsageSnapshot> getAiUsageSnapshot({required AiUsageQuery query}) async {
+  Future<AiUsageSnapshot> getAiUsageSnapshot(
+      {required AiUsageQuery query}) async {
     final days = query.range.days;
     final end = DateTime(_now.year, _now.month, _now.day);
     final start = end.subtract(Duration(days: days - 1));
@@ -598,25 +789,33 @@ class MockAdminRepository implements AdminRepository {
     for (var i = 0; i < days; i++) {
       final d = start.add(Duration(days: i));
       final base = 250000 + _rng.nextInt(180000);
-      final weekdayFactor = (d.weekday == DateTime.saturday || d.weekday == DateTime.sunday) ? 0.72 : 1.0;
+      final weekdayFactor =
+          (d.weekday == DateTime.saturday || d.weekday == DateTime.sunday)
+              ? 0.72
+              : 1.0;
       final input = (base * 0.55 * weekdayFactor).round();
       final output = (base * 0.45 * weekdayFactor).round();
       totalInput += input;
       totalOutput += output;
-      tokensByDay.add(AiTokensTimeseriesPoint(day: d, inputTokens: input, outputTokens: output));
+      tokensByDay.add(AiTokensTimeseriesPoint(
+          day: d, inputTokens: input, outputTokens: output));
     }
 
     // Requests: assume ~3.3k tokens/request average, with noise.
     final totalTokens = totalInput + totalOutput;
-    final aiRequests = max(1, (totalTokens / (2800 + _rng.nextInt(1400))).round());
-    final failed = max(0, (aiRequests * (0.02 + (_rng.nextDouble() * 0.03))).round());
+    final aiRequests =
+        max(1, (totalTokens / (2800 + _rng.nextInt(1400))).round());
+    final failed =
+        max(0, (aiRequests * (0.02 + (_rng.nextDouble() * 0.03))).round());
 
     // Feature breakdown
     final tokensByFeature = <AiFeatureArea, int>{};
     var remaining = totalTokens;
     for (var i = 0; i < featureAreas.length; i++) {
       final f = featureAreas[i];
-      final share = i == featureAreas.length - 1 ? remaining : max(0, (totalTokens * (0.08 + _rng.nextDouble() * 0.18)).round());
+      final share = i == featureAreas.length - 1
+          ? remaining
+          : max(0, (totalTokens * (0.08 + _rng.nextDouble() * 0.18)).round());
       final v = min(remaining, share);
       tokensByFeature[f] = v;
       remaining -= v;
@@ -656,15 +855,18 @@ class MockAdminRepository implements AdminRepository {
     final estDaily = dailyCost.isEmpty ? 0.0 : dailyCost.last.estimatedCostUsd;
 
     final costByPlan = <String, double>{
-      for (final e in tokensByPlan.entries) e.key: (e.value / 1000) * usdPer1kTokens,
+      for (final e in tokensByPlan.entries)
+        e.key: (e.value / 1000) * usdPer1kTokens,
     };
 
     final costByFeature = <AiFeatureArea, double>{
-      for (final e in tokensByFeature.entries) e.key: (e.value / 1000) * usdPer1kTokens,
+      for (final e in tokensByFeature.entries)
+        e.key: (e.value / 1000) * usdPer1kTokens,
     };
 
     final activeUsers = 7800 + _rng.nextInt(2500);
-    final costPerActiveUser = activeUsers <= 0 ? 0.0 : (estMonthlyCost / activeUsers);
+    final costPerActiveUser =
+        activeUsers <= 0 ? 0.0 : (estMonthlyCost / activeUsers);
 
     final highCostUsers = List.generate(12, (i) {
       final plan = (i % 4 == 0)
@@ -683,9 +885,11 @@ class MockAdminRepository implements AdminRepository {
         estimatedCostUsd: (userTokens / 1000) * usdPer1kTokens,
         totalTokens: userTokens,
         aiRequests: req,
-        lastAiRequestAt: _now.subtract(Duration(hours: 1 + _rng.nextInt(24 * 10))),
+        lastAiRequestAt:
+            _now.subtract(Duration(hours: 1 + _rng.nextInt(24 * 10))),
       );
-    })..sort((a, b) => b.estimatedCostUsd.compareTo(a.estimatedCostUsd));
+    })
+      ..sort((a, b) => b.estimatedCostUsd.compareTo(a.estimatedCostUsd));
 
     final limitMonitoring = List.generate(40, (i) {
       final plan = (i % 4 == 0)
@@ -710,21 +914,38 @@ class MockAdminRepository implements AdminRepository {
         monthlyTokenLimit: limit,
         tokensUsed: used,
         aiRequests: requests,
-        limitReachedCount: (used >= limit) ? (1 + _rng.nextInt(4)) : _rng.nextInt(2),
+        limitReachedCount:
+            (used >= limit) ? (1 + _rng.nextInt(4)) : _rng.nextInt(2),
         lastAiRequestAt: _now.subtract(Duration(hours: _rng.nextInt(24 * 20))),
       );
     })
       ..sort((a, b) {
-        final ap = a.monthlyTokenLimit <= 0 ? 0 : a.tokensUsed / a.monthlyTokenLimit;
-        final bp = b.monthlyTokenLimit <= 0 ? 0 : b.tokensUsed / b.monthlyTokenLimit;
+        final ap =
+            a.monthlyTokenLimit <= 0 ? 0 : a.tokensUsed / a.monthlyTokenLimit;
+        final bp =
+            b.monthlyTokenLimit <= 0 ? 0 : b.tokensUsed / b.monthlyTokenLimit;
         return bp.compareTo(ap);
       });
 
-    final usersNearLimit = limitMonitoring.where((r) => r.monthlyTokenLimit > 0 && (r.tokensUsed / r.monthlyTokenLimit) >= 0.85 && r.tokensUsed < r.monthlyTokenLimit).length;
-    final usersOverLimit = limitMonitoring.where((r) => r.tokensUsed >= r.monthlyTokenLimit).length;
+    final usersNearLimit = limitMonitoring
+        .where((r) =>
+            r.monthlyTokenLimit > 0 &&
+            (r.tokensUsed / r.monthlyTokenLimit) >= 0.85 &&
+            r.tokensUsed < r.monthlyTokenLimit)
+        .length;
+    final usersOverLimit = limitMonitoring
+        .where((r) => r.tokensUsed >= r.monthlyTokenLimit)
+        .length;
 
     final models = const ['gpt-4o-mini', 'gpt-4o', 'o3-mini'];
-    final errorCodes = const ['RATE_LIMIT', 'TIMEOUT', 'UPSTREAM_5XX', 'POLICY_BLOCK', 'BAD_REQUEST', 'MODEL_OVERLOADED'];
+    final errorCodes = const [
+      'RATE_LIMIT',
+      'TIMEOUT',
+      'UPSTREAM_5XX',
+      'POLICY_BLOCK',
+      'BAD_REQUEST',
+      'MODEL_OVERLOADED'
+    ];
     final aiErrors = List.generate(55, (i) {
       final feature = featureAreas[i % featureAreas.length];
       final model = models[(i + 1) % models.length];
@@ -748,8 +969,11 @@ class MockAdminRepository implements AdminRepository {
     for (final f in featureAreas) {
       final ftokens = tokensByFeature[f] ?? 0;
       final req = max(1, (ftokens / (2700 + _rng.nextInt(1600))).round());
-      final failedReq = max(0, (req * (0.015 + _rng.nextDouble() * 0.04)).round());
-      final input = (ftokens * (0.55 + _rng.nextDouble() * 0.1)).round().clamp(0, ftokens);
+      final failedReq =
+          max(0, (req * (0.015 + _rng.nextDouble() * 0.04)).round());
+      final input = (ftokens * (0.55 + _rng.nextDouble() * 0.1))
+          .round()
+          .clamp(0, ftokens);
       final output = (ftokens - input).clamp(0, ftokens);
       usageByFeature.add(
         AiFeatureUsageRow(
@@ -808,7 +1032,8 @@ class MockAdminRepository implements AdminRepository {
   // ------------------------------
 
   @override
-  Future<BillingSnapshot> getBillingSnapshot({required BillingQuery query}) async {
+  Future<BillingSnapshot> getBillingSnapshot(
+      {required BillingQuery query}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
 
     // Mock population sized to feel plausible.
@@ -835,17 +1060,38 @@ class MockAdminRepository implements AdminRepository {
       trialConversionRate: trialConversion,
     );
 
-    final countries = ['US', 'CA', 'GB', 'DE', 'AU', 'SG', 'FR', 'ES', 'BR', 'IN'];
+    final countries = [
+      'US',
+      'CA',
+      'GB',
+      'DE',
+      'AU',
+      'SG',
+      'FR',
+      'ES',
+      'BR',
+      'IN'
+    ];
     final providers = BillingSubscriptionProvider.values;
 
     // Subscriptions
     final subs = List.generate(85, (i) {
       final userId = 'usr_${120000 + i}';
-      final plan = (i % 7 == 0) ? 'family' : (i % 5 == 0) ? 'enterprise' : (i % 3 == 0) ? 'premium' : 'free';
+      final plan = (i % 7 == 0)
+          ? 'family'
+          : (i % 5 == 0)
+              ? 'enterprise'
+              : (i % 3 == 0)
+                  ? 'premium'
+                  : 'free';
       final provider = providers[(i + 1) % providers.length];
       final start = _now.subtract(Duration(days: 10 + _rng.nextInt(540)));
-      final renewal = _rng.nextBool() ? _now.add(Duration(days: 2 + _rng.nextInt(40))) : null;
-      final cancelledDate = (plan != 'free' && _rng.nextDouble() < 0.12) ? _now.subtract(Duration(days: 1 + _rng.nextInt(45))) : null;
+      final renewal = _rng.nextBool()
+          ? _now.add(Duration(days: 2 + _rng.nextInt(40)))
+          : null;
+      final cancelledDate = (plan != 'free' && _rng.nextDouble() < 0.12)
+          ? _now.subtract(Duration(days: 1 + _rng.nextInt(45)))
+          : null;
       final status = cancelledDate != null
           ? 'cancelled'
           : (_rng.nextDouble() < 0.06)
@@ -853,9 +1099,12 @@ class MockAdminRepository implements AdminRepository {
               : (plan == 'free')
                   ? 'free'
                   : 'active';
-      final failures = status == 'past_due' ? (1 + _rng.nextInt(4)) : (_rng.nextDouble() < 0.1 ? 1 : 0);
+      final failures = status == 'past_due'
+          ? (1 + _rng.nextInt(4))
+          : (_rng.nextDouble() < 0.1 ? 1 : 0);
       final country = countries[(i * 3) % countries.length];
-      final manualComp = provider == BillingSubscriptionProvider.manual && plan != 'free';
+      final manualComp =
+          provider == BillingSubscriptionProvider.manual && plan != 'free';
       return SubscriptionRow(
         userId: userId,
         email: (i % 3 == 0) ? 'billing_user_$i@example.com' : null,
@@ -881,13 +1130,24 @@ class MockAdminRepository implements AdminRepository {
       final usage = ['Low', 'Medium', 'High'][_rng.nextInt(3)];
       final clicked = _rng.nextDouble() < 0.42;
       final converted = _rng.nextDouble() < (clicked ? 0.32 : 0.18);
-      return TrialRow(userId: userId, plan: plan, trialStart: start, trialEnd: end, usageLevel: usage, upgradePromptClicked: clicked, converted: converted);
+      return TrialRow(
+          userId: userId,
+          plan: plan,
+          trialStart: start,
+          trialEnd: end,
+          usageLevel: usage,
+          upgradePromptClicked: clicked,
+          converted: converted);
     });
 
     // Failed payments
     final failed = List.generate(38, (i) {
       final userId = 'usr_${121900 + i}';
-      final plan = (i % 3 == 0) ? 'premium' : (i % 3 == 1) ? 'family' : 'enterprise';
+      final plan = (i % 3 == 0)
+          ? 'premium'
+          : (i % 3 == 1)
+              ? 'family'
+              : 'enterprise';
       final provider = providers[(i + 2) % providers.length];
       final failures = 1 + _rng.nextInt(5);
       return FailedPaymentRow(
@@ -904,11 +1164,32 @@ class MockAdminRepository implements AdminRepository {
 
     // Revenue by plan
     final revenueByPlan = <RevenueByPlanRow>[
-      RevenueByPlanRow(plan: 'premium', users: 520, mrrUsd: 520 * 9.99, arrUsd: 520 * 9.99 * 12, churnRate: 0.032),
-      RevenueByPlanRow(plan: 'family', users: 240, mrrUsd: 240 * 14.99, arrUsd: 240 * 14.99 * 12, churnRate: 0.027),
-      RevenueByPlanRow(plan: 'enterprise', users: 58, mrrUsd: 58 * 39.0, arrUsd: 58 * 39.0 * 12, churnRate: 0.018),
-      RevenueByPlanRow(plan: 'team', users: 110, mrrUsd: 110 * 19.0, arrUsd: 110 * 19.0 * 12, churnRate: 0.024),
-      RevenueByPlanRow(plan: 'free', users: 6100, mrrUsd: 0, arrUsd: 0, churnRate: 0.0),
+      RevenueByPlanRow(
+          plan: 'premium',
+          users: 520,
+          mrrUsd: 520 * 9.99,
+          arrUsd: 520 * 9.99 * 12,
+          churnRate: 0.032),
+      RevenueByPlanRow(
+          plan: 'family',
+          users: 240,
+          mrrUsd: 240 * 14.99,
+          arrUsd: 240 * 14.99 * 12,
+          churnRate: 0.027),
+      RevenueByPlanRow(
+          plan: 'enterprise',
+          users: 58,
+          mrrUsd: 58 * 39.0,
+          arrUsd: 58 * 39.0 * 12,
+          churnRate: 0.018),
+      RevenueByPlanRow(
+          plan: 'team',
+          users: 110,
+          mrrUsd: 110 * 19.0,
+          arrUsd: 110 * 19.0 * 12,
+          churnRate: 0.024),
+      RevenueByPlanRow(
+          plan: 'free', users: 6100, mrrUsd: 0, arrUsd: 0, churnRate: 0.0),
     ];
 
     // Revenue by country (group <10 into Other)
@@ -917,7 +1198,8 @@ class MockAdminRepository implements AdminRepository {
       final users = 4 + _rng.nextInt(420);
       final avgMrr = 8.0 + _rng.nextDouble() * 6.0;
       final mrrUsd = users * avgMrr;
-      rawCountries.add(RevenueByCountryRow(country: c, users: users, mrrUsd: mrrUsd, arrUsd: mrrUsd * 12));
+      rawCountries.add(RevenueByCountryRow(
+          country: c, users: users, mrrUsd: mrrUsd, arrUsd: mrrUsd * 12));
     }
 
     final grouped = <RevenueByCountryRow>[];
@@ -933,21 +1215,37 @@ class MockAdminRepository implements AdminRepository {
         grouped.add(r);
       }
     }
-    if (otherUsers > 0) grouped.add(RevenueByCountryRow(country: 'Other', users: otherUsers, mrrUsd: otherMrr, arrUsd: otherArr));
+    if (otherUsers > 0) {
+      grouped.add(RevenueByCountryRow(
+          country: 'Other',
+          users: otherUsers,
+          mrrUsd: otherMrr,
+          arrUsd: otherArr));
+    }
     grouped.sort((a, b) => b.mrrUsd.compareTo(a.mrrUsd));
 
     // Apply query filters in-memory for mock.
     Iterable<SubscriptionRow> filteredSubs = subs;
-    if (query.country != null && query.country!.trim().isNotEmpty) filteredSubs = filteredSubs.where((s) => s.country == query.country);
-    if (query.plan != null && query.plan!.trim().isNotEmpty) filteredSubs = filteredSubs.where((s) => s.plan == query.plan);
-    if (query.provider != null) filteredSubs = filteredSubs.where((s) => s.provider == query.provider);
+    if (query.country != null && query.country!.trim().isNotEmpty) {
+      filteredSubs = filteredSubs.where((s) => s.country == query.country);
+    }
+    if (query.plan != null && query.plan!.trim().isNotEmpty) {
+      filteredSubs = filteredSubs.where((s) => s.plan == query.plan);
+    }
+    if (query.provider != null) {
+      filteredSubs = filteredSubs.where((s) => s.provider == query.provider);
+    }
 
     return BillingSnapshot(
       query: query,
       overview: overview,
       subscriptions: filteredSubs.toList(),
-      trials: trialsRows.where((t) => query.plan == null ? true : t.plan == query.plan).toList(),
-      failedPayments: failed.where((f) => query.plan == null ? true : f.plan == query.plan).toList(),
+      trials: trialsRows
+          .where((t) => query.plan == null ? true : t.plan == query.plan)
+          .toList(),
+      failedPayments: failed
+          .where((f) => query.plan == null ? true : f.plan == query.plan)
+          .toList(),
       revenueByPlan: revenueByPlan,
       revenueByCountry: grouped,
       revenueCat: RevenueCatSyncHealth(
@@ -956,9 +1254,12 @@ class MockAdminRepository implements AdminRepository {
         webhookUnmappedAppUserIdRows: _rng.nextInt(3),
         entitlementsRows: 800 + _rng.nextInt(150),
         activeEntitlementsRows: 720 + _rng.nextInt(120),
-        latestWebhookReceivedAt: _now.subtract(Duration(minutes: 8 + _rng.nextInt(80))),
-        latestWebhookProcessedAt: _now.subtract(Duration(minutes: 7 + _rng.nextInt(80))),
-        latestWebhookProcessingResult: _rng.nextDouble() < 0.9 ? 'ok' : 'warning:unmapped_app_user_id',
+        latestWebhookReceivedAt:
+            _now.subtract(Duration(minutes: 8 + _rng.nextInt(80))),
+        latestWebhookProcessedAt:
+            _now.subtract(Duration(minutes: 7 + _rng.nextInt(80))),
+        latestWebhookProcessingResult:
+            _rng.nextDouble() < 0.9 ? 'ok' : 'warning:unmapped_app_user_id',
         storeBreakdown: const {'app_store': 420, 'play_store': 300},
       ),
       generatedAt: _now,
@@ -966,7 +1267,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> performUserAdminAction({required AdminActionRequest request}) async {
+  Future<void> performUserAdminAction(
+      {required AdminActionRequest request}) async {
     // Mock-only: no-op. A real implementation must call a Postgres function or
     // edge function that performs the action + writes audit logs.
     await Future<void>.delayed(const Duration(milliseconds: 250));
@@ -981,7 +1283,8 @@ class MockAdminRepository implements AdminRepository {
         final k = match.first;
         final idx = _featureFlags.indexWhere((f) => f.key == k);
         if (idx != -1) {
-          _featureFlags[idx] = _featureFlags[idx].copyWith(enabled: enabled, updatedAt: _now);
+          _featureFlags[idx] =
+              _featureFlags[idx].copyWith(enabled: enabled, updatedAt: _now);
         }
       }
     }
@@ -992,7 +1295,9 @@ class MockAdminRepository implements AdminRepository {
         targetUserId: request.userId,
         actionType: _mapUserAdminActionType(request.action),
         previousValue: {
-          if (request.parameters != null && request.parameters!.containsKey('previous')) 'previous': request.parameters!['previous'],
+          if (request.parameters != null &&
+              request.parameters!.containsKey('previous'))
+            'previous': request.parameters!['previous'],
           'action': request.action,
         },
         newValue: {
@@ -1008,16 +1313,24 @@ class MockAdminRepository implements AdminRepository {
 
   String _mapUserAdminActionType(String action) {
     final a = action.toLowerCase();
-    if (a.contains('billing') && a.contains('add note')) return 'billing_note_added';
+    if (a.contains('billing') && a.contains('add note')) {
+      return 'billing_note_added';
+    }
     if (a.contains('change plan')) return 'plan_changed';
     if (a.contains('extend trial')) return 'trial_extended';
     if (a.contains('storage')) return 'storage_limit_changed';
     if (a.contains('ai') && a.contains('limit')) return 'ai_limit_changed';
-    if (a.contains('featureflag') || a.contains('feature flag')) return 'feature_flag_changed';
-    if (a.contains('suspend') && !a.contains('unsuspend')) return 'account_suspended';
+    if (a.contains('featureflag') || a.contains('feature flag')) {
+      return 'feature_flag_changed';
+    }
+    if (a.contains('suspend') && !a.contains('unsuspend')) {
+      return 'account_suspended';
+    }
     if (a.contains('unsuspend')) return 'account_unsuspended';
     if (a.contains('force logout')) return 'force_logout_triggered';
-    if (a.contains('revoke') && a.contains('session')) return 'sessions_revoked';
+    if (a.contains('revoke') && a.contains('session')) {
+      return 'sessions_revoked';
+    }
     return 'admin_action';
   }
 
@@ -1026,21 +1339,44 @@ class MockAdminRepository implements AdminRepository {
   // ------------------------------
 
   @override
-  Future<ComplianceSnapshot> getComplianceSnapshot({required ComplianceQuery query}) async {
+  Future<ComplianceSnapshot> getComplianceSnapshot(
+      {required ComplianceQuery query}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
 
     // Overview cards
-    final openDeletion = _deletionRequests.where((r) => r.status == ComplianceRequestStatus.open || r.status == ComplianceRequestStatus.inProgress).length;
-    final completedDeletion = _deletionRequests.where((r) => r.status == ComplianceRequestStatus.completed).length;
-    final failedDeletion = _deletionRequests.where((r) => r.status == ComplianceRequestStatus.failed).length;
-    final openExport = _exportRequests.where((r) => r.status == ComplianceRequestStatus.open || r.status == ComplianceRequestStatus.inProgress).length;
-    final completedExport = _exportRequests.where((r) => r.status == ComplianceRequestStatus.completed).length;
+    final openDeletion = _deletionRequests
+        .where((r) =>
+            r.status == ComplianceRequestStatus.open ||
+            r.status == ComplianceRequestStatus.inProgress)
+        .length;
+    final completedDeletion = _deletionRequests
+        .where((r) => r.status == ComplianceRequestStatus.completed)
+        .length;
+    final failedDeletion = _deletionRequests
+        .where((r) => r.status == ComplianceRequestStatus.failed)
+        .length;
+    final openExport = _exportRequests
+        .where((r) =>
+            r.status == ComplianceRequestStatus.open ||
+            r.status == ComplianceRequestStatus.inProgress)
+        .length;
+    final completedExport = _exportRequests
+        .where((r) => r.status == ComplianceRequestStatus.completed)
+        .length;
 
-    final activeSupport = _supportSessions.where((s) => s.status == SupportSessionStatus.active).length;
-    final expiredSupport = _supportSessions.where((s) => s.status == SupportSessionStatus.expired).length;
+    final activeSupport = _supportSessions
+        .where((s) => s.status == SupportSessionStatus.active)
+        .length;
+    final expiredSupport = _supportSessions
+        .where((s) => s.status == SupportSessionStatus.expired)
+        .length;
 
     final recentAdminActions = 28 + _rng.nextInt(60);
-    final usersPendingDeletion = _deletionRequests.where((r) => r.status != ComplianceRequestStatus.completed).map((e) => e.userId).toSet().length;
+    final usersPendingDeletion = _deletionRequests
+        .where((r) => r.status != ComplianceRequestStatus.completed)
+        .map((e) => e.userId)
+        .toSet()
+        .length;
 
     final overview = ComplianceOverviewMetrics(
       openDeletionRequests: openDeletion,
@@ -1076,7 +1412,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> performComplianceAction({required ComplianceActionRequest request}) async {
+  Future<void> performComplianceAction(
+      {required ComplianceActionRequest request}) async {
     await Future<void>.delayed(const Duration(milliseconds: 260));
 
     // Mandatory audit row (best-effort; never include health content).
@@ -1101,68 +1438,105 @@ class MockAdminRepository implements AdminRepository {
     final requestId = request.requestId;
 
     switch (request.action) {
-      case ComplianceAction.markExportInProgress: {
-        if (requestId == null) return;
-        final idx = _exportRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx == -1) return;
-        _exportRequests[idx] = _exportRequests[idx].copyWith(status: ComplianceRequestStatus.inProgress, clearFailureReason: true);
-        return;
-      }
-      case ComplianceAction.markExportComplete: {
-        if (requestId == null) return;
-        final idx = _exportRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx == -1) return;
-        _exportRequests[idx] = _exportRequests[idx].copyWith(status: ComplianceRequestStatus.completed, completedAt: now, verifiedBy: request.actorAdminId, clearFailureReason: true);
-        return;
-      }
-      case ComplianceAction.markDeletionInProgress: {
-        if (requestId == null) return;
-        final idx = _deletionRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx == -1) return;
-        _deletionRequests[idx] = _deletionRequests[idx].copyWith(status: ComplianceRequestStatus.inProgress, clearFailedReason: true);
-        return;
-      }
-      case ComplianceAction.markDeletionComplete: {
-        if (requestId == null) return;
-        final idx = _deletionRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx == -1) return;
-        _deletionRequests[idx] = _deletionRequests[idx].copyWith(status: ComplianceRequestStatus.completed, completedAt: now, verifiedBy: request.actorAdminId, clearFailedReason: true);
-        return;
-      }
-      case ComplianceAction.recordFailureReason: {
-        if (requestId == null) return;
-        var idx = _exportRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx != -1) {
-          _exportRequests[idx] = _exportRequests[idx].copyWith(status: ComplianceRequestStatus.failed, failureReason: request.reason, clearCompletedAt: true, clearVerifiedBy: true);
+      case ComplianceAction.markExportInProgress:
+        {
+          if (requestId == null) return;
+          final idx =
+              _exportRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx == -1) return;
+          _exportRequests[idx] = _exportRequests[idx].copyWith(
+              status: ComplianceRequestStatus.inProgress,
+              clearFailureReason: true);
           return;
         }
-        idx = _deletionRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx != -1) {
-          _deletionRequests[idx] = _deletionRequests[idx].copyWith(status: ComplianceRequestStatus.failed, failedReason: request.reason, clearCompletedAt: true, clearVerifiedBy: true);
+      case ComplianceAction.markExportComplete:
+        {
+          if (requestId == null) return;
+          final idx =
+              _exportRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx == -1) return;
+          _exportRequests[idx] = _exportRequests[idx].copyWith(
+              status: ComplianceRequestStatus.completed,
+              completedAt: now,
+              verifiedBy: request.actorAdminId,
+              clearFailureReason: true);
+          return;
         }
-        return;
-      }
-      case ComplianceAction.addComplianceNote: {
-        if (requestId == null) return;
-        final note = (request.parameters?['note'] ?? '').toString().trim();
-        if (note.isEmpty) return;
-        final idx = _exportRequests.indexWhere((r) => r.requestId == requestId);
-        if (idx == -1) return;
-        final prev = _exportRequests[idx].notes;
-        final merged = (prev == null || prev.trim().isEmpty) ? note : '$prev\n—\n$note';
-        _exportRequests[idx] = _exportRequests[idx].copyWith(notes: merged);
-        return;
-      }
-      case ComplianceAction.closeSupportAccess: {
-        if (requestId == null) return;
-        var idx = _supportAccessRecords.indexWhere((r) => r.ticketReference == requestId);
-        if (idx == -1) {
-          idx = _supportAccessRecords.indexWhere((r) => '${r.userId}:${r.adminUser}:${r.accessExpiresAt?.millisecondsSinceEpoch ?? 0}' == requestId);
+      case ComplianceAction.markDeletionInProgress:
+        {
+          if (requestId == null) return;
+          final idx =
+              _deletionRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx == -1) return;
+          _deletionRequests[idx] = _deletionRequests[idx].copyWith(
+              status: ComplianceRequestStatus.inProgress,
+              clearFailedReason: true);
+          return;
         }
-        if (idx == -1) return;
-        _supportAccessRecords[idx] = _supportAccessRecords[idx].copyWith(status: 'closed', clearAccessExpiresAt: true);
-        return;
-      }
+      case ComplianceAction.markDeletionComplete:
+        {
+          if (requestId == null) return;
+          final idx =
+              _deletionRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx == -1) return;
+          _deletionRequests[idx] = _deletionRequests[idx].copyWith(
+              status: ComplianceRequestStatus.completed,
+              completedAt: now,
+              verifiedBy: request.actorAdminId,
+              clearFailedReason: true);
+          return;
+        }
+      case ComplianceAction.recordFailureReason:
+        {
+          if (requestId == null) return;
+          var idx = _exportRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx != -1) {
+            _exportRequests[idx] = _exportRequests[idx].copyWith(
+                status: ComplianceRequestStatus.failed,
+                failureReason: request.reason,
+                clearCompletedAt: true,
+                clearVerifiedBy: true);
+            return;
+          }
+          idx = _deletionRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx != -1) {
+            _deletionRequests[idx] = _deletionRequests[idx].copyWith(
+                status: ComplianceRequestStatus.failed,
+                failedReason: request.reason,
+                clearCompletedAt: true,
+                clearVerifiedBy: true);
+          }
+          return;
+        }
+      case ComplianceAction.addComplianceNote:
+        {
+          if (requestId == null) return;
+          final note = (request.parameters?['note'] ?? '').toString().trim();
+          if (note.isEmpty) return;
+          final idx =
+              _exportRequests.indexWhere((r) => r.requestId == requestId);
+          if (idx == -1) return;
+          final prev = _exportRequests[idx].notes;
+          final merged =
+              (prev == null || prev.trim().isEmpty) ? note : '$prev\n—\n$note';
+          _exportRequests[idx] = _exportRequests[idx].copyWith(notes: merged);
+          return;
+        }
+      case ComplianceAction.closeSupportAccess:
+        {
+          if (requestId == null) return;
+          var idx = _supportAccessRecords
+              .indexWhere((r) => r.ticketReference == requestId);
+          if (idx == -1) {
+            idx = _supportAccessRecords.indexWhere((r) =>
+                '${r.userId}:${r.adminUser}:${r.accessExpiresAt?.millisecondsSinceEpoch ?? 0}' ==
+                requestId);
+          }
+          if (idx == -1) return;
+          _supportAccessRecords[idx] = _supportAccessRecords[idx]
+              .copyWith(status: 'closed', clearAccessExpiresAt: true);
+          return;
+        }
     }
   }
 
@@ -1184,12 +1558,84 @@ class MockAdminRepository implements AdminRepository {
     await Future<void>.delayed(const Duration(milliseconds: 180));
     // Example plans requested.
     final rows = <PlanOverviewRow>[
-      PlanOverviewRow(planName: 'free', monthlyPriceUsd: 0, storageLimitBytes: 5 * 1024 * 1024 * 1024, aiTokenLimitMonthly: 200000, profileLimit: 3, uploadLimit: 40, exportAccess: false, aiAccess: true, activeUsers: 640, trialUsers: 0, paidUsers: 0, cancelledUsers: 34),
-      PlanOverviewRow(planName: 'launch_free_6_months', monthlyPriceUsd: 0, storageLimitBytes: 15 * 1024 * 1024 * 1024, aiTokenLimitMonthly: 500000, profileLimit: 5, uploadLimit: 120, exportAccess: true, aiAccess: true, activeUsers: 120, trialUsers: 95, paidUsers: 0, cancelledUsers: 4),
-      PlanOverviewRow(planName: 'premium', monthlyPriceUsd: 9.99, storageLimitBytes: 50 * 1024 * 1024 * 1024, aiTokenLimitMonthly: 1500000, profileLimit: 10, uploadLimit: null, exportAccess: true, aiAccess: true, activeUsers: 210, trialUsers: 22, paidUsers: 185, cancelledUsers: 18),
-      PlanOverviewRow(planName: 'family', monthlyPriceUsd: 14.99, storageLimitBytes: 120 * 1024 * 1024 * 1024, aiTokenLimitMonthly: 2500000, profileLimit: 20, uploadLimit: null, exportAccess: true, aiAccess: true, activeUsers: 90, trialUsers: 8, paidUsers: 76, cancelledUsers: 6),
-      PlanOverviewRow(planName: 'admin_test', monthlyPriceUsd: 0, storageLimitBytes: 10 * 1024 * 1024 * 1024, aiTokenLimitMonthly: 800000, profileLimit: 5, uploadLimit: 80, exportAccess: true, aiAccess: true, activeUsers: 7, trialUsers: 0, paidUsers: 0, cancelledUsers: 0),
-      PlanOverviewRow(planName: 'suspended', monthlyPriceUsd: 0, storageLimitBytes: 0, aiTokenLimitMonthly: 0, profileLimit: 0, uploadLimit: 0, exportAccess: false, aiAccess: false, activeUsers: 0, trialUsers: 0, paidUsers: 0, cancelledUsers: 42),
+      PlanOverviewRow(
+          planName: 'free',
+          monthlyPriceUsd: 0,
+          storageLimitBytes: 5 * 1024 * 1024 * 1024,
+          aiTokenLimitMonthly: 200000,
+          profileLimit: 3,
+          uploadLimit: 40,
+          exportAccess: false,
+          aiAccess: true,
+          activeUsers: 640,
+          trialUsers: 0,
+          paidUsers: 0,
+          cancelledUsers: 34),
+      PlanOverviewRow(
+          planName: 'launch_free_6_months',
+          monthlyPriceUsd: 0,
+          storageLimitBytes: 15 * 1024 * 1024 * 1024,
+          aiTokenLimitMonthly: 500000,
+          profileLimit: 5,
+          uploadLimit: 120,
+          exportAccess: true,
+          aiAccess: true,
+          activeUsers: 120,
+          trialUsers: 95,
+          paidUsers: 0,
+          cancelledUsers: 4),
+      PlanOverviewRow(
+          planName: 'premium',
+          monthlyPriceUsd: 9.99,
+          storageLimitBytes: 50 * 1024 * 1024 * 1024,
+          aiTokenLimitMonthly: 1500000,
+          profileLimit: 10,
+          uploadLimit: null,
+          exportAccess: true,
+          aiAccess: true,
+          activeUsers: 210,
+          trialUsers: 22,
+          paidUsers: 185,
+          cancelledUsers: 18),
+      PlanOverviewRow(
+          planName: 'family',
+          monthlyPriceUsd: 14.99,
+          storageLimitBytes: 120 * 1024 * 1024 * 1024,
+          aiTokenLimitMonthly: 2500000,
+          profileLimit: 20,
+          uploadLimit: null,
+          exportAccess: true,
+          aiAccess: true,
+          activeUsers: 90,
+          trialUsers: 8,
+          paidUsers: 76,
+          cancelledUsers: 6),
+      PlanOverviewRow(
+          planName: 'admin_test',
+          monthlyPriceUsd: 0,
+          storageLimitBytes: 10 * 1024 * 1024 * 1024,
+          aiTokenLimitMonthly: 800000,
+          profileLimit: 5,
+          uploadLimit: 80,
+          exportAccess: true,
+          aiAccess: true,
+          activeUsers: 7,
+          trialUsers: 0,
+          paidUsers: 0,
+          cancelledUsers: 0),
+      PlanOverviewRow(
+          planName: 'suspended',
+          monthlyPriceUsd: 0,
+          storageLimitBytes: 0,
+          aiTokenLimitMonthly: 0,
+          profileLimit: 0,
+          uploadLimit: 0,
+          exportAccess: false,
+          aiAccess: false,
+          activeUsers: 0,
+          trialUsers: 0,
+          paidUsers: 0,
+          cancelledUsers: 42),
     ];
     return rows.take(limit).toList();
   }
@@ -1204,8 +1650,14 @@ class MockAdminRepository implements AdminRepository {
       'free' => 'free',
       _ => u.plan.toLowerCase().replaceAll(' ', '_'),
     };
-    final trialStart = (u.billingStatus == 'active' && plan == 'launch_free_6_months') ? now.subtract(const Duration(days: 12)) : (u.billingStatus == 'active' && plan == 'premium' && _rng.nextBool()) ? now.subtract(const Duration(days: 7)) : null;
-    final trialEnd = (trialStart != null) ? trialStart.add(const Duration(days: 14)) : null;
+    final trialStart = (u.billingStatus == 'active' &&
+            plan == 'launch_free_6_months')
+        ? now.subtract(const Duration(days: 12))
+        : (u.billingStatus == 'active' && plan == 'premium' && _rng.nextBool())
+            ? now.subtract(const Duration(days: 7))
+            : null;
+    final trialEnd =
+        (trialStart != null) ? trialStart.add(const Duration(days: 14)) : null;
 
     final defaultStorage = switch (plan) {
       'free' => 5 * 1024 * 1024 * 1024,
@@ -1256,20 +1708,23 @@ class MockAdminRepository implements AdminRepository {
       storageLimitBytes: defaultStorage,
       aiTokenLimitMonthly: defaultAi,
       profileLimit: defaultProfiles,
-      uploadLimit: (plan == 'free' || plan == 'launch_free_6_months') ? 120 : null,
+      uploadLimit:
+          (plan == 'free' || plan == 'launch_free_6_months') ? 120 : null,
       featureFlags: flags,
       updatedAt: now,
     );
   }
 
   @override
-  Future<List<FeatureFlagDefinition>> listFeatureFlags({required int limit}) async {
+  Future<List<FeatureFlagDefinition>> listFeatureFlags(
+      {required int limit}) async {
     await Future<void>.delayed(const Duration(milliseconds: 140));
     return _featureFlags.take(limit).toList();
   }
 
   @override
-  Future<List<LimitOverrideRow>> listLimitOverrides({required int limit}) async {
+  Future<List<LimitOverrideRow>> listLimitOverrides(
+      {required int limit}) async {
     await Future<void>.delayed(const Duration(milliseconds: 160));
     return _limitOverrides.take(limit).toList();
   }
@@ -1279,19 +1734,37 @@ class MockAdminRepository implements AdminRepository {
   // ------------------------------
 
   @override
-  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot({required UsageAnalyticsQuery query}) async {
+  Future<UsageAnalyticsSnapshot> getUsageAnalyticsSnapshot(
+      {required UsageAnalyticsQuery query}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
 
     // Only derived from safe account summaries. Never content.
-    final users = await listUsers(query: const UserListQuery(search: '', filters: UserListFilters()), limit: 600);
+    final users = await listUsers(
+        query: const UserListQuery(search: '', filters: UserListFilters()),
+        limit: 600);
     List<UserAccountSummary> filtered = users;
-    if (query.country != null) filtered = filtered.where((u) => u.country == query.country).toList();
-    if (query.platform != null) filtered = filtered.where((u) => u.platform == query.platform).toList();
-    if (query.plan != null) filtered = filtered.where((u) => u.plan.toLowerCase() == query.plan!.toLowerCase()).toList();
-    if (query.appVersion != null) filtered = filtered.where((u) => u.appVersion == query.appVersion).toList();
+    if (query.country != null) {
+      filtered = filtered.where((u) => u.country == query.country).toList();
+    }
+    if (query.platform != null) {
+      filtered = filtered.where((u) => u.platform == query.platform).toList();
+    }
+    if (query.plan != null) {
+      filtered = filtered
+          .where((u) => u.plan.toLowerCase() == query.plan!.toLowerCase())
+          .toList();
+    }
+    if (query.appVersion != null) {
+      filtered =
+          filtered.where((u) => u.appVersion == query.appVersion).toList();
+    }
 
     final now = _now;
-    final activeUsers = filtered.where((u) => (u.lastActiveAt?.isAfter(now.subtract(Duration(days: query.range.days))) ?? false)).length;
+    final activeUsers = filtered
+        .where((u) => (u.lastActiveAt
+                ?.isAfter(now.subtract(Duration(days: query.range.days))) ??
+            false))
+        .length;
 
     // Build rough event/session estimates.
     final days = query.range.days;
@@ -1308,8 +1781,16 @@ class MockAdminRepository implements AdminRepository {
       AdminDateRangePreset.days90 => 0.7,
     };
 
-    final totalEvents = (activeUsers * days * avgEventsPerActiveUserPerDay * (0.9 + (_rng.nextDouble() * 0.2))).round();
-    final sessions = (activeUsers * days * sessionsPerActiveUserPerDay * (0.9 + (_rng.nextDouble() * 0.2))).round();
+    final totalEvents = (activeUsers *
+            days *
+            avgEventsPerActiveUserPerDay *
+            (0.9 + (_rng.nextDouble() * 0.2)))
+        .round();
+    final sessions = (activeUsers *
+            days *
+            sessionsPerActiveUserPerDay *
+            (0.9 + (_rng.nextDouble() * 0.2)))
+        .round();
     final avgSessionDurationSeconds = (420 + _rng.nextInt(240));
 
     // Feature usage by category (high-level only).
@@ -1325,11 +1806,14 @@ class MockAdminRepository implements AdminRepository {
     // Conversions are expressed as rates (0..1).
     double clamp01(double v) => v.clamp(0.0, 1.0);
     final signupToFirstProfile = clamp01(0.64 + (_rng.nextDouble() * 0.08));
-    final firstProfileToFirstUpload = clamp01(0.38 + (_rng.nextDouble() * 0.10));
+    final firstProfileToFirstUpload =
+        clamp01(0.38 + (_rng.nextDouble() * 0.10));
     final firstUploadToRecurring = clamp01(0.22 + (_rng.nextDouble() * 0.08));
 
-    final upgradePromptViews = (activeUsers * (0.6 + _rng.nextDouble()) * (days / 7)).round();
-    final upgradeClicks = (upgradePromptViews * (0.05 + _rng.nextDouble() * 0.05)).round();
+    final upgradePromptViews =
+        (activeUsers * (0.6 + _rng.nextDouble()) * (days / 7)).round();
+    final upgradeClicks =
+        (upgradePromptViews * (0.05 + _rng.nextDouble() * 0.05)).round();
 
     final conversions = UsageOverviewConversions(
       signupToFirstProfile: signupToFirstProfile,
@@ -1340,41 +1824,133 @@ class MockAdminRepository implements AdminRepository {
     );
 
     // Feature usage counts (explicit list requested).
-    int ev(int base) => (base * (days / 30) * (0.85 + _rng.nextDouble() * 0.3)).round();
-    int uu(int base) => (base * (0.9 + _rng.nextDouble() * 0.2)).round().clamp(1, max(1, activeUsers));
+    int ev(int base) =>
+        (base * (days / 30) * (0.85 + _rng.nextDouble() * 0.3)).round();
+    int uu(int base) => (base * (0.9 + _rng.nextDouble() * 0.2))
+        .round()
+        .clamp(1, max(1, activeUsers));
 
     final featureUsage = <UsageFeatureUsageRow>[
-      UsageFeatureUsageRow(feature: 'Documents', eventCount: ev(totalEvents ~/ 8), uniqueUsers: uu((activeUsers * 0.52).round())),
-      UsageFeatureUsageRow(feature: 'Appointments', eventCount: ev(totalEvents ~/ 18), uniqueUsers: uu((activeUsers * 0.18).round())),
-      UsageFeatureUsageRow(feature: 'Medications', eventCount: ev(totalEvents ~/ 20), uniqueUsers: uu((activeUsers * 0.16).round())),
-      UsageFeatureUsageRow(feature: 'Vaccinations', eventCount: ev(totalEvents ~/ 26), uniqueUsers: uu((activeUsers * 0.12).round())),
-      UsageFeatureUsageRow(feature: 'Blood Pressure', eventCount: ev(totalEvents ~/ 14), uniqueUsers: uu((activeUsers * 0.22).round())),
-      UsageFeatureUsageRow(feature: 'Timeline', eventCount: ev(totalEvents ~/ 10), uniqueUsers: uu((activeUsers * 0.44).round())),
-      UsageFeatureUsageRow(feature: 'Body Map', eventCount: ev(totalEvents ~/ 28), uniqueUsers: uu((activeUsers * 0.10).round())),
-      UsageFeatureUsageRow(feature: 'AI Assistant', eventCount: ev(totalEvents ~/ 7), uniqueUsers: uu((activeUsers * 0.34).round())),
-      UsageFeatureUsageRow(feature: 'Search', eventCount: ev(totalEvents ~/ 9), uniqueUsers: uu((activeUsers * 0.62).round())),
-      UsageFeatureUsageRow(feature: 'Export', eventCount: ev(totalEvents ~/ 30), uniqueUsers: uu((activeUsers * 0.08).round())),
-      UsageFeatureUsageRow(feature: 'Settings', eventCount: ev(totalEvents ~/ 22), uniqueUsers: uu((activeUsers * 0.28).round())),
-      UsageFeatureUsageRow(feature: 'Account deletion page', eventCount: ev(max(80, totalEvents ~/ 220)), uniqueUsers: uu(max(6, (activeUsers * 0.01).round()))),
-      UsageFeatureUsageRow(feature: 'Data export page', eventCount: ev(max(180, totalEvents ~/ 140)), uniqueUsers: uu(max(12, (activeUsers * 0.02).round()))),
+      UsageFeatureUsageRow(
+          feature: 'Documents',
+          eventCount: ev(totalEvents ~/ 8),
+          uniqueUsers: uu((activeUsers * 0.52).round())),
+      UsageFeatureUsageRow(
+          feature: 'Appointments',
+          eventCount: ev(totalEvents ~/ 18),
+          uniqueUsers: uu((activeUsers * 0.18).round())),
+      UsageFeatureUsageRow(
+          feature: 'Medications',
+          eventCount: ev(totalEvents ~/ 20),
+          uniqueUsers: uu((activeUsers * 0.16).round())),
+      UsageFeatureUsageRow(
+          feature: 'Vaccinations',
+          eventCount: ev(totalEvents ~/ 26),
+          uniqueUsers: uu((activeUsers * 0.12).round())),
+      UsageFeatureUsageRow(
+          feature: 'Blood Pressure',
+          eventCount: ev(totalEvents ~/ 14),
+          uniqueUsers: uu((activeUsers * 0.22).round())),
+      UsageFeatureUsageRow(
+          feature: 'Timeline',
+          eventCount: ev(totalEvents ~/ 10),
+          uniqueUsers: uu((activeUsers * 0.44).round())),
+      UsageFeatureUsageRow(
+          feature: 'Body Map',
+          eventCount: ev(totalEvents ~/ 28),
+          uniqueUsers: uu((activeUsers * 0.10).round())),
+      UsageFeatureUsageRow(
+          feature: 'AI Assistant',
+          eventCount: ev(totalEvents ~/ 7),
+          uniqueUsers: uu((activeUsers * 0.34).round())),
+      UsageFeatureUsageRow(
+          feature: 'Search',
+          eventCount: ev(totalEvents ~/ 9),
+          uniqueUsers: uu((activeUsers * 0.62).round())),
+      UsageFeatureUsageRow(
+          feature: 'Export',
+          eventCount: ev(totalEvents ~/ 30),
+          uniqueUsers: uu((activeUsers * 0.08).round())),
+      UsageFeatureUsageRow(
+          feature: 'Settings',
+          eventCount: ev(totalEvents ~/ 22),
+          uniqueUsers: uu((activeUsers * 0.28).round())),
+      UsageFeatureUsageRow(
+          feature: 'Account deletion page',
+          eventCount: ev(max(80, totalEvents ~/ 220)),
+          uniqueUsers: uu(max(6, (activeUsers * 0.01).round()))),
+      UsageFeatureUsageRow(
+          feature: 'Data export page',
+          eventCount: ev(max(180, totalEvents ~/ 140)),
+          uniqueUsers: uu(max(12, (activeUsers * 0.02).round()))),
     ];
 
     featureUsage.sort((a, b) => b.eventCount.compareTo(a.eventCount));
 
     final screenUsage = <UsageScreenUsageRow>[
-      UsageScreenUsageRow(screenName: 'Home', views: ev(totalEvents ~/ 6), uniqueUsers: uu((activeUsers * 0.70).round()), avgDurationSeconds: 62 + _rng.nextInt(40), exitRate: 0.22 + _rng.nextDouble() * 0.08, errorCount: _rng.nextInt(30)),
-      UsageScreenUsageRow(screenName: 'Profiles', views: ev(totalEvents ~/ 10), uniqueUsers: uu((activeUsers * 0.46).round()), avgDurationSeconds: 54 + _rng.nextInt(35), exitRate: 0.18 + _rng.nextDouble() * 0.06, errorCount: _rng.nextInt(24)),
-      UsageScreenUsageRow(screenName: 'Documents', views: ev(totalEvents ~/ 9), uniqueUsers: uu((activeUsers * 0.50).round()), avgDurationSeconds: 78 + _rng.nextInt(60), exitRate: 0.25 + _rng.nextDouble() * 0.08, errorCount: _rng.nextInt(40)),
-      UsageScreenUsageRow(screenName: 'Upload', views: ev(totalEvents ~/ 22), uniqueUsers: uu((activeUsers * 0.16).round()), avgDurationSeconds: 92 + _rng.nextInt(70), exitRate: 0.34 + _rng.nextDouble() * 0.10, errorCount: _rng.nextInt(65)),
-      UsageScreenUsageRow(screenName: 'AI Assistant', views: ev(totalEvents ~/ 8), uniqueUsers: uu((activeUsers * 0.34).round()), avgDurationSeconds: 110 + _rng.nextInt(90), exitRate: 0.20 + _rng.nextDouble() * 0.10, errorCount: _rng.nextInt(32)),
-      UsageScreenUsageRow(screenName: 'Search', views: ev(totalEvents ~/ 7), uniqueUsers: uu((activeUsers * 0.62).round()), avgDurationSeconds: 24 + _rng.nextInt(20), exitRate: 0.40 + _rng.nextDouble() * 0.12, errorCount: _rng.nextInt(22)),
-      UsageScreenUsageRow(screenName: 'Settings', views: ev(totalEvents ~/ 20), uniqueUsers: uu((activeUsers * 0.28).round()), avgDurationSeconds: 34 + _rng.nextInt(26), exitRate: 0.30 + _rng.nextDouble() * 0.10, errorCount: _rng.nextInt(20)),
-      UsageScreenUsageRow(screenName: 'Billing / Upgrade', views: ev(max(350, totalEvents ~/ 90)), uniqueUsers: uu(max(50, (activeUsers * 0.06).round())), avgDurationSeconds: 40 + _rng.nextInt(30), exitRate: 0.44 + _rng.nextDouble() * 0.12, errorCount: _rng.nextInt(18)),
+      UsageScreenUsageRow(
+          screenName: 'Home',
+          views: ev(totalEvents ~/ 6),
+          uniqueUsers: uu((activeUsers * 0.70).round()),
+          avgDurationSeconds: 62 + _rng.nextInt(40),
+          exitRate: 0.22 + _rng.nextDouble() * 0.08,
+          errorCount: _rng.nextInt(30)),
+      UsageScreenUsageRow(
+          screenName: 'Profiles',
+          views: ev(totalEvents ~/ 10),
+          uniqueUsers: uu((activeUsers * 0.46).round()),
+          avgDurationSeconds: 54 + _rng.nextInt(35),
+          exitRate: 0.18 + _rng.nextDouble() * 0.06,
+          errorCount: _rng.nextInt(24)),
+      UsageScreenUsageRow(
+          screenName: 'Documents',
+          views: ev(totalEvents ~/ 9),
+          uniqueUsers: uu((activeUsers * 0.50).round()),
+          avgDurationSeconds: 78 + _rng.nextInt(60),
+          exitRate: 0.25 + _rng.nextDouble() * 0.08,
+          errorCount: _rng.nextInt(40)),
+      UsageScreenUsageRow(
+          screenName: 'Upload',
+          views: ev(totalEvents ~/ 22),
+          uniqueUsers: uu((activeUsers * 0.16).round()),
+          avgDurationSeconds: 92 + _rng.nextInt(70),
+          exitRate: 0.34 + _rng.nextDouble() * 0.10,
+          errorCount: _rng.nextInt(65)),
+      UsageScreenUsageRow(
+          screenName: 'AI Assistant',
+          views: ev(totalEvents ~/ 8),
+          uniqueUsers: uu((activeUsers * 0.34).round()),
+          avgDurationSeconds: 110 + _rng.nextInt(90),
+          exitRate: 0.20 + _rng.nextDouble() * 0.10,
+          errorCount: _rng.nextInt(32)),
+      UsageScreenUsageRow(
+          screenName: 'Search',
+          views: ev(totalEvents ~/ 7),
+          uniqueUsers: uu((activeUsers * 0.62).round()),
+          avgDurationSeconds: 24 + _rng.nextInt(20),
+          exitRate: 0.40 + _rng.nextDouble() * 0.12,
+          errorCount: _rng.nextInt(22)),
+      UsageScreenUsageRow(
+          screenName: 'Settings',
+          views: ev(totalEvents ~/ 20),
+          uniqueUsers: uu((activeUsers * 0.28).round()),
+          avgDurationSeconds: 34 + _rng.nextInt(26),
+          exitRate: 0.30 + _rng.nextDouble() * 0.10,
+          errorCount: _rng.nextInt(20)),
+      UsageScreenUsageRow(
+          screenName: 'Billing / Upgrade',
+          views: ev(max(350, totalEvents ~/ 90)),
+          uniqueUsers: uu(max(50, (activeUsers * 0.06).round())),
+          avgDurationSeconds: 40 + _rng.nextInt(30),
+          exitRate: 0.44 + _rng.nextDouble() * 0.12,
+          errorCount: _rng.nextInt(18)),
     ];
     screenUsage.sort((a, b) => b.views.compareTo(a.views));
 
-    int funnelCount(int base) => (base * (0.9 + _rng.nextDouble() * 0.2)).round();
-    int step(int previous, double keepRate) => max(0, (previous * keepRate).round());
+    int funnelCount(int base) =>
+        (base * (0.9 + _rng.nextDouble() * 0.2)).round();
+    int step(int previous, double keepRate) =>
+        max(0, (previous * keepRate).round());
 
     final signup0 = funnelCount(max(80, (activeUsers * 0.35).round()));
     final signup1 = step(signup0, 0.86);
@@ -1464,7 +2040,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<List<SupportSessionSummary>> listSupportSessions({required SupportQueueQuery query, required int limit}) async {
+  Future<List<SupportSessionSummary>> listSupportSessions(
+      {required SupportQueueQuery query, required int limit}) async {
     await Future<void>.delayed(const Duration(milliseconds: 180));
     final q = query.search.trim().toLowerCase();
     var list = _supportSessions;
@@ -1478,15 +2055,22 @@ class MockAdminRepository implements AdminRepository {
           .toList();
     }
     final f = query.filters;
-    if (f.status != null) list = list.where((s) => s.status == f.status).toList();
-    if (f.consentStatus != null) list = list.where((s) => s.consentStatus == f.consentStatus).toList();
-    if (f.assignedAdminId != null) list = list.where((s) => s.assignedAdmin == f.assignedAdminId).toList();
+    if (f.status != null) {
+      list = list.where((s) => s.status == f.status).toList();
+    }
+    if (f.consentStatus != null) {
+      list = list.where((s) => s.consentStatus == f.consentStatus).toList();
+    }
+    if (f.assignedAdminId != null) {
+      list = list.where((s) => s.assignedAdmin == f.assignedAdminId).toList();
+    }
     if (f.onlyExpiringSoon == true) {
       final now = _now;
       list = list.where((s) {
         final exp = s.accessExpiresAt;
         if (exp == null) return false;
-        return exp.isAfter(now) && exp.isBefore(now.add(const Duration(minutes: 15)));
+        return exp.isAfter(now) &&
+            exp.isBefore(now.add(const Duration(minutes: 15)));
       }).toList();
     }
     list.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
@@ -1498,32 +2082,66 @@ class MockAdminRepository implements AdminRepository {
     await Future<void>.delayed(const Duration(milliseconds: 120));
     final now = _now;
 
-    int countWhere(bool Function(SupportSessionSummary s) pred) => _supportSessions.where(pred).length;
-    final latest = _supportSessions.isEmpty ? null : _supportSessions.map((s) => s.updatedAt).reduce((a, b) => a.isAfter(b) ? a : b);
+    int countWhere(bool Function(SupportSessionSummary s) pred) =>
+        _supportSessions.where(pred).length;
+    final latest = _supportSessions.isEmpty
+        ? null
+        : _supportSessions
+            .map((s) => s.updatedAt)
+            .reduce((a, b) => a.isAfter(b) ? a : b);
 
     return SupportSummarySnapshot(
       totalSessions: _supportSessions.length,
       openSessions: countWhere((s) => s.status == SupportSessionStatus.pending),
-      activeSessions: countWhere((s) => s.status == SupportSessionStatus.active),
-      closedSessions: countWhere((s) => s.status == SupportSessionStatus.closed),
-      expiredSessions: countWhere((s) => s.status == SupportSessionStatus.expired),
+      activeSessions:
+          countWhere((s) => s.status == SupportSessionStatus.active),
+      closedSessions:
+          countWhere((s) => s.status == SupportSessionStatus.closed),
+      expiredSessions:
+          countWhere((s) => s.status == SupportSessionStatus.expired),
       latestSessionAt: latest,
       generatedAt: now,
     );
   }
 
   @override
-  Future<SupportSessionDetail> getSupportSessionDetail({required String supportSessionId}) async {
+  Future<SupportSessionDetail> getSupportSessionDetail(
+      {required String supportSessionId}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
-    final s = _supportSessions.firstWhere((x) => x.supportSessionId == supportSessionId, orElse: () => _supportSessions.first);
+    final s = _supportSessions.firstWhere(
+        (x) => x.supportSessionId == supportSessionId,
+        orElse: () => _supportSessions.first);
     final u = await getUserDetail(userId: s.userId);
     final now = _now;
     final events = <TechnicalEvent>[
-      TechnicalEvent(timestamp: now.subtract(const Duration(minutes: 12)), type: 'sync', message: 'Background sync completed.', code: 'SYNC_OK'),
-      if ((u.failedSyncCount30d) > 6) TechnicalEvent(timestamp: now.subtract(const Duration(hours: 3)), type: 'sync', message: 'Sync timeout after 30s.', code: 'SYNC_TIMEOUT'),
-      if ((u.failedUploadCount30d) > 6) TechnicalEvent(timestamp: now.subtract(const Duration(hours: 8)), type: 'upload', message: 'Upload failed: network reset.', code: 'UPLOAD_CONN_RESET'),
-      if (u.billingStatus == 'past_due') TechnicalEvent(timestamp: now.subtract(const Duration(days: 1)), type: 'billing', message: 'Payment failed; account may be blocked.', code: 'PAYMENT_PAST_DUE'),
-      TechnicalEvent(timestamp: now.subtract(const Duration(days: 2)), type: 'auth', message: 'Session refreshed successfully.', code: 'AUTH_REFRESH_OK'),
+      TechnicalEvent(
+          timestamp: now.subtract(const Duration(minutes: 12)),
+          type: 'sync',
+          message: 'Background sync completed.',
+          code: 'SYNC_OK'),
+      if ((u.failedSyncCount30d) > 6)
+        TechnicalEvent(
+            timestamp: now.subtract(const Duration(hours: 3)),
+            type: 'sync',
+            message: 'Sync timeout after 30s.',
+            code: 'SYNC_TIMEOUT'),
+      if ((u.failedUploadCount30d) > 6)
+        TechnicalEvent(
+            timestamp: now.subtract(const Duration(hours: 8)),
+            type: 'upload',
+            message: 'Upload failed: network reset.',
+            code: 'UPLOAD_CONN_RESET'),
+      if (u.billingStatus == 'past_due')
+        TechnicalEvent(
+            timestamp: now.subtract(const Duration(days: 1)),
+            type: 'billing',
+            message: 'Payment failed; account may be blocked.',
+            code: 'PAYMENT_PAST_DUE'),
+      TechnicalEvent(
+          timestamp: now.subtract(const Duration(days: 2)),
+          type: 'auth',
+          message: 'Session refreshed successfully.',
+          code: 'AUTH_REFRESH_OK'),
     ];
 
     final openErrors = <String>[
@@ -1534,7 +2152,8 @@ class MockAdminRepository implements AdminRepository {
     ];
 
     final consentWindowStatus = switch (s.consentStatus) {
-      'on_file' => (s.status == SupportSessionStatus.active) ? 'active' : 'on_file',
+      'on_file' =>
+        (s.status == SupportSessionStatus.active) ? 'active' : 'on_file',
       'revoked' => 'revoked',
       'missing' => 'missing',
       _ => 'unknown',
@@ -1558,7 +2177,8 @@ class MockAdminRepository implements AdminRepository {
       aiTokensUsed: u.aiTokensUsedThisMonth,
       aiLimit: u.aiTokenLimitThisMonth,
       openErrors: openErrors,
-      recentTechnicalEvents: events..sort((a, b) => b.timestamp.compareTo(a.timestamp)),
+      recentTechnicalEvents: events
+        ..sort((a, b) => b.timestamp.compareTo(a.timestamp)),
       adminNotes: u.supportNotes,
       consentWindowStatus: consentWindowStatus,
       status: s.status,
@@ -1582,29 +2202,137 @@ class MockAdminRepository implements AdminRepository {
 
     final overStorage = u.storageUsedBytes > u.storageLimitBytes;
     final overAi = u.aiTokensUsedThisMonth > u.aiTokenLimitThisMonth;
-    final lastSyncRecent = (u.lastSyncAt != null) && u.lastSyncAt!.isAfter(now.subtract(const Duration(days: 2)));
-    final repeatedErrors = (u.failedSyncCount30d + u.failedUploadCount30d) >= 12;
+    final lastSyncRecent = (u.lastSyncAt != null) &&
+        u.lastSyncAt!.isAfter(now.subtract(const Duration(days: 2)));
+    final repeatedErrors =
+        (u.failedSyncCount30d + u.failedUploadCount30d) >= 12;
     final paymentBlocked = u.billingStatus == 'past_due';
-    final adminSuspension = u.accountStatus == 'suspended' || u.accountStatus == 'locked';
+    final adminSuspension =
+        u.accountStatus == 'suspended' || u.accountStatus == 'locked';
     final supportedVersion = !_isAppVersionTooOld(u.appVersion);
 
     final checks = <DiagnosticCheck>[
-      DiagnosticCheck(id: 'account_exists', title: 'Account exists', status: DiagnosticStatus.pass, explanation: 'User account metadata is present in the control summary.', suggestedAction: 'Proceed with troubleshooting.'),
-      DiagnosticCheck(id: 'email_verified', title: 'Email verified', status: (u.email == null) ? DiagnosticStatus.warning : DiagnosticStatus.pass, explanation: (u.email == null) ? 'Email is hidden for your role or not on file.' : 'Email present in safe summary.', suggestedAction: 'If user cannot sign in, resend verification email.'),
-      DiagnosticCheck(id: 'account_active', title: 'Account active', status: statusOf(!(adminSuspension)), explanation: adminSuspension ? 'Account is suspended/locked by admin policy.' : 'Account status is active.', suggestedAction: adminSuspension ? 'Unsuspend account if appropriate.' : 'No action needed.'),
-      DiagnosticCheck(id: 'subscription_active', title: 'Subscription active', status: statusOf(!paymentBlocked, warnOnly: true), explanation: paymentBlocked ? 'Billing status is past_due; features may be blocked.' : 'Billing status is active.', suggestedAction: paymentBlocked ? 'Resolve billing failure or extend trial.' : 'No action needed.'),
-      DiagnosticCheck(id: 'storage_over_limit', title: 'Storage not over limit', status: statusOf(!overStorage, warnOnly: false), explanation: overStorage ? 'User is over their storage quota; uploads may be blocked.' : 'Storage usage is within quota.', suggestedAction: overStorage ? 'Temporarily increase storage limit or advise cleanup.' : 'No action needed.'),
-      DiagnosticCheck(id: 'ai_over_limit', title: 'AI not over limit', status: statusOf(!overAi, warnOnly: true), explanation: overAi ? 'AI usage exceeds limit this month; assistant may be blocked.' : 'AI usage is within limit.', suggestedAction: overAi ? 'Temporarily increase AI limit if policy allows.' : 'No action needed.'),
-      DiagnosticCheck(id: 'last_sync_success', title: 'Last sync successful', status: statusOf(lastSyncRecent, warnOnly: true), explanation: lastSyncRecent ? 'Last sync is recent.' : 'Last sync is stale or missing.', suggestedAction: 'Ask user to open the app and trigger sync; check errors.'),
-      DiagnosticCheck(id: 'upload_service_healthy', title: 'Upload service healthy', status: DiagnosticStatus.pass, explanation: 'No service outage flagged in mock telemetry.', suggestedAction: 'If uploads fail, revoke sessions and retry.'),
-      DiagnosticCheck(id: 'app_version_supported', title: 'App version supported', status: statusOf(supportedVersion, warnOnly: true), explanation: supportedVersion ? 'App version appears supported.' : 'App version is older than the supported floor.', suggestedAction: 'Ask user to update the app.'),
-      DiagnosticCheck(id: 'platform_supported', title: 'Platform supported', status: DiagnosticStatus.pass, explanation: 'Platform is in the supported set.', suggestedAction: 'No action needed.'),
-      DiagnosticCheck(id: 'repeated_error_codes', title: 'No recent repeated error codes', status: statusOf(!repeatedErrors, warnOnly: true), explanation: repeatedErrors ? 'Repeated failures detected over last 30d.' : 'No repeated error patterns detected.', suggestedAction: repeatedErrors ? 'Collect logs (metadata), escalate to engineering.' : 'No action needed.'),
-      DiagnosticCheck(id: 'payment_failure_block', title: 'No payment failure block', status: statusOf(!paymentBlocked, warnOnly: true), explanation: paymentBlocked ? 'Payment failures may block sync/AI.' : 'No payment blocks detected.', suggestedAction: paymentBlocked ? 'Billing admin review recommended.' : 'No action needed.'),
-      DiagnosticCheck(id: 'admin_suspension', title: 'No admin suspension', status: statusOf(!adminSuspension, warnOnly: false), explanation: adminSuspension ? 'Account is currently suspended/locked.' : 'No admin suspension flags.', suggestedAction: adminSuspension ? 'Unsuspend if verified and permitted.' : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'account_exists',
+          title: 'Account exists',
+          status: DiagnosticStatus.pass,
+          explanation:
+              'User account metadata is present in the control summary.',
+          suggestedAction: 'Proceed with troubleshooting.'),
+      DiagnosticCheck(
+          id: 'email_verified',
+          title: 'Email verified',
+          status: (u.email == null)
+              ? DiagnosticStatus.warning
+              : DiagnosticStatus.pass,
+          explanation: (u.email == null)
+              ? 'Email is hidden for your role or not on file.'
+              : 'Email present in safe summary.',
+          suggestedAction:
+              'If user cannot sign in, resend verification email.'),
+      DiagnosticCheck(
+          id: 'account_active',
+          title: 'Account active',
+          status: statusOf(!(adminSuspension)),
+          explanation: adminSuspension
+              ? 'Account is suspended/locked by admin policy.'
+              : 'Account status is active.',
+          suggestedAction: adminSuspension
+              ? 'Unsuspend account if appropriate.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'subscription_active',
+          title: 'Subscription active',
+          status: statusOf(!paymentBlocked, warnOnly: true),
+          explanation: paymentBlocked
+              ? 'Billing status is past_due; features may be blocked.'
+              : 'Billing status is active.',
+          suggestedAction: paymentBlocked
+              ? 'Resolve billing failure or extend trial.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'storage_over_limit',
+          title: 'Storage not over limit',
+          status: statusOf(!overStorage, warnOnly: false),
+          explanation: overStorage
+              ? 'User is over their storage quota; uploads may be blocked.'
+              : 'Storage usage is within quota.',
+          suggestedAction: overStorage
+              ? 'Temporarily increase storage limit or advise cleanup.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'ai_over_limit',
+          title: 'AI not over limit',
+          status: statusOf(!overAi, warnOnly: true),
+          explanation: overAi
+              ? 'AI usage exceeds limit this month; assistant may be blocked.'
+              : 'AI usage is within limit.',
+          suggestedAction: overAi
+              ? 'Temporarily increase AI limit if policy allows.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'last_sync_success',
+          title: 'Last sync successful',
+          status: statusOf(lastSyncRecent, warnOnly: true),
+          explanation: lastSyncRecent
+              ? 'Last sync is recent.'
+              : 'Last sync is stale or missing.',
+          suggestedAction:
+              'Ask user to open the app and trigger sync; check errors.'),
+      DiagnosticCheck(
+          id: 'upload_service_healthy',
+          title: 'Upload service healthy',
+          status: DiagnosticStatus.pass,
+          explanation: 'No service outage flagged in mock telemetry.',
+          suggestedAction: 'If uploads fail, revoke sessions and retry.'),
+      DiagnosticCheck(
+          id: 'app_version_supported',
+          title: 'App version supported',
+          status: statusOf(supportedVersion, warnOnly: true),
+          explanation: supportedVersion
+              ? 'App version appears supported.'
+              : 'App version is older than the supported floor.',
+          suggestedAction: 'Ask user to update the app.'),
+      DiagnosticCheck(
+          id: 'platform_supported',
+          title: 'Platform supported',
+          status: DiagnosticStatus.pass,
+          explanation: 'Platform is in the supported set.',
+          suggestedAction: 'No action needed.'),
+      DiagnosticCheck(
+          id: 'repeated_error_codes',
+          title: 'No recent repeated error codes',
+          status: statusOf(!repeatedErrors, warnOnly: true),
+          explanation: repeatedErrors
+              ? 'Repeated failures detected over last 30d.'
+              : 'No repeated error patterns detected.',
+          suggestedAction: repeatedErrors
+              ? 'Collect logs (metadata), escalate to engineering.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'payment_failure_block',
+          title: 'No payment failure block',
+          status: statusOf(!paymentBlocked, warnOnly: true),
+          explanation: paymentBlocked
+              ? 'Payment failures may block sync/AI.'
+              : 'No payment blocks detected.',
+          suggestedAction: paymentBlocked
+              ? 'Billing admin review recommended.'
+              : 'No action needed.'),
+      DiagnosticCheck(
+          id: 'admin_suspension',
+          title: 'No admin suspension',
+          status: statusOf(!adminSuspension, warnOnly: false),
+          explanation: adminSuspension
+              ? 'Account is currently suspended/locked.'
+              : 'No admin suspension flags.',
+          suggestedAction: adminSuspension
+              ? 'Unsuspend if verified and permitted.'
+              : 'No action needed.'),
     ];
 
-    return DiagnosticsReport(userId: u.userId, generatedAt: now, checks: checks);
+    return DiagnosticsReport(
+        userId: u.userId, generatedAt: now, checks: checks);
   }
 
   bool _isAppVersionTooOld(String version) {
@@ -1619,15 +2347,19 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<void> performSupportAction({required SupportActionRequest request}) async {
+  Future<void> performSupportAction(
+      {required SupportActionRequest request}) async {
     await Future<void>.delayed(const Duration(milliseconds: 280));
     // Update mock session status for close/revoke flows.
-    final idx = _supportSessions.indexWhere((s) => s.supportSessionId == request.supportSessionId);
+    final idx = _supportSessions
+        .indexWhere((s) => s.supportSessionId == request.supportSessionId);
     if (idx == -1) return;
     final current = _supportSessions[idx];
 
     SupportSessionStatus? next;
-    if (request.action == SupportAction.closeSupportSession) next = SupportSessionStatus.closed;
+    if (request.action == SupportAction.closeSupportSession) {
+      next = SupportSessionStatus.closed;
+    }
     if (next != null) {
       _supportSessions[idx] = SupportSessionSummary(
         supportSessionId: current.supportSessionId,
@@ -1687,7 +2419,8 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<List<AuditLogEntry>> listAuditLogs({required AuditLogQuery query, required int limit}) async {
+  Future<List<AuditLogEntry>> listAuditLogs(
+      {required AuditLogQuery query, required int limit}) async {
     // If Supabase is configured, prefer live audit logs.
     final c = _client;
     if (c != null) {
@@ -1699,20 +2432,32 @@ class MockAdminRepository implements AdminRepository {
           q = c.from('admin_audit_log').select('*');
         }
 
-        if (query.adminUserId != null && query.adminUserId!.trim().isNotEmpty) q = q.ilike('admin_user_id', '%${query.adminUserId!.trim()}%');
-        if (query.targetUserId != null && query.targetUserId!.trim().isNotEmpty) q = q.ilike('target_user_id', '%${query.targetUserId!.trim()}%');
-        if (query.actionType != null && query.actionType!.trim().isNotEmpty) q = q.eq('action_type', query.actionType!.trim());
-        if (query.result != null && query.result!.trim().isNotEmpty) q = q.eq('result', query.result!.trim());
+        if (query.adminUserId != null && query.adminUserId!.trim().isNotEmpty) {
+          q = q.ilike('admin_user_id', '%${query.adminUserId!.trim()}%');
+        }
+        if (query.targetUserId != null &&
+            query.targetUserId!.trim().isNotEmpty) {
+          q = q.ilike('target_user_id', '%${query.targetUserId!.trim()}%');
+        }
+        if (query.actionType != null && query.actionType!.trim().isNotEmpty) {
+          q = q.eq('action_type', query.actionType!.trim());
+        }
+        if (query.result != null && query.result!.trim().isNotEmpty) {
+          q = q.eq('result', query.result!.trim());
+        }
         if (query.createdRange != null) {
-          q = q.gte('created_at', query.createdRange!.start.toUtc().toIso8601String());
-          q = q.lte('created_at', query.createdRange!.end.toUtc().toIso8601String());
+          q = q.gte('created_at',
+              query.createdRange!.start.toUtc().toIso8601String());
+          q = q.lte(
+              'created_at', query.createdRange!.end.toUtc().toIso8601String());
         }
 
         final res = await q.order('created_at', ascending: false).limit(limit);
         final list = (res as List).cast<Map<String, dynamic>>();
         return list.map(AuditLogEntry.fromJson).toList(growable: false);
       } catch (e) {
-        debugPrint('MockAdminRepository.listAuditLogs Supabase fallback to local: $e');
+        debugPrint(
+            'MockAdminRepository.listAuditLogs Supabase fallback to local: $e');
       }
     }
 
@@ -1737,7 +2482,8 @@ class MockAdminRepository implements AdminRepository {
     if (query.createdRange != null) {
       final start = query.createdRange!.start;
       final end = query.createdRange!.end;
-      logs = logs.where((l) => !l.createdAt.isBefore(start) && !l.createdAt.isAfter(end));
+      logs = logs.where(
+          (l) => !l.createdAt.isBefore(start) && !l.createdAt.isAfter(end));
     }
     return logs.take(limit).toList(growable: false);
   }
@@ -1747,9 +2493,14 @@ class MockAdminRepository implements AdminRepository {
     await Future<void>.delayed(const Duration(milliseconds: 120));
     final now = _now;
     final total = _auditLogs.length;
-    final audit24h = _auditLogs.where((e) => e.createdAt.isAfter(now.subtract(const Duration(hours: 24)))).length;
+    final audit24h = _auditLogs
+        .where(
+            (e) => e.createdAt.isAfter(now.subtract(const Duration(hours: 24))))
+        .length;
     final failed24h = _auditLogs
-        .where((e) => e.createdAt.isAfter(now.subtract(const Duration(hours: 24))) && e.result.toLowerCase() != 'success')
+        .where((e) =>
+            e.createdAt.isAfter(now.subtract(const Duration(hours: 24))) &&
+            e.result.toLowerCase() != 'success')
         .length;
 
     DateTime? latest;
@@ -1767,19 +2518,31 @@ class MockAdminRepository implements AdminRepository {
   }
 
   @override
-  Future<DashboardSnapshot> getDashboardSnapshot({required DashboardQuery query}) async {
+  Future<DashboardSnapshot> getDashboardSnapshot(
+      {required DashboardQuery query}) async {
     // Privacy-safe: derived exclusively from aggregated account metadata.
-    final users = await listUsers(query: const UserListQuery(search: '', filters: UserListFilters()), limit: 300);
+    final users = await listUsers(
+        query: const UserListQuery(search: '', filters: UserListFilters()),
+        limit: 300);
 
     List<UserAccountSummary> filtered = users;
-    if (query.country != null) filtered = filtered.where((u) => u.country == query.country).toList();
-    if (query.platform != null) filtered = filtered.where((u) => u.platform == query.platform).toList();
-    if (query.plan != null) filtered = filtered.where((u) => _planCategory(u) == query.plan).toList();
+    if (query.country != null) {
+      filtered = filtered.where((u) => u.country == query.country).toList();
+    }
+    if (query.platform != null) {
+      filtered = filtered.where((u) => u.platform == query.platform).toList();
+    }
+    if (query.plan != null) {
+      filtered = filtered.where((u) => _planCategory(u) == query.plan).toList();
+    }
 
     final totalRegisteredUsers = filtered.length;
 
-    final totalStorageUsedBytes = filtered.fold<int>(0, (acc, u) => acc + u.storageUsedBytes);
-    final averageStoragePerUserBytes = totalRegisteredUsers == 0 ? 0 : (totalStorageUsedBytes / totalRegisteredUsers).round();
+    final totalStorageUsedBytes =
+        filtered.fold<int>(0, (acc, u) => acc + u.storageUsedBytes);
+    final averageStoragePerUserBytes = totalRegisteredUsers == 0
+        ? 0
+        : (totalStorageUsedBytes / totalRegisteredUsers).round();
 
     final usersNearStorageLimit = filtered.where((u) {
       if (u.storageLimitBytes <= 0) return false;
@@ -1787,30 +2550,56 @@ class MockAdminRepository implements AdminRepository {
       return ratio >= 0.85;
     }).length;
 
-    final aiTokensUsedThisMonth = filtered.fold<int>(0, (acc, u) => acc + u.aiTokensThisMonth);
+    final aiTokensUsedThisMonth =
+        filtered.fold<int>(0, (acc, u) => acc + u.aiTokensThisMonth);
 
     // A deliberately rough, executive-level estimate.
     // If/when wired to Supabase, this should come from a billing/usage summary view.
     final aiEstimatedCostThisMonthUsd = aiTokensUsedThisMonth / 1e6 * 2.50;
 
-    final usersNearAiLimit = filtered.where((u) => u.aiTokensThisMonth >= 750000).length;
+    final usersNearAiLimit =
+        filtered.where((u) => u.aiTokensThisMonth >= 750000).length;
 
     final freeUsers = filtered.where((u) => _planCategory(u) == 'Free').length;
-    final trialUsers = filtered.where((u) => _planCategory(u) == 'Trial').length;
+    final trialUsers =
+        filtered.where((u) => _planCategory(u) == 'Trial').length;
     final paidUsers = filtered.where((u) => _planCategory(u) == 'Paid').length;
-    final cancelledUsers = filtered.where((u) => _planCategory(u) == 'Cancelled').length;
-    final failedPayments = filtered.where((u) => u.billingStatus == 'past_due').length;
+    final cancelledUsers =
+        filtered.where((u) => _planCategory(u) == 'Cancelled').length;
+    final failedPayments =
+        filtered.where((u) => u.billingStatus == 'past_due').length;
 
     final now = _now;
-    final newUsersThisWeek = filtered.where((u) => u.createdAt.isAfter(now.subtract(const Duration(days: 7)))).length;
-    final newUsersThisMonth = filtered.where((u) => u.createdAt.isAfter(now.subtract(const Duration(days: 30)))).length;
+    final newUsersThisWeek = filtered
+        .where(
+            (u) => u.createdAt.isAfter(now.subtract(const Duration(days: 7))))
+        .length;
+    final newUsersThisMonth = filtered
+        .where(
+            (u) => u.createdAt.isAfter(now.subtract(const Duration(days: 30))))
+        .length;
 
     // Active users are mock signals based on lastActiveAt recency.
-    final dailyActiveUsers = filtered.where((u) => (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 1))) ?? false)).length;
-    final weeklyActiveUsers = filtered.where((u) => (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 7))) ?? false)).length;
-    final monthlyActiveUsers = filtered.where((u) => (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 30))) ?? false)).length;
+    final dailyActiveUsers = filtered
+        .where((u) =>
+            (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 1))) ??
+                false))
+        .length;
+    final weeklyActiveUsers = filtered
+        .where((u) =>
+            (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 7))) ??
+                false))
+        .length;
+    final monthlyActiveUsers = filtered
+        .where((u) =>
+            (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 30))) ??
+                false))
+        .length;
 
-    final userGrowth = _buildGrowthSeries(totalRegisteredUsers: totalRegisteredUsers, rangeDays: query.range.days, now: now);
+    final userGrowth = _buildGrowthSeries(
+        totalRegisteredUsers: totalRegisteredUsers,
+        rangeDays: query.range.days,
+        now: now);
 
     final platformUsage = <String, int>{'iOS': 0, 'Android': 0, 'Web': 0};
     for (final u in filtered) {
@@ -1853,34 +2642,47 @@ class MockAdminRepository implements AdminRepository {
 
   String _planCategory(UserAccountSummary u) {
     // Keep this mapping aligned with control-site billing summary views.
-    if (u.accountStatus == 'locked' || u.accountStatus == 'suspended') return 'Cancelled';
+    if (u.accountStatus == 'locked' || u.accountStatus == 'suspended') {
+      return 'Cancelled';
+    }
     if (u.plan.toLowerCase() == 'free') return 'Free';
     if (u.plan.toLowerCase().contains('trial')) return 'Trial';
     return 'Paid';
   }
 
-  List<DashboardTimeseriesPoint> _buildGrowthSeries({required int totalRegisteredUsers, required int rangeDays, required DateTime now}) {
+  List<DashboardTimeseriesPoint> _buildGrowthSeries(
+      {required int totalRegisteredUsers,
+      required int rangeDays,
+      required DateTime now}) {
     if (rangeDays <= 1) {
-      return [DashboardTimeseriesPoint(date: DateTime(now.year, now.month, now.day), value: totalRegisteredUsers)];
+      return [
+        DashboardTimeseriesPoint(
+            date: DateTime(now.year, now.month, now.day),
+            value: totalRegisteredUsers)
+      ];
     }
 
     // Build a smooth-ish curve ending at totalRegisteredUsers.
     final points = <DashboardTimeseriesPoint>[];
     final end = DateTime(now.year, now.month, now.day);
     final start = end.subtract(Duration(days: rangeDays - 1));
-    final base = (totalRegisteredUsers * 0.82).round().clamp(0, totalRegisteredUsers);
+    final base =
+        (totalRegisteredUsers * 0.82).round().clamp(0, totalRegisteredUsers);
     for (int i = 0; i < rangeDays; i++) {
       final d = start.add(Duration(days: i));
       final t = i / (rangeDays - 1);
-      final growth = base + ((totalRegisteredUsers - base) * (0.25 + 0.75 * t)).round();
+      final growth =
+          base + ((totalRegisteredUsers - base) * (0.25 + 0.75 * t)).round();
       // Add small deterministic wobble.
       final wobble = ((i % 5) - 2) * (rangeDays >= 30 ? 3 : 1);
-      points.add(DashboardTimeseriesPoint(date: d, value: (growth + wobble).clamp(0, totalRegisteredUsers)));
+      points.add(DashboardTimeseriesPoint(
+          date: d, value: (growth + wobble).clamp(0, totalRegisteredUsers)));
     }
     return points;
   }
 
-  Map<String, int> _buildFeatureUsage(List<UserAccountSummary> users, AdminDateRangePreset range) {
+  Map<String, int> _buildFeatureUsage(
+      List<UserAccountSummary> users, AdminDateRangePreset range) {
     // Only show totals / event counts. No content.
     final multiplier = switch (range) {
       AdminDateRangePreset.today => 1,
@@ -1904,7 +2706,9 @@ class MockAdminRepository implements AdminRepository {
       'Blood Pressure': scaled((users.length * 8) + 45),
       'Timeline': scaled((users.length * 12) + 70),
       'Body Map': scaled((users.length * 4) + 22),
-      'AI Assistant': scaled((users.fold<int>(0, (a, u) => a + (u.aiTokensThisMonth ~/ 4000))) + 60),
+      'AI Assistant': scaled(
+          (users.fold<int>(0, (a, u) => a + (u.aiTokensThisMonth ~/ 4000))) +
+              60),
       'Search': scaled((users.length * 18) + 90),
       'Export': scaled((users.length * 2) + 12),
     };
@@ -1938,8 +2742,13 @@ class MockAdminRepository implements AdminRepository {
   CountryUsageRow _countryRow(String country, List<UserAccountSummary> list) {
     final now = _now;
     final totalUsers = list.length;
-    final activeUsers = list.where((u) => (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 30))) ?? false)).length;
-    final storageUsedBytes = list.fold<int>(0, (a, u) => a + u.storageUsedBytes);
+    final activeUsers = list
+        .where((u) =>
+            (u.lastActiveAt?.isAfter(now.subtract(const Duration(days: 30))) ??
+                false))
+        .length;
+    final storageUsedBytes =
+        list.fold<int>(0, (a, u) => a + u.storageUsedBytes);
     final aiTokensUsed = list.fold<int>(0, (a, u) => a + u.aiTokensThisMonth);
     final paidUsers = list.where((u) => _planCategory(u) == 'Paid').length;
     return CountryUsageRow(
@@ -1953,36 +2762,94 @@ class MockAdminRepository implements AdminRepository {
   }
 
   List<AlertRow> _buildAlerts(List<UserAccountSummary> users) {
-    final overStorage = users.where((u) => u.storageLimitBytes > 0 && u.storageUsedBytes > u.storageLimitBytes).length;
+    final overStorage = users
+        .where((u) =>
+            u.storageLimitBytes > 0 && u.storageUsedBytes > u.storageLimitBytes)
+        .length;
     final nearAi = users.where((u) => u.aiTokensThisMonth >= 750000).length;
-    final paymentFailures = users.where((u) => u.billingStatus == 'past_due').length;
+    final paymentFailures =
+        users.where((u) => u.billingStatus == 'past_due').length;
 
     // Mock operational alerts derived from failures.
-    final highFailedUploadRate = users.where((u) => u.failedUploadCount7d >= 6).length;
-    final highFailedSyncRate = users.where((u) => u.failedSyncCount7d >= 6).length;
+    final highFailedUploadRate =
+        users.where((u) => u.failedUploadCount7d >= 6).length;
+    final highFailedSyncRate =
+        users.where((u) => u.failedSyncCount7d >= 6).length;
 
     // Suspicious spikes: extremely high tokens + some failures.
-    final suspiciousSpikes = users.where((u) => u.aiTokensThisMonth >= 900000 && (u.failedSyncCount7d + u.failedUploadCount7d) >= 6).length;
+    final suspiciousSpikes = users
+        .where((u) =>
+            u.aiTokensThisMonth >= 900000 &&
+            (u.failedSyncCount7d + u.failedUploadCount7d) >= 6)
+        .length;
 
     return [
-      AlertRow(type: 'Users over storage limit', count: overStorage, severity: overStorage > 0 ? 'high' : 'low', note: 'Requires support outreach or plan upgrade.'),
-      AlertRow(type: 'Users near AI limit', count: nearAi, severity: nearAi >= 3 ? 'medium' : 'low', note: 'Monitor usage or adjust limits per plan.'),
-      AlertRow(type: 'High failed upload rate', count: highFailedUploadRate, severity: highFailedUploadRate >= 5 ? 'medium' : 'low', note: 'Investigate client/network regressions.'),
-      AlertRow(type: 'High failed sync rate', count: highFailedSyncRate, severity: highFailedSyncRate >= 6 ? 'medium' : 'low', note: 'Check background jobs and client retries.'),
-      AlertRow(type: 'Payment failures', count: paymentFailures, severity: paymentFailures > 0 ? 'high' : 'low', note: 'Review dunning & billing webhooks.'),
-      AlertRow(type: 'Suspicious usage spikes', count: suspiciousSpikes, severity: suspiciousSpikes > 0 ? 'high' : 'low', note: 'Check abuse signals and rate limits.'),
+      AlertRow(
+          type: 'Users over storage limit',
+          count: overStorage,
+          severity: overStorage > 0 ? 'high' : 'low',
+          note: 'Requires support outreach or plan upgrade.'),
+      AlertRow(
+          type: 'Users near AI limit',
+          count: nearAi,
+          severity: nearAi >= 3 ? 'medium' : 'low',
+          note: 'Monitor usage or adjust limits per plan.'),
+      AlertRow(
+          type: 'High failed upload rate',
+          count: highFailedUploadRate,
+          severity: highFailedUploadRate >= 5 ? 'medium' : 'low',
+          note: 'Investigate client/network regressions.'),
+      AlertRow(
+          type: 'High failed sync rate',
+          count: highFailedSyncRate,
+          severity: highFailedSyncRate >= 6 ? 'medium' : 'low',
+          note: 'Check background jobs and client retries.'),
+      AlertRow(
+          type: 'Payment failures',
+          count: paymentFailures,
+          severity: paymentFailures > 0 ? 'high' : 'low',
+          note: 'Review dunning & billing webhooks.'),
+      AlertRow(
+          type: 'Suspicious usage spikes',
+          count: suspiciousSpikes,
+          severity: suspiciousSpikes > 0 ? 'high' : 'low',
+          note: 'Check abuse signals and rate limits.'),
     ];
   }
 
   List<SystemStatusCard> _buildSystemStatus(DateTime now) {
     String s(int i) => (i % 13 == 0) ? 'Warn' : 'OK';
     return [
-      SystemStatusCard(label: 'App API status', status: s(1), detail: 'Latency stable; errors within threshold.', updatedAt: now.subtract(const Duration(minutes: 3))),
-      SystemStatusCard(label: 'Supabase status', status: 'OK', detail: 'Auth + DB reachable (mock).', updatedAt: now.subtract(const Duration(minutes: 5))),
-      SystemStatusCard(label: 'Storage status', status: s(2), detail: 'Upload success rate 99.2% (mock).', updatedAt: now.subtract(const Duration(minutes: 7))),
-      SystemStatusCard(label: 'AI service status', status: s(3), detail: 'No elevated timeouts (mock).', updatedAt: now.subtract(const Duration(minutes: 9))),
-      SystemStatusCard(label: 'Last sync job status', status: 'OK', detail: 'Last run succeeded.', updatedAt: now.subtract(const Duration(minutes: 12))),
-      SystemStatusCard(label: 'Error rate (24h)', status: s(4), detail: '0.7% requests errored (mock).', updatedAt: now.subtract(const Duration(minutes: 4))),
+      SystemStatusCard(
+          label: 'App API status',
+          status: s(1),
+          detail: 'Latency stable; errors within threshold.',
+          updatedAt: now.subtract(const Duration(minutes: 3))),
+      SystemStatusCard(
+          label: 'Supabase status',
+          status: 'OK',
+          detail: 'Auth + DB reachable (mock).',
+          updatedAt: now.subtract(const Duration(minutes: 5))),
+      SystemStatusCard(
+          label: 'Storage status',
+          status: s(2),
+          detail: 'Upload success rate 99.2% (mock).',
+          updatedAt: now.subtract(const Duration(minutes: 7))),
+      SystemStatusCard(
+          label: 'AI service status',
+          status: s(3),
+          detail: 'No elevated timeouts (mock).',
+          updatedAt: now.subtract(const Duration(minutes: 9))),
+      SystemStatusCard(
+          label: 'Last sync job status',
+          status: 'OK',
+          detail: 'Last run succeeded.',
+          updatedAt: now.subtract(const Duration(minutes: 12))),
+      SystemStatusCard(
+          label: 'Error rate (24h)',
+          status: s(4),
+          detail: '0.7% requests errored (mock).',
+          updatedAt: now.subtract(const Duration(minutes: 4))),
     ];
   }
 
@@ -1991,13 +2858,18 @@ class MockAdminRepository implements AdminRepository {
   // ------------------------------
 
   @override
-  Future<StorageSnapshot> getStorageSnapshot({required StorageQuery query}) async {
+  Future<StorageSnapshot> getStorageSnapshot(
+      {required StorageQuery query}) async {
     await Future<void>.delayed(const Duration(milliseconds: 220));
 
-    final users = await listUsers(query: const UserListQuery(search: '', filters: UserListFilters()), limit: 700);
-    final totalStorage = users.fold<int>(0, (sum, u) => sum + u.storageUsedBytes);
+    final users = await listUsers(
+        query: const UserListQuery(search: '', filters: UserListFilters()),
+        limit: 700);
+    final totalStorage =
+        users.fold<int>(0, (sum, u) => sum + u.storageUsedBytes);
     final totalDocs = users.fold<int>(0, (sum, u) => sum + u.documentCount);
-    final avgStoragePerUser = users.isEmpty ? 0 : (totalStorage / users.length).round();
+    final avgStoragePerUser =
+        users.isEmpty ? 0 : (totalStorage / users.length).round();
 
     int overLimit = 0;
     int over80 = 0;
@@ -2009,12 +2881,15 @@ class MockAdminRepository implements AdminRepository {
     }
 
     // Month metrics: approximate based on selected range.
-    final uploadsThisMonth = (users.length * (0.18 + _rng.nextDouble() * 0.10) * 30).round();
-    final failedUploadsThisMonth = (uploadsThisMonth * (0.015 + _rng.nextDouble() * 0.02)).round();
+    final uploadsThisMonth =
+        (users.length * (0.18 + _rng.nextDouble() * 0.10) * 30).round();
+    final failedUploadsThisMonth =
+        (uploadsThisMonth * (0.015 + _rng.nextDouble() * 0.02)).round();
 
     // Rough storage cost: choose an internal blended rate per GB-month.
     final gb = 1024 * 1024 * 1024;
-    const blendedUsdPerGbMonth = 0.018; // mock-only; tune to your provider blend
+    const blendedUsdPerGbMonth =
+        0.018; // mock-only; tune to your provider blend
     final estimatedCost = (totalStorage / gb) * blendedUsdPerGbMonth;
 
     // High usage users
@@ -2028,7 +2903,8 @@ class MockAdminRepository implements AdminRepository {
             storageUsedBytes: u.storageUsedBytes,
             storageLimitBytes: u.storageLimitBytes,
             documentCount: u.documentCount,
-            lastUploadAt: _now.subtract(Duration(days: _rng.nextInt(40), hours: _rng.nextInt(24))),
+            lastUploadAt: _now.subtract(
+                Duration(days: _rng.nextInt(40), hours: _rng.nextInt(24))),
             failedUploadCount: u.failedUploadCount7d + _rng.nextInt(12),
             accountStatus: u.accountStatus,
           ),
@@ -2053,7 +2929,13 @@ class MockAdminRepository implements AdminRepository {
         if (pct >= 0.8) near++;
         if (pct > 1.0) over++;
       }
-      return StorageByPlanRow(plan: e.key, users: list.length, totalStorageBytes: total, avgStoragePerUserBytes: avg, usersNearLimit: near, usersOverLimit: over);
+      return StorageByPlanRow(
+          plan: e.key,
+          users: list.length,
+          totalStorageBytes: total,
+          avgStoragePerUserBytes: avg,
+          usersNearLimit: near,
+          usersOverLimit: over);
     }).toList();
     byPlan.sort((a, b) => b.totalStorageBytes.compareTo(a.totalStorageBytes));
 
@@ -2071,25 +2953,61 @@ class MockAdminRepository implements AdminRepository {
       }
       final total = e.value.fold<int>(0, (sum, u) => sum + u.storageUsedBytes);
       final docs = e.value.fold<int>(0, (sum, u) => sum + u.documentCount);
-      final paid = e.value.where((u) => u.plan.toLowerCase().contains('pro') || u.plan.toLowerCase().contains('team') || u.plan.toLowerCase().contains('enterprise') || u.plan.toLowerCase().contains('premium') || u.plan.toLowerCase().contains('family')).length;
-      countries.add(StorageByCountryRow(country: e.key, users: e.value.length, totalStorageBytes: total, avgStorageBytes: (total / e.value.length).round(), documentCount: docs, paidUsers: paid));
+      final paid = e.value
+          .where((u) =>
+              u.plan.toLowerCase().contains('pro') ||
+              u.plan.toLowerCase().contains('team') ||
+              u.plan.toLowerCase().contains('enterprise') ||
+              u.plan.toLowerCase().contains('premium') ||
+              u.plan.toLowerCase().contains('family'))
+          .length;
+      countries.add(StorageByCountryRow(
+          country: e.key,
+          users: e.value.length,
+          totalStorageBytes: total,
+          avgStorageBytes: (total / e.value.length).round(),
+          documentCount: docs,
+          paidUsers: paid));
     }
     if (otherUsers.isNotEmpty) {
-      final total = otherUsers.fold<int>(0, (sum, u) => sum + u.storageUsedBytes);
+      final total =
+          otherUsers.fold<int>(0, (sum, u) => sum + u.storageUsedBytes);
       final docs = otherUsers.fold<int>(0, (sum, u) => sum + u.documentCount);
-      final paid = otherUsers.where((u) => u.plan.toLowerCase().contains('pro') || u.plan.toLowerCase().contains('team') || u.plan.toLowerCase().contains('enterprise') || u.plan.toLowerCase().contains('premium') || u.plan.toLowerCase().contains('family')).length;
-      countries.add(StorageByCountryRow(country: 'Other', users: otherUsers.length, totalStorageBytes: total, avgStorageBytes: (total / otherUsers.length).round(), documentCount: docs, paidUsers: paid));
+      final paid = otherUsers
+          .where((u) =>
+              u.plan.toLowerCase().contains('pro') ||
+              u.plan.toLowerCase().contains('team') ||
+              u.plan.toLowerCase().contains('enterprise') ||
+              u.plan.toLowerCase().contains('premium') ||
+              u.plan.toLowerCase().contains('family'))
+          .length;
+      countries.add(StorageByCountryRow(
+          country: 'Other',
+          users: otherUsers.length,
+          totalStorageBytes: total,
+          avgStorageBytes: (total / otherUsers.length).round(),
+          documentCount: docs,
+          paidUsers: paid));
     }
-    countries.sort((a, b) => b.totalStorageBytes.compareTo(a.totalStorageBytes));
+    countries
+        .sort((a, b) => b.totalStorageBytes.compareTo(a.totalStorageBytes));
 
     // Upload errors (safe only)
     String pseudo(String raw) {
       final n = raw.replaceAll(RegExp(r'[^0-9]'), '');
-      final tail = (n.length >= 4) ? n.substring(n.length - 4) : n.padLeft(4, '0');
+      final tail =
+          (n.length >= 4) ? n.substring(n.length - 4) : n.padLeft(4, '0');
       return 'U-***$tail';
     }
 
-    final errorCodes = const ['UPLOAD_TIMEOUT', 'QUOTA_EXCEEDED', 'NETWORK_LOSS', 'INVALID_MIME', 'SIGNED_URL_FAILED', 'SERVER_5XX'];
+    final errorCodes = const [
+      'UPLOAD_TIMEOUT',
+      'QUOTA_EXCEEDED',
+      'NETWORK_LOSS',
+      'INVALID_MIME',
+      'SIGNED_URL_FAILED',
+      'SERVER_5XX'
+    ];
     final buckets = const ['<1MB', '1–10MB', '10–50MB', '50–200MB', '>200MB'];
     final results = const ['failed', 'retry_scheduled', 'blocked', 'resolved'];
     final uploadErrors = List.generate(40, (i) {
@@ -2145,11 +3063,16 @@ class MockAdminRepository implements AdminRepository {
         if (login.actionType == 'admin_login') lastLoginAt = login.createdAt;
       }
     } catch (e) {
-      debugPrint('MockAdminRepository.getSecurityChecklistSnapshot audit probe failed: $e');
+      debugPrint(
+          'MockAdminRepository.getSecurityChecklistSnapshot audit probe failed: $e');
     }
 
-    final active = _supportSessions.where((s) => s.status == SupportSessionStatus.active).length;
-    final expired = _supportSessions.where((s) => s.status == SupportSessionStatus.expired).length;
+    final active = _supportSessions
+        .where((s) => s.status == SupportSessionStatus.active)
+        .length;
+    final expired = _supportSessions
+        .where((s) => s.status == SupportSessionStatus.expired)
+        .length;
 
     // This mock repository cannot truly validate RLS. We return null to avoid a
     // false sense of certainty.
@@ -2171,14 +3094,15 @@ class MockAdminRepository implements AdminRepository {
     await Future<void>.delayed(const Duration(milliseconds: 120));
     final t = _now;
     const tables = <String, bool>{
-      'marketing_pages': false,
-      'marketing_sections': false,
-      'marketing_blog_posts': false,
-      'marketing_faqs': false,
-      'marketing_pricing_plans': false,
-      'marketing_testimonials': false,
-      'marketing_campaigns': false,
-      'marketing_seo_settings': false,
+      'marketing_pages': true,
+      'marketing_sections': true,
+      'marketing_blog_posts': true,
+      'marketing_faqs': true,
+      'marketing_pricing_plans': true,
+      'marketing_testimonials': true,
+      'marketing_campaigns': true,
+      'marketing_seo_settings': true,
+      'marketing_media_assets': true,
     };
 
     final rows = <WebsiteCmsTableStatusRow>[];
@@ -2186,14 +3110,19 @@ class MockAdminRepository implements AdminRepository {
     for (final entry in tables.entries) {
       final count = (i % 3 == 0) ? 0 : (2 + (i * 7) % 23);
       final ui = entry.value;
-      final status = !ui ? WebsiteCmsTableOverallStatus.missingUi : (count == 0 ? WebsiteCmsTableOverallStatus.empty : WebsiteCmsTableOverallStatus.live);
+      final status = !ui
+          ? WebsiteCmsTableOverallStatus.missingUi
+          : (count == 0
+              ? WebsiteCmsTableOverallStatus.empty
+              : WebsiteCmsTableOverallStatus.live);
       rows.add(
         WebsiteCmsTableStatusRow(
           tableName: entry.key,
           exists: true,
           uiConnected: ui,
           rowCount: count,
-          latestUpdatedAt: count == 0 ? null : t.subtract(Duration(hours: 6 + (i * 9) % 60)),
+          latestUpdatedAt:
+              count == 0 ? null : t.subtract(Duration(hours: 6 + (i * 9) % 60)),
           rlsEnabled: null,
           status: status,
         ),
@@ -2207,7 +3136,11 @@ class MockAdminRepository implements AdminRepository {
   Future<MarketingCmsSnapshot> getMarketingCmsSnapshot() async {
     final t = _now;
     const categories = <MarketingBlogCategoryRow>[
-      MarketingBlogCategoryRow(id: 'mock-category', slug: 'product', name: 'Product', isActive: true),
+      MarketingBlogCategoryRow(
+          id: 'mock-category',
+          slug: 'product',
+          name: 'Product',
+          isActive: true),
     ];
     final pages = <MarketingPageRow>[
       MarketingPageRow(
@@ -2247,18 +3180,28 @@ class MockAdminRepository implements AdminRepository {
         createdAt: t.subtract(const Duration(days: 3)),
       ),
     ];
-    return MarketingCmsSnapshot(pages: pages, sections: sections, blogPosts: posts, categories: categories, generatedAt: t);
+    return MarketingCmsSnapshot(
+        pages: pages,
+        sections: sections,
+        blogPosts: posts,
+        categories: categories,
+        generatedAt: t);
   }
 
   @override
   Future<void> saveMarketingPage({required MarketingPageDraft draft}) async {}
 
   @override
-  Future<void> saveMarketingSection({required MarketingSectionDraft draft}) async {}
+  Future<void> saveMarketingSection(
+      {required MarketingSectionDraft draft}) async {}
 
   @override
-  Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft}) async {}
+  Future<void> saveMarketingBlogPost(
+      {required MarketingBlogPostDraft draft}) async {}
 
   @override
-  Future<void> updateMarketingContentStatus({required String resourceType, required String resourceId, required MarketingContentStatus status}) async {}
+  Future<void> updateMarketingContentStatus(
+      {required String resourceType,
+      required String resourceId,
+      required MarketingContentStatus status}) async {}
 }

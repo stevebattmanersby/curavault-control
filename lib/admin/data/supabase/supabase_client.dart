@@ -11,7 +11,8 @@ class ControlSupabaseClient {
   static SupabaseClient? tryGet() {
     // Fail closed if a service role key was accidentally bundled.
     if (AdminAuthStore.supabaseServiceRoleKey.isNotEmpty) {
-      debugPrint('SECURITY: SUPABASE_SERVICE_ROLE_KEY detected; refusing Supabase client access.');
+      debugPrint(
+          'SECURITY: SUPABASE_SERVICE_ROLE_KEY detected; refusing Supabase client access.');
       return null;
     }
 
