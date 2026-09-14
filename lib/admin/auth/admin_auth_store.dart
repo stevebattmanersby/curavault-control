@@ -563,7 +563,7 @@ class AdminAuthStore extends ChangeNotifier {
 
       try {
         await _refreshAdminProfile(recordLoginDiagnostics: true);
-        await _refreshMfaState(force: true);
+        await _refreshMfaState();
       } catch (e) {
         // Auth succeeded, but allow-list lookup failed (network/RLS/table missing).
         throw AdminAuthAllowListLookupException(e.toString());
@@ -1057,6 +1057,20 @@ class AdminAuthStore extends ChangeNotifier {
     if (!force &&
         _lastSuccessfulMfaRefreshToken == token &&
         _mfaStateStatus == AdminMfaStateStatus.available) {
+      return;
+    }
+
+    if (!force) {
+      final aal = _client!.auth.mfa.getAuthenticatorAssuranceLevel();
+      _currentAal = aal.currentLevel;
+      _verifiedTotpFactors = (session.user.factors ?? const <Factor>[])
+          .where((factor) =>
+              factor.factorType == FactorType.totp &&
+              factor.status == FactorStatus.verified)
+          .toList();
+      _mfaStateStatus = AdminMfaStateStatus.available;
+      _lastSuccessfulMfaRefreshToken = token;
+      _mfaError = null;
       return;
     }
 
