@@ -7,6 +7,7 @@ import 'package:curavault_admin/admin/pages/dashboard_page.dart';
 import 'package:curavault_admin/admin/pages/development_control_page.dart';
 import 'package:curavault_admin/admin/pages/loading_page.dart';
 import 'package:curavault_admin/admin/pages/login_page.dart';
+import 'package:curavault_admin/admin/pages/mfa_page.dart';
 import 'package:curavault_admin/admin/pages/plans_permissions_page.dart';
 import 'package:curavault_admin/admin/pages/settings_page.dart';
 import 'package:curavault_admin/admin/pages/security_checklist_page.dart';
@@ -55,7 +56,7 @@ class AppRouter {
           if (!kDebugMode) return;
           debugPrint(
             '[router.redirect] matched=$matched location=$location '
-            'bootstrapping=${auth.isBootstrapping} signedIn=${auth.isSignedIn} authorized=${auth.isAuthorized} role=${auth.role} :: $message',
+            'bootstrapping=${auth.isBootstrapping} signedIn=${auth.isSignedIn} gate=${auth.gateState.name} authorized=${auth.isAuthorized} role=${auth.role} :: $message',
           );
         }
 
@@ -71,6 +72,10 @@ class AppRouter {
         }
 
         final isAuthFree = isAuthFreePath(path) || isAuthFreePath(matched);
+        final isPasswordSetupPath = matched == AppRoutes.resetPassword ||
+            matched == AppRoutes.setPassword ||
+            path == AppRoutes.resetPassword ||
+            path == AppRoutes.setPassword;
 
         // While bootstrapping, keep the user on the loading screen unless they're
         // on an explicitly auth-free route.
@@ -85,9 +90,11 @@ class AppRouter {
         if (matched == AppRoutes.loading) {
           final target = !auth.isSignedIn
               ? AppRoutes.login
-              : (!auth.isAuthorized
-                  ? AppRoutes.unauthorized
-                  : AppRoutes.dashboard);
+              : (auth.isMfaRequired
+                  ? AppRoutes.mfa
+                  : !auth.isAuthorized
+                      ? AppRoutes.unauthorized
+                      : AppRoutes.dashboard);
           trace('leaving /loading => $target');
           return target;
         }
@@ -97,6 +104,14 @@ class AppRouter {
           // This includes password setup/recovery and the dev connectivity test page.
           final target = isAuthFree ? null : AppRoutes.login;
           trace('signed out => ${target ?? 'allow'}');
+          return target;
+        }
+
+        if (auth.isMfaRequired) {
+          final target = matched == AppRoutes.mfa || isPasswordSetupPath
+              ? null
+              : AppRoutes.mfa;
+          trace('MFA required => ${target ?? 'allow'}');
           return target;
         }
 
@@ -116,6 +131,7 @@ class AppRouter {
         // Authorized admins should never land on login/loading/unauthorized.
         if (matched == AppRoutes.login ||
             matched == AppRoutes.loading ||
+            matched == AppRoutes.mfa ||
             matched == AppRoutes.unauthorized) {
           trace('authorized but on auth gate page => ${AppRoutes.dashboard}');
           return AppRoutes.dashboard;
@@ -158,6 +174,10 @@ class AppRouter {
             path: AppRoutes.login,
             name: 'login',
             builder: (context, state) => const LoginPage()),
+        GoRoute(
+            path: AppRoutes.mfa,
+            name: 'mfa',
+            builder: (context, state) => const MfaPage()),
         GoRoute(
             path: AppRoutes.resetPassword,
             name: 'resetPassword',
@@ -418,6 +438,7 @@ class AppRouter {
 class AppRoutes {
   static const String loading = '/loading';
   static const String login = '/login';
+  static const String mfa = '/mfa';
   static const String resetPassword = '/reset-password';
   static const String setPassword = '/set-password';
   static const String supabaseConnectivityTest = '/supabase-connectivity-test';
