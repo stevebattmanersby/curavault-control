@@ -183,7 +183,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
       if (!mounted) return;
 
       if (allowListed) {
-        context.go(AppRoutes.dashboard);
+        context.go(AppRoutes.mfa);
       } else {
         context.go(AppRoutes.unauthorized);
       }
