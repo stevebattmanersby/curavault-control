@@ -174,6 +174,12 @@ enum AdminAuthGateState {
   authorized,
 }
 
+enum AdminMfaStateStatus {
+  loading,
+  available,
+  unavailable,
+}
+
 class AdminMfaEnrollment {
   const AdminMfaEnrollment({
     required this.factorId,
@@ -329,6 +335,14 @@ class AdminAuthStore extends ChangeNotifier {
   List<Factor> _verifiedTotpFactors = const [];
   List<Factor> get verifiedTotpFactors => _verifiedTotpFactors;
 
+  AdminMfaStateStatus _mfaStateStatus = AdminMfaStateStatus.loading;
+  AdminMfaStateStatus get mfaStateStatus => _mfaStateStatus;
+  bool get isMfaStateLoading => _mfaStateStatus == AdminMfaStateStatus.loading;
+  bool get isMfaStateAvailable =>
+      _mfaStateStatus == AdminMfaStateStatus.available;
+  bool get isMfaStateUnavailable =>
+      _mfaStateStatus == AdminMfaStateStatus.unavailable;
+
   AdminMfaEnrollment? _mfaEnrollment;
   AdminMfaEnrollment? get mfaEnrollment => _mfaEnrollment;
 
@@ -339,6 +353,11 @@ class AdminAuthStore extends ChangeNotifier {
   String? get mfaError => _mfaError;
 
   String? _loginAuditWrittenForAccessToken;
+
+  Future<void>? _mfaRefreshFuture;
+  String? _mfaRefreshTokenInFlight;
+  String? _lastSuccessfulMfaRefreshToken;
+  int _authEventSequence = 0;
 
   String? _accessDeniedReason;
   String? get accessDeniedReason => _accessDeniedReason;
@@ -433,9 +452,12 @@ class AdminAuthStore extends ChangeNotifier {
     _session = _client?.auth.currentSession;
 
     _authSub?.cancel();
-    _authSub = _client?.auth.onAuthStateChange.listen((event) {
-      unawaited(_handleAuthStateChange(event));
-    });
+    _authSub = _client?.auth.onAuthStateChange.listen(
+      (event) {
+        unawaited(_handleAuthStateChange(event));
+      },
+      onError: _handleAuthStateError,
+    );
 
     await _refreshAdminProfile();
     await _refreshMfaState();
@@ -444,14 +466,61 @@ class AdminAuthStore extends ChangeNotifier {
   }
 
   Future<void> _handleAuthStateChange(AuthState event) async {
-    _session = event.session;
-    if (event.session == null) {
+    final sequence = ++_authEventSequence;
+    final eventType = event.event;
+    final nextSession = event.session ?? _client?.auth.currentSession;
+    final isDestructiveSignOut = eventType == AuthChangeEvent.signedOut ||
+        eventType.name == 'userDeleted';
+
+    if (isDestructiveSignOut) {
+      _session = null;
       _clearAdminState();
       notifyListeners();
       return;
     }
-    await _refreshAdminProfile();
-    await _refreshMfaState();
+
+    if (nextSession == null) {
+      _currentAal = null;
+      _mfaStateStatus = AdminMfaStateStatus.unavailable;
+      if (isAllowListedActiveAdmin) {
+        _mfaError = 'MFA status could not be loaded. Try again.';
+      }
+      notifyListeners();
+      return;
+    }
+
+    switch (eventType) {
+      case AuthChangeEvent.initialSession:
+      case AuthChangeEvent.signedIn:
+      case AuthChangeEvent.tokenRefreshed:
+      case AuthChangeEvent.userUpdated:
+      case AuthChangeEvent.passwordRecovery:
+        _session = nextSession;
+        await _refreshAdminProfile();
+        if (sequence != _authEventSequence) return;
+        await _refreshMfaState();
+        break;
+      case AuthChangeEvent.mfaChallengeVerified:
+        _session = nextSession;
+        await _refreshAdminProfile();
+        if (sequence != _authEventSequence) return;
+        await _refreshMfaState(force: true);
+        break;
+      case AuthChangeEvent.signedOut:
+      default:
+        return;
+    }
+    if (sequence != _authEventSequence) return;
+    notifyListeners();
+  }
+
+  void _handleAuthStateError(Object error, StackTrace stackTrace) {
+    debugPrint('AdminAuthStore.onAuthStateChange error: ${error.runtimeType}');
+    _currentAal = null;
+    if (isAllowListedActiveAdmin) {
+      _mfaStateStatus = AdminMfaStateStatus.unavailable;
+      _mfaError = 'MFA status could not be loaded. Try again.';
+    }
     notifyListeners();
   }
 
@@ -494,7 +563,7 @@ class AdminAuthStore extends ChangeNotifier {
 
       try {
         await _refreshAdminProfile(recordLoginDiagnostics: true);
-        await _refreshMfaState();
+        await _refreshMfaState(force: true);
       } catch (e) {
         // Auth succeeded, but allow-list lookup failed (network/RLS/table missing).
         throw AdminAuthAllowListLookupException(e.toString());
@@ -635,6 +704,11 @@ class AdminAuthStore extends ChangeNotifier {
     if (!isAllowListedActiveAdmin) {
       throw const AdminAccessDeniedException('Access denied.');
     }
+    if (!isMfaStateAvailable) {
+      _mfaError = 'MFA status could not be loaded. Try again.';
+      notifyListeners();
+      throw StateError('MFA state is not available.');
+    }
     if (_client == null) return;
     _isMfaBusy = true;
     _mfaError = null;
@@ -697,7 +771,7 @@ class AdminAuthStore extends ChangeNotifier {
       _session = _client!.auth.currentSession;
       _mfaEnrollment = null;
       await _refreshAdminProfile();
-      await _refreshMfaState();
+      await _refreshMfaState(force: true);
       if (isAuthorized) {
         await _writeSuccessfulAdminLoginAudit(email: _adminEmail);
       }
@@ -847,9 +921,13 @@ class AdminAuthStore extends ChangeNotifier {
     _role = null;
     _currentAal = null;
     _verifiedTotpFactors = const [];
+    _mfaStateStatus = AdminMfaStateStatus.loading;
     _mfaEnrollment = null;
     _mfaError = null;
     _loginAuditWrittenForAccessToken = null;
+    _mfaRefreshFuture = null;
+    _mfaRefreshTokenInFlight = null;
+    _lastSuccessfulMfaRefreshToken = null;
   }
 
   Future<void> _refreshAdminProfile(
@@ -961,23 +1039,63 @@ class AdminAuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _refreshMfaState() async {
-    if (_client?.auth.currentSession == null) {
+  Future<void> retryMfaStateRefresh() async {
+    await _refreshMfaState(force: true);
+    notifyListeners();
+  }
+
+  Future<void> _refreshMfaState({bool force = false}) async {
+    final session = _client?.auth.currentSession;
+    final token = session?.accessToken;
+    if (session == null || token == null || token.isEmpty) {
       _currentAal = null;
       _verifiedTotpFactors = const [];
+      _mfaStateStatus = AdminMfaStateStatus.loading;
       return;
     }
+
+    if (!force &&
+        _lastSuccessfulMfaRefreshToken == token &&
+        _mfaStateStatus == AdminMfaStateStatus.available) {
+      return;
+    }
+
+    if (_mfaRefreshFuture != null && _mfaRefreshTokenInFlight == token) {
+      return _mfaRefreshFuture!;
+    }
+
+    _mfaRefreshTokenInFlight = token;
+    _mfaStateStatus = AdminMfaStateStatus.loading;
+    _mfaError = null;
+    final refresh = _refreshMfaStateForToken(token);
+    _mfaRefreshFuture = refresh;
+    try {
+      await refresh;
+    } finally {
+      if (_mfaRefreshFuture == refresh) {
+        _mfaRefreshFuture = null;
+        _mfaRefreshTokenInFlight = null;
+      }
+    }
+  }
+
+  Future<void> _refreshMfaStateForToken(String token) async {
     try {
       final aal = _client!.auth.mfa.getAuthenticatorAssuranceLevel();
-      _currentAal = aal.currentLevel;
       final factors = await _client!.auth.mfa.listFactors();
+      if (_client?.auth.currentSession?.accessToken != token) return;
+      _currentAal = aal.currentLevel;
       _verifiedTotpFactors = factors.totp;
+      _mfaStateStatus = AdminMfaStateStatus.available;
+      _lastSuccessfulMfaRefreshToken = token;
+      _mfaError = null;
     } catch (e) {
-      debugPrint('AdminAuthStore._refreshMfaState failed: $e');
+      debugPrint('AdminAuthStore._refreshMfaState failed: ${e.runtimeType}');
       _currentAal = null;
       _verifiedTotpFactors = const [];
+      _mfaStateStatus = AdminMfaStateStatus.unavailable;
       if (isAllowListedActiveAdmin) {
-        _mfaError = 'Could not verify MFA status. Try signing in again.';
+        _mfaError = 'MFA status could not be loaded. Try again.';
       }
     }
   }

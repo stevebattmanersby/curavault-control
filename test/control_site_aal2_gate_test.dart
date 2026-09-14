@@ -76,5 +76,66 @@ void main() {
       expect(mfaPage, contains('Manual setup key'));
       expect(mfaPage, contains('auth.signOut'));
     });
+
+    test('auth listener handles stream errors without destructive sign-out',
+        () {
+      expect(authStore, contains('onError: _handleAuthStateError'));
+      expect(authStore, contains('void _handleAuthStateError'));
+      expect(authStore, contains('AdminMfaStateStatus.unavailable'));
+      expect(
+        authStore,
+        contains("'MFA status could not be loaded. Try again.'"),
+      );
+      expect(
+        authStore,
+        isNot(contains('event.session == null) {\n      _clearAdminState')),
+      );
+    });
+
+    test('auth event handling distinguishes sign-out from refresh events', () {
+      expect(authStore, contains('switch (eventType)'));
+      expect(authStore, contains('AuthChangeEvent.initialSession'));
+      expect(authStore, contains('AuthChangeEvent.signedIn'));
+      expect(authStore, contains('AuthChangeEvent.signedOut'));
+      expect(authStore, contains('AuthChangeEvent.tokenRefreshed'));
+      expect(authStore, contains('AuthChangeEvent.userUpdated'));
+      expect(authStore, contains("eventType.name == 'userDeleted'"));
+      expect(authStore, contains('AuthChangeEvent.passwordRecovery'));
+      expect(authStore, contains('AuthChangeEvent.mfaChallengeVerified'));
+      expect(authStore, contains('final sequence = ++_authEventSequence'));
+      expect(authStore, contains('if (sequence != _authEventSequence) return'));
+    });
+
+    test('MFA factor refresh is coalesced by access token', () {
+      expect(authStore, contains('Future<void>? _mfaRefreshFuture'));
+      expect(authStore, contains('String? _mfaRefreshTokenInFlight'));
+      expect(authStore, contains('String? _lastSuccessfulMfaRefreshToken'));
+      expect(
+        authStore,
+        contains('_lastSuccessfulMfaRefreshToken == token'),
+      );
+      expect(
+        authStore,
+        contains(
+          'if (_mfaRefreshFuture != null && _mfaRefreshTokenInFlight == token)',
+        ),
+      );
+      expect(authStore, contains('_refreshMfaState(force: true)'));
+    });
+
+    test('transient MFA refresh errors fail closed without enrollment UI', () {
+      expect(authStore, contains('enum AdminMfaStateStatus'));
+      expect(authStore, contains('bool get isMfaStateUnavailable'));
+      expect(authStore, contains('Future<void> retryMfaStateRefresh()'));
+      expect(mfaPage, contains('final mfaUnavailable'));
+      expect(mfaPage, contains('final mfaLoading'));
+      expect(mfaPage, contains("'MFA status unavailable'"));
+      expect(mfaPage, contains("'MFA status could not be loaded. Try again.'"));
+      expect(mfaPage, contains("'Retry'"));
+      expect(
+        mfaPage,
+        contains('auth.isMfaStateAvailable && !hasVerifiedTotp'),
+      );
+    });
   });
 }

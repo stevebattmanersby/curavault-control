@@ -47,13 +47,27 @@ class _MfaPageState extends State<MfaPage> {
     }
   }
 
+  Future<void> _retryMfaState(AdminAuthStore auth) async {
+    setState(() => _error = null);
+    try {
+      await auth.retryMfaStateRefresh();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = auth.mfaError ?? 'Could not load MFA status.');
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final auth = context.watch<AdminAuthStore>();
     final enrollment = auth.mfaEnrollment;
-    final hasVerifiedTotp = auth.verifiedTotpFactors.isNotEmpty;
-    final isEnrollment = !hasVerifiedTotp;
+    final mfaUnavailable = auth.isMfaStateUnavailable;
+    final mfaLoading = auth.isMfaStateLoading;
+    final hasVerifiedTotp =
+        auth.isMfaStateAvailable && auth.verifiedTotpFactors.isNotEmpty;
+    final isEnrollment = auth.isMfaStateAvailable && !hasVerifiedTotp;
 
     return Scaffold(
       body: Center(
@@ -89,9 +103,13 @@ class _MfaPageState extends State<MfaPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            isEnrollment
-                                ? 'Set up authenticator app'
-                                : 'Enter authenticator code',
+                            mfaUnavailable
+                                ? 'MFA status unavailable'
+                                : mfaLoading
+                                    ? 'Checking MFA status'
+                                    : isEnrollment
+                                        ? 'Set up authenticator app'
+                                        : 'Enter authenticator code',
                             style: Theme.of(context)
                                 .textTheme
                                 .titleLarge
@@ -127,7 +145,64 @@ class _MfaPageState extends State<MfaPage> {
                           ),
                     ),
                   ),
-                if (isEnrollment && enrollment == null) ...[
+                if (mfaLoading) ...[
+                  Row(
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: cs.primary,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'Checking this admin account for an existing MFA factor.',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: cs.onSurfaceVariant,
+                                    height: 1.35,
+                                  ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ] else if (mfaUnavailable) ...[
+                  Text(
+                    'MFA status could not be loaded. Try again.',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.copyWith(color: cs.onSurfaceVariant, height: 1.35),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed:
+                          auth.isMfaBusy ? null : () => _retryMfaState(auth),
+                      icon: auth.isMfaBusy
+                          ? SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: cs.primary,
+                              ),
+                            )
+                          : Icon(Icons.refresh, color: cs.primary),
+                      label: Text(
+                        auth.isMfaBusy ? 'Retrying...' : 'Retry',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: cs.primary,
+                              fontWeight: FontWeight.w800,
+                            ),
+                      ),
+                    ),
+                  ),
+                ] else if (isEnrollment && enrollment == null) ...[
                   Text(
                     'Use an authenticator app to add a TOTP factor to this admin account.',
                     style: Theme.of(context)
