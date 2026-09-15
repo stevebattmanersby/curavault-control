@@ -14,7 +14,7 @@ class AdminTopBar extends StatelessWidget {
 
   static const String environment = String.fromEnvironment(
     'CONTROL_SITE_ENV_LABEL',
-    defaultValue: String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'LIVE'),
+    defaultValue: String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'DEV'),
   );
 
   @override
@@ -81,7 +81,7 @@ class _EnvironmentBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final normalized = value.trim().isEmpty ? 'LIVE' : value.toUpperCase();
+    final normalized = value.trim().isEmpty ? 'DEV' : value.toUpperCase();
     final isLive = normalized == 'LIVE' || normalized == 'PROD';
     final bg = isLive ? cs.primaryContainer : cs.surfaceContainerHighest;
     final fg = isLive ? cs.onPrimaryContainer : cs.onSurfaceVariant;

@@ -1004,7 +1004,6 @@ class SupabaseAdminRepository implements AdminRepository {
       'marketing_pricing_plans': true,
       'marketing_testimonials': true,
       'marketing_campaigns': true,
-      'marketing_seo_settings': true,
       'marketing_media_assets': true,
     };
 
@@ -1016,7 +1015,6 @@ class SupabaseAdminRepository implements AdminRepository {
       'marketing_pricing_plans',
       'marketing_testimonials',
       'marketing_campaigns',
-      'marketing_seo_settings',
       'marketing_media_assets',
     ];
 
@@ -1134,6 +1132,31 @@ class SupabaseAdminRepository implements AdminRepository {
           .select(
               'id, slug, title, status, excerpt, category_id, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
           .order('updated_at', ascending: false);
+      final pricingRows = await client
+          .from('marketing_pricing_plans')
+          .select(
+              'id, plan_key, name, description, monthly_price, annual_price, currency, features, is_featured, is_active, sort_order, updated_at')
+          .order('sort_order', ascending: true);
+      final faqRows = await client
+          .from('marketing_faqs')
+          .select(
+              'id, question, answer, category, sort_order, is_published, updated_at')
+          .order('sort_order', ascending: true);
+      final testimonialRows = await client
+          .from('marketing_testimonials')
+          .select(
+              'id, quote, name, role, organisation, avatar_url, is_published, sort_order, updated_at')
+          .order('sort_order', ascending: true);
+      final campaignRows = await client
+          .from('marketing_campaigns')
+          .select(
+              'id, campaign_key, name, status, landing_page_slug, headline, subheadline, cta_label, cta_url, utm_source, utm_medium, utm_campaign, starts_at, ends_at, updated_at')
+          .order('updated_at', ascending: false);
+      final assetRows = await client
+          .from('marketing_media_assets')
+          .select(
+              'id, storage_bucket, storage_path, alt_text, caption, mime_type, width, height, size_bytes, visibility, updated_at')
+          .order('updated_at', ascending: false);
 
       final snapshot = MarketingCmsSnapshot(
         pages: _asList(pageRows).map(_marketingPageFromRow).toList(),
@@ -1141,13 +1164,26 @@ class SupabaseAdminRepository implements AdminRepository {
         categories:
             _asList(categoryRows).map(_marketingCategoryFromRow).toList(),
         blogPosts: _asList(postRows).map(_marketingBlogPostFromRow).toList(),
+        pricingPlans:
+            _asList(pricingRows).map(_marketingPricingPlanFromRow).toList(),
+        faqs: _asList(faqRows).map(_marketingFaqFromRow).toList(),
+        testimonials:
+            _asList(testimonialRows).map(_marketingTestimonialFromRow).toList(),
+        campaigns:
+            _asList(campaignRows).map(_marketingCampaignFromRow).toList(),
+        assets: _asList(assetRows).map(_marketingMediaAssetFromRow).toList(),
         generatedAt: DateTime.now().toUtc(),
       );
       _setLive(AdminDataSourceKey.websiteCms,
           queryName: 'marketing CMS snapshot',
           rowCount: snapshot.pages.length +
               snapshot.sections.length +
-              snapshot.blogPosts.length);
+              snapshot.blogPosts.length +
+              snapshot.pricingPlans.length +
+              snapshot.faqs.length +
+              snapshot.testimonials.length +
+              snapshot.campaigns.length +
+              snapshot.assets.length);
       return snapshot;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getMarketingCmsSnapshot failed: $e');
@@ -1273,6 +1309,163 @@ class SupabaseAdminRepository implements AdminRepository {
   }
 
   @override
+  Future<void> saveMarketingPricingPlan(
+      {required MarketingPricingPlanDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'plan_key': draft.planKey,
+      'name': draft.name,
+      'description': _blankToNull(draft.description),
+      'monthly_price': draft.monthlyPrice,
+      'annual_price': draft.annualPrice,
+      'currency': draft.currency,
+      'features': draft.features,
+      'is_featured': draft.isFeatured,
+      'is_active': draft.isActive,
+      'sort_order': draft.sortOrder,
+    };
+    if (isUpdate) {
+      await client
+          .from('marketing_pricing_plans')
+          .update(row)
+          .eq('id', draft.id!);
+    } else {
+      await client.from('marketing_pricing_plans').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_pricing_updated' : 'cms_pricing_created',
+      resourceType: 'marketing_pricing_plan',
+      resourceId: draft.id,
+      newValue: {'plan_key': draft.planKey, 'is_active': draft.isActive},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingFaq({required MarketingFaqDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'question': draft.question,
+      'answer': draft.answer,
+      'category': _blankToNull(draft.category),
+      'sort_order': draft.sortOrder,
+      'is_published': draft.isPublished,
+    };
+    if (isUpdate) {
+      await client.from('marketing_faqs').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_faqs').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_faq_updated' : 'cms_faq_created',
+      resourceType: 'marketing_faq',
+      resourceId: draft.id,
+      newValue: {'category': draft.category, 'is_published': draft.isPublished},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingTestimonial(
+      {required MarketingTestimonialDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'quote': draft.quote,
+      'name': _blankToNull(draft.name),
+      'role': _blankToNull(draft.role),
+      'organisation': _blankToNull(draft.organisation),
+      'avatar_url': _blankToNull(draft.avatarUrl),
+      'is_published': draft.isPublished,
+      'sort_order': draft.sortOrder,
+    };
+    if (isUpdate) {
+      await client
+          .from('marketing_testimonials')
+          .update(row)
+          .eq('id', draft.id!);
+    } else {
+      await client.from('marketing_testimonials').insert(row);
+    }
+    await _auditCmsAction(
+      actionType:
+          isUpdate ? 'cms_testimonial_updated' : 'cms_testimonial_created',
+      resourceType: 'marketing_testimonial',
+      resourceId: draft.id,
+      newValue: {'is_published': draft.isPublished},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingCampaign(
+      {required MarketingCampaignDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'campaign_key': draft.campaignKey,
+      'name': draft.name,
+      'status': draft.status.value,
+      'landing_page_slug': _blankToNull(draft.landingPageSlug),
+      'headline': _blankToNull(draft.headline),
+      'subheadline': _blankToNull(draft.subheadline),
+      'cta_label': _blankToNull(draft.ctaLabel),
+      'cta_url': _blankToNull(draft.ctaUrl),
+      'utm_source': _blankToNull(draft.utmSource),
+      'utm_medium': _blankToNull(draft.utmMedium),
+      'utm_campaign': _blankToNull(draft.utmCampaign),
+      'starts_at': draft.startsAt?.toUtc().toIso8601String(),
+      'ends_at': draft.endsAt?.toUtc().toIso8601String(),
+    };
+    if (isUpdate) {
+      await client.from('marketing_campaigns').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_campaigns').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_campaign_updated' : 'cms_campaign_created',
+      resourceType: 'marketing_campaign',
+      resourceId: draft.id,
+      newValue: {
+        'campaign_key': draft.campaignKey,
+        'status': draft.status.value
+      },
+    );
+  }
+
+  @override
+  Future<void> saveMarketingMediaAsset(
+      {required MarketingMediaAssetDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final row = <String, dynamic>{
+      'alt_text': _blankToNull(draft.altText),
+      'caption': _blankToNull(draft.caption),
+      'visibility': draft.visibility,
+    };
+    await client.from('marketing_media_assets').update(row).eq('id', draft.id);
+    await _auditCmsAction(
+      actionType: 'cms_asset_updated',
+      resourceType: 'marketing_media_asset',
+      resourceId: draft.id,
+      newValue: {'visibility': draft.visibility},
+    );
+  }
+
+  @override
   Future<void> updateMarketingContentStatus(
       {required String resourceType,
       required String resourceId,
@@ -1339,6 +1532,22 @@ class SupabaseAdminRepository implements AdminRepository {
       _tryParseDateTime(value) ??
       DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
+  int _intValue(dynamic value) =>
+      value is int ? value : int.tryParse(value?.toString() ?? '') ?? 0;
+
+  bool _boolValue(dynamic value) =>
+      value == true || value?.toString().toLowerCase() == 'true';
+
+  num? _numValue(dynamic value) {
+    if (value is num) return value;
+    return num.tryParse(value?.toString() ?? '');
+  }
+
+  List<String> _stringList(dynamic value) {
+    if (value is List) return value.map((item) => item.toString()).toList();
+    return const [];
+  }
+
   MarketingPageRow _marketingPageFromRow(Map<String, dynamic> row) =>
       MarketingPageRow(
         id: row['id']?.toString() ?? '',
@@ -1395,6 +1604,84 @@ class SupabaseAdminRepository implements AdminRepository {
         scheduledFor: _tryParseDateTime(row['scheduled_for']),
         updatedAt: _requiredDate(row['updated_at']),
         createdAt: _requiredDate(row['created_at']),
+      );
+
+  MarketingPricingPlanRow _marketingPricingPlanFromRow(
+          Map<String, dynamic> row) =>
+      MarketingPricingPlanRow(
+        id: row['id']?.toString() ?? '',
+        planKey: row['plan_key']?.toString() ?? '',
+        name: row['name']?.toString() ?? 'Untitled plan',
+        description: row['description']?.toString(),
+        monthlyPrice: _numValue(row['monthly_price']),
+        annualPrice: _numValue(row['annual_price']),
+        currency: row['currency']?.toString() ?? 'EUR',
+        features: _stringList(row['features']),
+        isFeatured: _boolValue(row['is_featured']),
+        isActive: _boolValue(row['is_active']),
+        sortOrder: _intValue(row['sort_order']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingFaqRow _marketingFaqFromRow(Map<String, dynamic> row) =>
+      MarketingFaqRow(
+        id: row['id']?.toString() ?? '',
+        question: row['question']?.toString() ?? '',
+        answer: row['answer']?.toString() ?? '',
+        category: row['category']?.toString(),
+        sortOrder: _intValue(row['sort_order']),
+        isPublished: _boolValue(row['is_published']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingTestimonialRow _marketingTestimonialFromRow(
+          Map<String, dynamic> row) =>
+      MarketingTestimonialRow(
+        id: row['id']?.toString() ?? '',
+        quote: row['quote']?.toString() ?? '',
+        name: row['name']?.toString(),
+        role: row['role']?.toString(),
+        organisation: row['organisation']?.toString(),
+        avatarUrl: row['avatar_url']?.toString(),
+        isPublished: _boolValue(row['is_published']),
+        sortOrder: _intValue(row['sort_order']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingCampaignRow _marketingCampaignFromRow(Map<String, dynamic> row) =>
+      MarketingCampaignRow(
+        id: row['id']?.toString() ?? '',
+        campaignKey: row['campaign_key']?.toString() ?? '',
+        name: row['name']?.toString() ?? 'Untitled campaign',
+        status: MarketingContentStatus.parse(row['status']?.toString()),
+        landingPageSlug: row['landing_page_slug']?.toString(),
+        headline: row['headline']?.toString(),
+        subheadline: row['subheadline']?.toString(),
+        ctaLabel: row['cta_label']?.toString(),
+        ctaUrl: row['cta_url']?.toString(),
+        utmSource: row['utm_source']?.toString(),
+        utmMedium: row['utm_medium']?.toString(),
+        utmCampaign: row['utm_campaign']?.toString(),
+        startsAt: _tryParseDateTime(row['starts_at']),
+        endsAt: _tryParseDateTime(row['ends_at']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingMediaAssetRow _marketingMediaAssetFromRow(
+          Map<String, dynamic> row) =>
+      MarketingMediaAssetRow(
+        id: row['id']?.toString() ?? '',
+        storageBucket: row['storage_bucket']?.toString() ?? '',
+        storagePath: row['storage_path']?.toString() ?? '',
+        altText: row['alt_text']?.toString(),
+        caption: row['caption']?.toString(),
+        mimeType: row['mime_type']?.toString(),
+        width: row['width'] == null ? null : _intValue(row['width']),
+        height: row['height'] == null ? null : _intValue(row['height']),
+        sizeBytes:
+            row['size_bytes'] == null ? null : _intValue(row['size_bytes']),
+        visibility: row['visibility']?.toString() ?? 'private',
+        updatedAt: _requiredDate(row['updated_at']),
       );
 
   Future<void> _auditCmsAction(

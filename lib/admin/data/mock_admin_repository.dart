@@ -3101,7 +3101,6 @@ class MockAdminRepository implements AdminRepository {
       'marketing_pricing_plans': true,
       'marketing_testimonials': true,
       'marketing_campaigns': true,
-      'marketing_seo_settings': true,
       'marketing_media_assets': true,
     };
 
@@ -3185,6 +3184,55 @@ class MockAdminRepository implements AdminRepository {
         sections: sections,
         blogPosts: posts,
         categories: categories,
+        pricingPlans: [
+          MarketingPricingPlanRow(
+              id: 'mock-plan',
+              planKey: 'plus',
+              name: 'Plus',
+              description: 'Mock public plan copy.',
+              monthlyPrice: 9,
+              annualPrice: 90,
+              currency: 'EUR',
+              isFeatured: true,
+              isActive: true,
+              sortOrder: 0,
+              updatedAt: t)
+        ],
+        faqs: [
+          MarketingFaqRow(
+              id: 'mock-faq',
+              question: 'How does CuraVault help?',
+              answer: 'Mock FAQ answer.',
+              sortOrder: 0,
+              isPublished: false,
+              updatedAt: t)
+        ],
+        testimonials: [
+          MarketingTestimonialRow(
+              id: 'mock-testimonial',
+              quote: 'Mock testimonial copy.',
+              name: 'Launch reviewer',
+              isPublished: false,
+              sortOrder: 0,
+              updatedAt: t)
+        ],
+        campaigns: [
+          MarketingCampaignRow(
+              id: 'mock-campaign',
+              campaignKey: 'launch',
+              name: 'Launch',
+              status: MarketingContentStatus.draft,
+              updatedAt: t)
+        ],
+        assets: [
+          MarketingMediaAssetRow(
+              id: 'mock-asset',
+              storageBucket: 'marketing',
+              storagePath: 'hero.png',
+              altText: 'Mock hero',
+              visibility: 'private',
+              updatedAt: t)
+        ],
         generatedAt: t);
   }
 
@@ -3198,6 +3246,25 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<void> saveMarketingBlogPost(
       {required MarketingBlogPostDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingPricingPlan(
+      {required MarketingPricingPlanDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingFaq({required MarketingFaqDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingTestimonial(
+      {required MarketingTestimonialDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingCampaign(
+      {required MarketingCampaignDraft draft}) async {}
+
+  @override
+  Future<void> saveMarketingMediaAsset(
+      {required MarketingMediaAssetDraft draft}) async {}
 
   @override
   Future<void> updateMarketingContentStatus(

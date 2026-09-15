@@ -195,6 +195,19 @@ abstract interface class AdminRepository {
 
   Future<void> saveMarketingBlogPost({required MarketingBlogPostDraft draft});
 
+  Future<void> saveMarketingPricingPlan(
+      {required MarketingPricingPlanDraft draft});
+
+  Future<void> saveMarketingFaq({required MarketingFaqDraft draft});
+
+  Future<void> saveMarketingTestimonial(
+      {required MarketingTestimonialDraft draft});
+
+  Future<void> saveMarketingCampaign({required MarketingCampaignDraft draft});
+
+  Future<void> saveMarketingMediaAsset(
+      {required MarketingMediaAssetDraft draft});
+
   Future<void> updateMarketingContentStatus({
     required String resourceType,
     required String resourceId,

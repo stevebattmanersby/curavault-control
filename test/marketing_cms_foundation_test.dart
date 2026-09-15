@@ -227,5 +227,20 @@ void main() {
       expect(page, contains('Admin writes allowed'));
       expect(page, isNot(contains('class _PlannedWebsiteSection')));
     });
+
+    test('implements management for supported marketing tables', () {
+      for (final symbol in [
+        'saveMarketingPricingPlan',
+        'saveMarketingFaq',
+        'saveMarketingTestimonial',
+        'saveMarketingCampaign',
+        'saveMarketingMediaAsset',
+      ]) {
+        expect(repository, contains(symbol));
+        expect(page, contains(symbol));
+      }
+      expect(page, contains('class _SimpleCmsEditorSheet'));
+      expect(repository, isNot(contains("'marketing_seo_settings'")));
+    });
   });
 }

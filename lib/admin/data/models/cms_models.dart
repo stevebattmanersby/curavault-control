@@ -69,12 +69,22 @@ class MarketingCmsSnapshot {
     required this.blogPosts,
     required this.categories,
     required this.generatedAt,
+    this.pricingPlans = const [],
+    this.faqs = const [],
+    this.testimonials = const [],
+    this.campaigns = const [],
+    this.assets = const [],
   });
 
   final List<MarketingPageRow> pages;
   final List<MarketingPageSectionRow> sections;
   final List<MarketingBlogPostRow> blogPosts;
   final List<MarketingBlogCategoryRow> categories;
+  final List<MarketingPricingPlanRow> pricingPlans;
+  final List<MarketingFaqRow> faqs;
+  final List<MarketingTestimonialRow> testimonials;
+  final List<MarketingCampaignRow> campaigns;
+  final List<MarketingMediaAssetRow> assets;
   final DateTime generatedAt;
 
   int get publishedPages => pages
@@ -284,4 +294,268 @@ class MarketingBlogPostDraft {
   final String? seoTitle;
   final String? seoDescription;
   final DateTime? scheduledFor;
+}
+
+@immutable
+class MarketingPricingPlanRow {
+  const MarketingPricingPlanRow({
+    required this.id,
+    required this.planKey,
+    required this.name,
+    this.description,
+    this.monthlyPrice,
+    this.annualPrice,
+    required this.currency,
+    this.features = const [],
+    required this.isFeatured,
+    required this.isActive,
+    required this.sortOrder,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String planKey;
+  final String name;
+  final String? description;
+  final num? monthlyPrice;
+  final num? annualPrice;
+  final String currency;
+  final List<String> features;
+  final bool isFeatured;
+  final bool isActive;
+  final int sortOrder;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingFaqRow {
+  const MarketingFaqRow({
+    required this.id,
+    required this.question,
+    required this.answer,
+    this.category,
+    required this.sortOrder,
+    required this.isPublished,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String question;
+  final String answer;
+  final String? category;
+  final int sortOrder;
+  final bool isPublished;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingTestimonialRow {
+  const MarketingTestimonialRow({
+    required this.id,
+    required this.quote,
+    this.name,
+    this.role,
+    this.organisation,
+    this.avatarUrl,
+    required this.isPublished,
+    required this.sortOrder,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String quote;
+  final String? name;
+  final String? role;
+  final String? organisation;
+  final String? avatarUrl;
+  final bool isPublished;
+  final int sortOrder;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingCampaignRow {
+  const MarketingCampaignRow({
+    required this.id,
+    required this.campaignKey,
+    required this.name,
+    required this.status,
+    this.landingPageSlug,
+    this.headline,
+    this.subheadline,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.utmSource,
+    this.utmMedium,
+    this.utmCampaign,
+    this.startsAt,
+    this.endsAt,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String campaignKey;
+  final String name;
+  final MarketingContentStatus status;
+  final String? landingPageSlug;
+  final String? headline;
+  final String? subheadline;
+  final String? ctaLabel;
+  final String? ctaUrl;
+  final String? utmSource;
+  final String? utmMedium;
+  final String? utmCampaign;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingMediaAssetRow {
+  const MarketingMediaAssetRow({
+    required this.id,
+    required this.storageBucket,
+    required this.storagePath,
+    this.altText,
+    this.caption,
+    this.mimeType,
+    this.width,
+    this.height,
+    this.sizeBytes,
+    required this.visibility,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String storageBucket;
+  final String storagePath;
+  final String? altText;
+  final String? caption;
+  final String? mimeType;
+  final int? width;
+  final int? height;
+  final int? sizeBytes;
+  final String visibility;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingPricingPlanDraft {
+  const MarketingPricingPlanDraft({
+    this.id,
+    required this.planKey,
+    required this.name,
+    this.description,
+    this.monthlyPrice,
+    this.annualPrice,
+    this.currency = 'EUR',
+    this.features = const [],
+    this.isFeatured = false,
+    this.isActive = true,
+    this.sortOrder = 0,
+  });
+
+  final String? id;
+  final String planKey;
+  final String name;
+  final String? description;
+  final num? monthlyPrice;
+  final num? annualPrice;
+  final String currency;
+  final List<String> features;
+  final bool isFeatured;
+  final bool isActive;
+  final int sortOrder;
+}
+
+@immutable
+class MarketingFaqDraft {
+  const MarketingFaqDraft({
+    this.id,
+    required this.question,
+    required this.answer,
+    this.category,
+    this.sortOrder = 0,
+    this.isPublished = false,
+  });
+
+  final String? id;
+  final String question;
+  final String answer;
+  final String? category;
+  final int sortOrder;
+  final bool isPublished;
+}
+
+@immutable
+class MarketingTestimonialDraft {
+  const MarketingTestimonialDraft({
+    this.id,
+    required this.quote,
+    this.name,
+    this.role,
+    this.organisation,
+    this.avatarUrl,
+    this.isPublished = false,
+    this.sortOrder = 0,
+  });
+
+  final String? id;
+  final String quote;
+  final String? name;
+  final String? role;
+  final String? organisation;
+  final String? avatarUrl;
+  final bool isPublished;
+  final int sortOrder;
+}
+
+@immutable
+class MarketingCampaignDraft {
+  const MarketingCampaignDraft({
+    this.id,
+    required this.campaignKey,
+    required this.name,
+    required this.status,
+    this.landingPageSlug,
+    this.headline,
+    this.subheadline,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.utmSource,
+    this.utmMedium,
+    this.utmCampaign,
+    this.startsAt,
+    this.endsAt,
+  });
+
+  final String? id;
+  final String campaignKey;
+  final String name;
+  final MarketingContentStatus status;
+  final String? landingPageSlug;
+  final String? headline;
+  final String? subheadline;
+  final String? ctaLabel;
+  final String? ctaUrl;
+  final String? utmSource;
+  final String? utmMedium;
+  final String? utmCampaign;
+  final DateTime? startsAt;
+  final DateTime? endsAt;
+}
+
+@immutable
+class MarketingMediaAssetDraft {
+  const MarketingMediaAssetDraft({
+    required this.id,
+    this.altText,
+    this.caption,
+    required this.visibility,
+  });
+
+  final String id;
+  final String? altText;
+  final String? caption;
+  final String visibility;
 }

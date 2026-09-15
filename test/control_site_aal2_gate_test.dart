@@ -8,6 +8,7 @@ void main() {
     late final String nav;
     late final String setPasswordPage;
     late final String mfaPage;
+    late final String topBar;
 
     setUpAll(() {
       authStore =
@@ -16,6 +17,8 @@ void main() {
       setPasswordPage =
           File('lib/admin/pages/set_password_page.dart').readAsStringSync();
       mfaPage = File('lib/admin/pages/mfa_page.dart').readAsStringSync();
+      topBar =
+          File('lib/admin/pages/widgets/admin_top_bar.dart').readAsStringSync();
     });
 
     test(
@@ -155,6 +158,12 @@ void main() {
         mfaPage,
         contains('auth.isMfaStateAvailable && !hasVerifiedTotp'),
       );
+    });
+
+    test('environment badge does not default missing config to LIVE', () {
+      expect(topBar, contains("'CONTROL_SITE_ENV_LABEL'"));
+      expect(topBar, contains("defaultValue: 'DEV'"));
+      expect(topBar, isNot(contains("defaultValue: 'LIVE'")));
     });
   });
 }

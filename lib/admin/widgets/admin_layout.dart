@@ -99,12 +99,14 @@ class AdminCard extends StatelessWidget {
       required this.child,
       this.padding,
       this.header,
-      this.aiEmphasis = false});
+      this.aiEmphasis = false,
+      this.expandChild = false});
 
   final Widget? header;
   final Widget child;
   final EdgeInsets? padding;
   final bool aiEmphasis;
+  final bool expandChild;
 
   @override
   Widget build(BuildContext context) {
@@ -136,11 +138,90 @@ class AdminCard extends StatelessWidget {
               header!,
               const SizedBox(height: AppSpacing.sm)
             ],
-            child,
+            if (expandChild) Expanded(child: child) else child,
           ],
         ),
       ),
     );
+  }
+}
+
+class AdminScrollableTable extends StatefulWidget {
+  const AdminScrollableTable({
+    super.key,
+    required this.child,
+    this.minWidth = 900,
+    this.bottomPadding = AppSpacing.xl,
+    this.showVerticalScrollbar = true,
+    this.showHorizontalScrollbar = true,
+  });
+
+  final Widget child;
+  final double minWidth;
+  final double bottomPadding;
+  final bool showVerticalScrollbar;
+  final bool showHorizontalScrollbar;
+
+  @override
+  State<AdminScrollableTable> createState() => _AdminScrollableTableState();
+}
+
+class _AdminScrollableTableState extends State<AdminScrollableTable> {
+  late final ScrollController _verticalController;
+  late final ScrollController _horizontalController;
+
+  @override
+  void initState() {
+    super.initState();
+    _verticalController = ScrollController();
+    _horizontalController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _verticalController.dispose();
+    _horizontalController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = SingleChildScrollView(
+      controller: _horizontalController,
+      scrollDirection: Axis.horizontal,
+      primary: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: widget.minWidth),
+        child: widget.child,
+      ),
+    );
+
+    final horizontalWithScrollbar = widget.showHorizontalScrollbar
+        ? Scrollbar(
+            controller: _horizontalController,
+            thumbVisibility: true,
+            notificationPredicate: (notification) =>
+                notification.metrics.axis == Axis.horizontal,
+            child: horizontal,
+          )
+        : horizontal;
+
+    final vertical = SingleChildScrollView(
+      controller: _verticalController,
+      primary: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: widget.bottomPadding),
+        child: horizontalWithScrollbar,
+      ),
+    );
+
+    return widget.showVerticalScrollbar
+        ? Scrollbar(
+            controller: _verticalController,
+            thumbVisibility: true,
+            child: vertical,
+          )
+        : vertical;
   }
 }
 

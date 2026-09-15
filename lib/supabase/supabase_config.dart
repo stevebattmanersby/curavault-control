@@ -15,9 +15,9 @@ class SupabaseConfig {
   ///
   /// Provided at build time via `--dart-define=CONTROL_SITE_BASE_URL=...`.
   ///
-  /// For local/preview Flutter Web builds, Dreamflow may not inject dart-defines.
-  /// In that case (debug-mode only), we allow providing the values via URL query
-  /// params to unblock preview:
+  /// For local/preview Flutter Web builds, dart-defines may be absent. In that
+  /// case (debug-mode only), we allow providing the values via URL query params
+  /// to unblock preview:
   /// - `?SUPABASE_URL=...&SUPABASE_ANON_KEY=...&CONTROL_SITE_BASE_URL=...`
   static const String controlSiteBaseUrl =
       String.fromEnvironment('CONTROL_SITE_BASE_URL', defaultValue: '');
