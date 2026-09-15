@@ -456,6 +456,12 @@ class AdminStore extends ChangeNotifier {
     await refreshAuditLogs();
   }
 
+  Future<void> saveMarketingSeoSettings(MarketingSeoSettingsDraft draft) async {
+    await _repository.saveMarketingSeoSettings(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
   Future<void> saveMarketingPricingPlan(MarketingPricingPlanDraft draft) async {
     await _repository.saveMarketingPricingPlan(draft: draft);
     await refreshWebsiteCmsStatus();
@@ -476,12 +482,6 @@ class AdminStore extends ChangeNotifier {
 
   Future<void> saveMarketingCampaign(MarketingCampaignDraft draft) async {
     await _repository.saveMarketingCampaign(draft: draft);
-    await refreshWebsiteCmsStatus();
-    await refreshAuditLogs();
-  }
-
-  Future<void> saveMarketingMediaAsset(MarketingMediaAssetDraft draft) async {
-    await _repository.saveMarketingMediaAsset(draft: draft);
     await refreshWebsiteCmsStatus();
     await refreshAuditLogs();
   }

@@ -67,24 +67,22 @@ class MarketingCmsSnapshot {
     required this.pages,
     required this.sections,
     required this.blogPosts,
-    required this.categories,
+    required this.seoSettings,
     required this.generatedAt,
     this.pricingPlans = const [],
     this.faqs = const [],
     this.testimonials = const [],
     this.campaigns = const [],
-    this.assets = const [],
   });
 
   final List<MarketingPageRow> pages;
   final List<MarketingPageSectionRow> sections;
   final List<MarketingBlogPostRow> blogPosts;
-  final List<MarketingBlogCategoryRow> categories;
+  final MarketingSeoSettingsRow? seoSettings;
   final List<MarketingPricingPlanRow> pricingPlans;
   final List<MarketingFaqRow> faqs;
   final List<MarketingTestimonialRow> testimonials;
   final List<MarketingCampaignRow> campaigns;
-  final List<MarketingMediaAssetRow> assets;
   final DateTime generatedAt;
 
   int get publishedPages => pages
@@ -120,12 +118,13 @@ class MarketingPageRow {
     required this.slug,
     required this.title,
     required this.status,
-    this.template,
-    this.excerpt,
     this.seoTitle,
     this.seoDescription,
+    this.ogTitle,
+    this.ogDescription,
+    this.ogImageUrl,
+    this.canonicalUrl,
     this.publishedAt,
-    this.scheduledFor,
     required this.updatedAt,
     required this.createdAt,
   });
@@ -134,12 +133,13 @@ class MarketingPageRow {
   final String slug;
   final String title;
   final MarketingContentStatus status;
-  final String? template;
-  final String? excerpt;
   final String? seoTitle;
   final String? seoDescription;
+  final String? ogTitle;
+  final String? ogDescription;
+  final String? ogImageUrl;
+  final String? canonicalUrl;
   final DateTime? publishedAt;
-  final DateTime? scheduledFor;
   final DateTime updatedAt;
   final DateTime createdAt;
 }
@@ -152,10 +152,13 @@ class MarketingPageSectionRow {
     required this.sectionKey,
     required this.sectionType,
     required this.sortOrder,
-    required this.status,
-    this.eyebrow,
+    required this.isEnabled,
     this.title,
+    this.subtitle,
     this.body,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.mediaUrl,
     required this.updatedAt,
   });
 
@@ -164,28 +167,14 @@ class MarketingPageSectionRow {
   final String sectionKey;
   final String sectionType;
   final int sortOrder;
-  final MarketingContentStatus status;
-  final String? eyebrow;
+  final bool isEnabled;
   final String? title;
+  final String? subtitle;
   final String? body;
+  final String? ctaLabel;
+  final String? ctaUrl;
+  final String? mediaUrl;
   final DateTime updatedAt;
-}
-
-@immutable
-class MarketingBlogCategoryRow {
-  const MarketingBlogCategoryRow({
-    required this.id,
-    required this.slug,
-    required this.name,
-    this.description,
-    required this.isActive,
-  });
-
-  final String id;
-  final String slug;
-  final String name;
-  final String? description;
-  final bool isActive;
 }
 
 @immutable
@@ -196,11 +185,12 @@ class MarketingBlogPostRow {
     required this.title,
     required this.status,
     this.excerpt,
-    this.categoryId,
+    this.category,
+    this.tags = const [],
     this.seoTitle,
     this.seoDescription,
+    this.ogImageUrl,
     this.publishedAt,
-    this.scheduledFor,
     required this.updatedAt,
     required this.createdAt,
   });
@@ -210,11 +200,12 @@ class MarketingBlogPostRow {
   final String title;
   final MarketingContentStatus status;
   final String? excerpt;
-  final String? categoryId;
+  final String? category;
+  final List<String> tags;
   final String? seoTitle;
   final String? seoDescription;
+  final String? ogImageUrl;
   final DateTime? publishedAt;
-  final DateTime? scheduledFor;
   final DateTime updatedAt;
   final DateTime createdAt;
 }
@@ -226,22 +217,24 @@ class MarketingPageDraft {
     required this.slug,
     required this.title,
     required this.status,
-    this.template = 'marketing_page',
-    this.excerpt,
     this.seoTitle,
     this.seoDescription,
-    this.scheduledFor,
+    this.ogTitle,
+    this.ogDescription,
+    this.ogImageUrl,
+    this.canonicalUrl,
   });
 
   final String? id;
   final String slug;
   final String title;
   final MarketingContentStatus status;
-  final String template;
-  final String? excerpt;
   final String? seoTitle;
   final String? seoDescription;
-  final DateTime? scheduledFor;
+  final String? ogTitle;
+  final String? ogDescription;
+  final String? ogImageUrl;
+  final String? canonicalUrl;
 }
 
 @immutable
@@ -252,10 +245,13 @@ class MarketingSectionDraft {
     required this.sectionKey,
     required this.sectionType,
     required this.sortOrder,
-    required this.status,
-    this.eyebrow,
+    required this.isEnabled,
     this.title,
+    this.subtitle,
     this.body,
+    this.ctaLabel,
+    this.ctaUrl,
+    this.mediaUrl,
   });
 
   final String? id;
@@ -263,10 +259,13 @@ class MarketingSectionDraft {
   final String sectionKey;
   final String sectionType;
   final int sortOrder;
-  final MarketingContentStatus status;
-  final String? eyebrow;
+  final bool isEnabled;
   final String? title;
+  final String? subtitle;
   final String? body;
+  final String? ctaLabel;
+  final String? ctaUrl;
+  final String? mediaUrl;
 }
 
 @immutable
@@ -278,10 +277,11 @@ class MarketingBlogPostDraft {
     required this.status,
     this.excerpt,
     this.bodyMarkdown,
-    this.categoryId,
+    this.category,
+    this.tags = const [],
     this.seoTitle,
     this.seoDescription,
-    this.scheduledFor,
+    this.ogImageUrl,
   });
 
   final String? id;
@@ -290,10 +290,87 @@ class MarketingBlogPostDraft {
   final MarketingContentStatus status;
   final String? excerpt;
   final String? bodyMarkdown;
-  final String? categoryId;
+  final String? category;
+  final List<String> tags;
   final String? seoTitle;
   final String? seoDescription;
-  final DateTime? scheduledFor;
+  final String? ogImageUrl;
+}
+
+@immutable
+class MarketingSeoSettingsRow {
+  const MarketingSeoSettingsRow({
+    required this.id,
+    this.siteName,
+    this.defaultTitle,
+    this.defaultDescription,
+    this.defaultOgImage,
+    this.twitterHandle,
+    this.canonicalBaseUrl,
+    this.robotsPolicy,
+    required this.sitemapIncludePages,
+    required this.sitemapIncludeBlog,
+    required this.sitemapIncludeCampaigns,
+    this.schemaOrganisationName,
+    this.schemaWebsiteUrl,
+    this.schemaLogoUrl,
+    this.schemaSupportEmail,
+    required this.updatedAt,
+  });
+
+  final String id;
+  final String? siteName;
+  final String? defaultTitle;
+  final String? defaultDescription;
+  final String? defaultOgImage;
+  final String? twitterHandle;
+  final String? canonicalBaseUrl;
+  final String? robotsPolicy;
+  final bool sitemapIncludePages;
+  final bool sitemapIncludeBlog;
+  final bool sitemapIncludeCampaigns;
+  final String? schemaOrganisationName;
+  final String? schemaWebsiteUrl;
+  final String? schemaLogoUrl;
+  final String? schemaSupportEmail;
+  final DateTime updatedAt;
+}
+
+@immutable
+class MarketingSeoSettingsDraft {
+  const MarketingSeoSettingsDraft({
+    required this.id,
+    this.siteName,
+    this.defaultTitle,
+    this.defaultDescription,
+    this.defaultOgImage,
+    this.twitterHandle,
+    this.canonicalBaseUrl,
+    this.robotsPolicy,
+    required this.sitemapIncludePages,
+    required this.sitemapIncludeBlog,
+    required this.sitemapIncludeCampaigns,
+    this.schemaOrganisationName,
+    this.schemaWebsiteUrl,
+    this.schemaLogoUrl,
+    this.schemaSupportEmail,
+  });
+
+  final String id;
+  final String? siteName;
+  final String? defaultTitle;
+  final String? defaultDescription;
+  final String? defaultOgImage;
+  final String? twitterHandle;
+  final String? canonicalBaseUrl;
+  final String? robotsPolicy;
+  final bool sitemapIncludePages;
+  final bool sitemapIncludeBlog;
+  final bool sitemapIncludeCampaigns;
+  final String? schemaOrganisationName;
+  final String? schemaWebsiteUrl;
+  final String? schemaLogoUrl;
+  final String? schemaSupportEmail;
 }
 
 @immutable
@@ -411,35 +488,6 @@ class MarketingCampaignRow {
 }
 
 @immutable
-class MarketingMediaAssetRow {
-  const MarketingMediaAssetRow({
-    required this.id,
-    required this.storageBucket,
-    required this.storagePath,
-    this.altText,
-    this.caption,
-    this.mimeType,
-    this.width,
-    this.height,
-    this.sizeBytes,
-    required this.visibility,
-    required this.updatedAt,
-  });
-
-  final String id;
-  final String storageBucket;
-  final String storagePath;
-  final String? altText;
-  final String? caption;
-  final String? mimeType;
-  final int? width;
-  final int? height;
-  final int? sizeBytes;
-  final String visibility;
-  final DateTime updatedAt;
-}
-
-@immutable
 class MarketingPricingPlanDraft {
   const MarketingPricingPlanDraft({
     this.id,
@@ -543,19 +591,4 @@ class MarketingCampaignDraft {
   final String? utmCampaign;
   final DateTime? startsAt;
   final DateTime? endsAt;
-}
-
-@immutable
-class MarketingMediaAssetDraft {
-  const MarketingMediaAssetDraft({
-    required this.id,
-    this.altText,
-    this.caption,
-    required this.visibility,
-  });
-
-  final String id;
-  final String? altText;
-  final String? caption;
-  final String visibility;
 }

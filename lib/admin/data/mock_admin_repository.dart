@@ -3097,11 +3097,12 @@ class MockAdminRepository implements AdminRepository {
       'marketing_pages': true,
       'marketing_sections': true,
       'marketing_blog_posts': true,
+      'marketing_seo_settings': true,
       'marketing_faqs': true,
       'marketing_pricing_plans': true,
       'marketing_testimonials': true,
       'marketing_campaigns': true,
-      'marketing_media_assets': true,
+      'asset_library_backend': false,
     };
 
     final rows = <WebsiteCmsTableStatusRow>[];
@@ -3134,22 +3135,17 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<MarketingCmsSnapshot> getMarketingCmsSnapshot() async {
     final t = _now;
-    const categories = <MarketingBlogCategoryRow>[
-      MarketingBlogCategoryRow(
-          id: 'mock-category',
-          slug: 'product',
-          name: 'Product',
-          isActive: true),
-    ];
     final pages = <MarketingPageRow>[
       MarketingPageRow(
         id: 'mock-home',
         slug: 'home',
         title: 'Home',
         status: MarketingContentStatus.draft,
-        excerpt: 'Primary marketing homepage.',
         seoTitle: 'CuraVault',
         seoDescription: 'Health record organisation through AI.',
+        ogTitle: 'CuraVault',
+        ogDescription: 'Private health admin for families.',
+        canonicalUrl: 'https://curavault.com/',
         updatedAt: t,
         createdAt: t.subtract(const Duration(days: 2)),
       ),
@@ -3161,9 +3157,12 @@ class MockAdminRepository implements AdminRepository {
         sectionKey: 'hero',
         sectionType: 'hero',
         sortOrder: 0,
-        status: MarketingContentStatus.draft,
+        isEnabled: true,
         title: 'Health records, calmly organised',
+        subtitle: 'Private by design',
         body: 'Draft homepage hero copy.',
+        ctaLabel: 'Start securely',
+        ctaUrl: '/download',
         updatedAt: t,
       ),
     ];
@@ -3174,7 +3173,8 @@ class MockAdminRepository implements AdminRepository {
         title: 'Getting started with CuraVault',
         status: MarketingContentStatus.draft,
         excerpt: 'A draft launch article.',
-        categoryId: 'mock-category',
+        category: 'Product',
+        tags: const ['launch'],
         updatedAt: t.subtract(const Duration(hours: 2)),
         createdAt: t.subtract(const Duration(days: 3)),
       ),
@@ -3183,7 +3183,17 @@ class MockAdminRepository implements AdminRepository {
         pages: pages,
         sections: sections,
         blogPosts: posts,
-        categories: categories,
+        seoSettings: MarketingSeoSettingsRow(
+            id: 'mock-seo',
+            siteName: 'CuraVault',
+            defaultTitle: 'CuraVault',
+            defaultDescription: 'Private health records for families.',
+            canonicalBaseUrl: 'https://curavault.com',
+            robotsPolicy: 'index,follow',
+            sitemapIncludePages: true,
+            sitemapIncludeBlog: true,
+            sitemapIncludeCampaigns: true,
+            updatedAt: t),
         pricingPlans: [
           MarketingPricingPlanRow(
               id: 'mock-plan',
@@ -3224,15 +3234,6 @@ class MockAdminRepository implements AdminRepository {
               status: MarketingContentStatus.draft,
               updatedAt: t)
         ],
-        assets: [
-          MarketingMediaAssetRow(
-              id: 'mock-asset',
-              storageBucket: 'marketing',
-              storagePath: 'hero.png',
-              altText: 'Mock hero',
-              visibility: 'private',
-              updatedAt: t)
-        ],
         generatedAt: t);
   }
 
@@ -3248,6 +3249,10 @@ class MockAdminRepository implements AdminRepository {
       {required MarketingBlogPostDraft draft}) async {}
 
   @override
+  Future<void> saveMarketingSeoSettings(
+      {required MarketingSeoSettingsDraft draft}) async {}
+
+  @override
   Future<void> saveMarketingPricingPlan(
       {required MarketingPricingPlanDraft draft}) async {}
 
@@ -3261,10 +3266,6 @@ class MockAdminRepository implements AdminRepository {
   @override
   Future<void> saveMarketingCampaign(
       {required MarketingCampaignDraft draft}) async {}
-
-  @override
-  Future<void> saveMarketingMediaAsset(
-      {required MarketingMediaAssetDraft draft}) async {}
 
   @override
   Future<void> updateMarketingContentStatus(
