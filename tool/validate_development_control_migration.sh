@@ -35,12 +35,65 @@ create table auth.users (id uuid primary key, email text);
 create or replace function auth.uid() returns uuid language sql stable as $$
   select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid
 $$;
+create or replace function auth.jwt() returns jsonb language sql stable as $$
+  select coalesce(nullif(current_setting('request.jwt.claims', true), '')::jsonb, '{}'::jsonb)
+$$;
 create role anon nologin;
 create role authenticated nologin;
-grant usage on schema public, auth to anon, authenticated;
+create role service_role nologin bypassrls;
+grant usage on schema public, auth to anon, authenticated, service_role;
 SQL
 
 run_sql -f supabase/migrations/20260612230013_20260612_create_control_site_admin_tables.sql
+run_sql -f supabase/migrations/20260915160930_harden_admin_audit_log_insert_roles.sql
+
+run_sql <<'SQL'
+insert into auth.users (id, email) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'audit-billing@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', 'audit-support@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4', 'audit-readonly@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5', 'audit-inactive@example.test'),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6', 'audit-ordinary@example.test');
+insert into public.admin_users (admin_user_id, email, role, is_active) values
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test', 'owner', true),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'audit-billing@example.test', 'billing', true),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', 'audit-support@example.test', 'support', true),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4', 'audit-readonly@example.test', 'read_only', true),
+  ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5', 'audit-inactive@example.test', 'owner', false);
+SQL
+
+expect_rejected 'AAL1 owner admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1\",\"role\":\"authenticated\",\"aal\":\"aal1\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+expect_rejected 'AAL1 billing admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2\",\"role\":\"authenticated\",\"aal\":\"aal1\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'audit-billing@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+
+run_sql <<'SQL'
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', false);
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","role":"authenticated","aal":"aal2"}', false);
+insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id)
+values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test', 'admin_login', 'success', 'audit-policy-regression');
+reset role;
+SQL
+assert_count 'AAL2 owner first admin_login audit count' 1 "select count(*) from public.admin_audit_log where ticket_id = 'audit-policy-regression'"
+assert_count 'same authenticated session refresh creates no database duplicate without a second insert' 1 "select count(*) from public.admin_audit_log where ticket_id = 'audit-policy-regression'"
+
+run_sql <<'SQL'
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', false);
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","role":"authenticated","aal":"aal2"}', false);
+insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id)
+values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test', 'admin_login', 'success', 'audit-policy-regression');
+reset role;
+SQL
+assert_count 'second genuine AAL2 owner login audit count' 2 "select count(*) from public.admin_audit_log where ticket_id = 'audit-policy-regression'"
+
+expect_rejected 'AAL2 support admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3\",\"role\":\"authenticated\",\"aal\":\"aal2\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3', 'audit-support@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+expect_rejected 'AAL2 read_only admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4\",\"role\":\"authenticated\",\"aal\":\"aal2\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4', 'audit-readonly@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+expect_rejected 'AAL2 inactive owner admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5\",\"role\":\"authenticated\",\"aal\":\"aal2\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa5', 'audit-inactive@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+expect_rejected 'AAL2 ordinary user admin audit insert' "set role authenticated; select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6', false); select set_config('request.jwt.claims', '{\"sub\":\"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6\",\"role\":\"authenticated\",\"aal\":\"aal2\"}', false); insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id) values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa6', 'audit-ordinary@example.test', 'admin_login', 'success', 'audit-policy-regression');"
+
+assert_count 'denied audit probes did not create rows' 2 "select count(*) from public.admin_audit_log where ticket_id = 'audit-policy-regression'"
+
 run_sql -f supabase/migrations/20260830213000_development_control_plane_phase_1.sql
 run_sql -f supabase/migrations/20260831090000_development_execution_dispatcher_phase_2.sql
 

@@ -9,6 +9,7 @@ void main() {
     late final String setPasswordPage;
     late final String mfaPage;
     late final String topBar;
+    late final String auditPolicyMigration;
 
     setUpAll(() {
       authStore =
@@ -19,6 +20,9 @@ void main() {
       mfaPage = File('lib/admin/pages/mfa_page.dart').readAsStringSync();
       topBar =
           File('lib/admin/pages/widgets/admin_top_bar.dart').readAsStringSync();
+      auditPolicyMigration = File(
+        'supabase/migrations/20260915160930_harden_admin_audit_log_insert_roles.sql',
+      ).readAsStringSync();
     });
 
     test(
@@ -73,6 +77,42 @@ void main() {
       expect(guardIndex, greaterThan(insertIndex));
       expect(successIndex, greaterThan(insertIndex));
       expect(successIndex, greaterThan(guardIndex));
+    });
+
+    test('admin audit insert policy requires privileged AAL2 admins', () {
+      expect(
+        auditPolicyMigration,
+        contains(
+            'create or replace function public.admin_can_insert_audit_log()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("coalesce(auth.jwt() ->> 'aal', '') = 'aal2'"),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('admin_user.admin_user_id = auth.uid()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('admin_user.is_active = true'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains(
+          "admin_user.role in ('owner', 'admin', 'billing', 'compliance')",
+        ),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('with check (public.admin_can_insert_audit_log())'),
+      );
+      expect(
+        auditPolicyMigration,
+        isNot(contains('with check (public.is_active_admin())')),
+      );
+      expect(auditPolicyMigration, isNot(contains("'support'")));
+      expect(auditPolicyMigration, isNot(contains("'read_only'")));
     });
 
     test('routes AAL1 active admins to the protected MFA gate', () {
