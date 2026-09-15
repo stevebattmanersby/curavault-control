@@ -53,6 +53,25 @@ void main() {
       expect(auditIndex, greaterThan(mfaRequiredIndex));
     });
 
+    test('only marks admin_login audit written after insert success', () {
+      expect(authStore, contains('Future<bool> _writeAudit'));
+      expect(
+        authStore,
+        contains(
+            "throw StateError('admin_login audit insert was not accepted.')"),
+      );
+      final insertIndex = authStore.indexOf(
+        'final inserted = await _writeAudit(',
+      );
+      final guardIndex = authStore.indexOf('if (!inserted) {');
+      final successIndex =
+          authStore.indexOf('_loginAuditWrittenForAccessToken = token;');
+      expect(insertIndex, greaterThanOrEqualTo(0));
+      expect(guardIndex, greaterThan(insertIndex));
+      expect(successIndex, greaterThan(insertIndex));
+      expect(successIndex, greaterThan(guardIndex));
+    });
+
     test('routes AAL1 active admins to the protected MFA gate', () {
       expect(nav, contains("static const String mfa = '/mfa';"));
       expect(nav, contains('path: AppRoutes.mfa'));

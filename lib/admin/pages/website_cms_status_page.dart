@@ -192,7 +192,11 @@ class _WebsiteCmsWorkspaceState extends State<_WebsiteCmsWorkspace> {
       return _WebsiteSectionShell(
         section: section,
         snapshot: widget.snapshot,
-        child: _PlannedWebsiteSection(section: section),
+        child: _WebsiteTableWorkspace(
+          section: section,
+          snapshot: widget.snapshot,
+          canManage: widget.canManage,
+        ),
       );
     }
 
@@ -374,16 +378,143 @@ class _StatusLine extends StatelessWidget {
   }
 }
 
-class _PlannedWebsiteSection extends StatelessWidget {
-  const _PlannedWebsiteSection({required this.section});
+class _CmsChecklist extends StatelessWidget {
+  const _CmsChecklist({required this.items});
 
-  final WebsiteCmsSection section;
+  final List<(String, bool)> items;
 
   @override
   Widget build(BuildContext context) {
-    final copy = _plannedCopyForSection(section);
-    return _EmptyPanel(
-        icon: _iconForSection(section), title: copy.$1, body: copy.$2);
+    final cs = Theme.of(context).colorScheme;
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        for (final item in items)
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: 8),
+            decoration: BoxDecoration(
+              color: item.$2
+                  ? cs.primaryContainer.withValues(alpha: 0.5)
+                  : cs.errorContainer.withValues(alpha: 0.5),
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(
+                color: item.$2
+                    ? cs.primary.withValues(alpha: 0.22)
+                    : cs.error.withValues(alpha: 0.22),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  item.$2 ? Icons.check_circle_outline : Icons.error_outline,
+                  size: 16,
+                  color: item.$2 ? cs.onPrimaryContainer : cs.onErrorContainer,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  item.$1,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: item.$2
+                            ? cs.onPrimaryContainer
+                            : cs.onErrorContainer,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _WebsiteTableWorkspace extends StatelessWidget {
+  const _WebsiteTableWorkspace({
+    required this.section,
+    required this.snapshot,
+    required this.canManage,
+  });
+
+  final WebsiteCmsSection section;
+  final WebsiteCmsStatusSnapshot snapshot;
+  final bool canManage;
+
+  @override
+  Widget build(BuildContext context) {
+    final row = _statusRowForSection(snapshot, section);
+    final cs = Theme.of(context).colorScheme;
+    final content = _sectionControlCopy(section);
+    final exists = row?.exists == true;
+    final ready = exists && row?.status != WebsiteCmsTableOverallStatus.error;
+    return ListView(
+      children: [
+        AdminCard(
+          header: Row(
+            children: [
+              Icon(_iconForSection(section), color: cs.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(content.$1,
+                    style: Theme.of(context)
+                        .textTheme
+                        .titleMedium
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+              _TableStatusChip(
+                  status:
+                      row?.status ?? WebsiteCmsTableOverallStatus.missingTable),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(content.$2,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant)),
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  _MiniChip(
+                      icon: Icons.table_chart_outlined,
+                      label: section.tableName),
+                  _MiniChip(
+                      icon: Icons.fact_check_outlined,
+                      label: exists ? 'Live table' : 'Table missing'),
+                  _MiniChip(
+                      icon: Icons.admin_panel_settings_outlined,
+                      label: canManage ? 'Admin writes allowed' : 'Read-only'),
+                  _MiniChip(
+                      icon: Icons.format_list_numbered_outlined,
+                      label:
+                          '${AdminFormatters.compactInt(row?.rowCount ?? 0)} rows'),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              _CmsChecklist(
+                items: [
+                  ('Supabase table reachable', exists),
+                  ('RLS metadata visible', row?.rlsEnabled != null),
+                  ('Control route connected', row?.uiConnected == true),
+                  ('No table probe error', ready),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _WebsiteCmsStatusTable(
+          snapshot: WebsiteCmsStatusSnapshot(
+            rows: row == null ? const [] : [row],
+            generatedAt: snapshot.generatedAt,
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -420,31 +551,31 @@ IconData _iconForSection(WebsiteCmsSection section) => switch (section) {
       WebsiteCmsSection.status => Icons.web_outlined,
     };
 
-(String, String) _plannedCopyForSection(WebsiteCmsSection section) =>
+(String, String) _sectionControlCopy(WebsiteCmsSection section) =>
     switch (section) {
       WebsiteCmsSection.seo => (
-          'SEO settings ready',
-          'Global SEO defaults, sitemap settings, and schema controls are connected to the live CMS table.'
+          'SEO controls',
+          'Review live SEO table readiness and keep public metadata changes behind the existing admin CMS authorization path.'
         ),
       WebsiteCmsSection.pricing => (
-          'No pricing plans yet',
-          'Create plan copy for the marketing website when subscription messaging is ready.'
+          'Pricing controls',
+          'Inspect whether pricing copy can be managed from the Control Site before the public website consumes it.'
         ),
       WebsiteCmsSection.faqs => (
-          'No FAQs yet',
-          'FAQ categories and entries can be managed here when content is ready.'
+          'FAQ controls',
+          'Inspect FAQ readiness, publication status, and admin-write availability without exposing user or health data.'
         ),
       WebsiteCmsSection.testimonials => (
-          'No testimonials yet',
-          'Customer testimonials can be reviewed and published here without exposing medical content.'
+          'Testimonial controls',
+          'Track testimonial CMS readiness and ensure publication stays on the reviewed marketing path.'
         ),
       WebsiteCmsSection.campaigns => (
-          'No campaigns yet',
-          'Create campaign landing overlays with UTM, schedule, and section controls.'
+          'Campaign controls',
+          'Inspect campaign table readiness for future landing content, scheduling, and attribution work.'
         ),
       WebsiteCmsSection.assets => (
-          'No assets yet',
-          'Upload and manage public marketing images, icons, and media assets.'
+          'Asset controls',
+          'Inspect media asset readiness through the canonical marketing_media_assets table.'
         ),
       WebsiteCmsSection.pages ||
       WebsiteCmsSection.blog ||

@@ -220,5 +220,12 @@ void main() {
           isNot(contains("WebsiteCmsSection.assets => 'marketing_assets'")));
       expect(repository, isNot(contains("'marketing_assets'")));
     });
+
+    test('replaces planned placeholders with CMS status workspaces', () {
+      expect(page, contains('class _WebsiteTableWorkspace'));
+      expect(page, contains('Control route connected'));
+      expect(page, contains('Admin writes allowed'));
+      expect(page, isNot(contains('class _PlannedWebsiteSection')));
+    });
   });
 }

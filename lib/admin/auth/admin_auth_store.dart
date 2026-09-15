@@ -805,13 +805,16 @@ class AdminAuthStore extends ChangeNotifier {
       ),
     );
     try {
-      await _writeAudit(
+      final inserted = await _writeAudit(
         adminUserId: actor,
         actionType: actionType,
         result: 'success',
         newValue: {'email': email ?? _adminEmail ?? ''},
         failClosed: false,
       );
+      if (!inserted) {
+        throw StateError('admin_login audit insert was not accepted.');
+      }
       _loginAuditWrittenForAccessToken = token;
       _recordLoginDiag(loginDiagnostics.copyWith(loginAuditSucceeded: true));
     } catch (e) {
@@ -827,7 +830,7 @@ class AdminAuthStore extends ChangeNotifier {
     }
   }
 
-  Future<void> _writeAudit({
+  Future<bool> _writeAudit({
     required String adminUserId,
     String? targetUserId,
     required String actionType,
@@ -844,7 +847,7 @@ class AdminAuthStore extends ChangeNotifier {
         throw StateError(
             'Supabase client not initialized; cannot write audit log.');
       }
-      return;
+      return false;
     }
     try {
       final row = <String, dynamic>{
@@ -868,6 +871,7 @@ class AdminAuthStore extends ChangeNotifier {
       };
 
       await c.from('admin_audit_log').insert(row);
+      return true;
     } catch (e) {
       debugPrint('AdminAuthStore._writeAudit failed: $e');
       if (failClosed) {
@@ -883,6 +887,7 @@ class AdminAuthStore extends ChangeNotifier {
         notifyListeners();
         throw StateError('Audit log write failed (fail-closed).');
       }
+      return false;
     }
   }
 

@@ -12,8 +12,10 @@ class AdminTopBar extends StatelessWidget {
   final bool isDesktop;
   final VoidCallback onMenuPressed;
 
-  static const String environment =
-      String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'DEV');
+  static const String environment = String.fromEnvironment(
+    'CONTROL_SITE_ENV_LABEL',
+    defaultValue: String.fromEnvironment('CURAVAULT_ENV', defaultValue: 'LIVE'),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -79,9 +81,10 @@ class _EnvironmentBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final isProd = value.toUpperCase() == 'PROD';
-    final bg = isProd ? cs.primaryContainer : cs.surfaceContainerHighest;
-    final fg = isProd ? cs.onPrimaryContainer : cs.onSurfaceVariant;
+    final normalized = value.trim().isEmpty ? 'LIVE' : value.toUpperCase();
+    final isLive = normalized == 'LIVE' || normalized == 'PROD';
+    final bg = isLive ? cs.primaryContainer : cs.surfaceContainerHighest;
+    final fg = isLive ? cs.onPrimaryContainer : cs.onSurfaceVariant;
     return Container(
       padding:
           const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 8),
@@ -94,12 +97,12 @@ class _EnvironmentBadge extends StatelessWidget {
             width: 8,
             height: 8,
             decoration: BoxDecoration(
-              color: isProd ? Colors.green : Colors.orange,
+              color: isLive ? Colors.green : Colors.orange,
               borderRadius: BorderRadius.circular(99),
             ),
           ),
           const SizedBox(width: 8),
-          Text(value.toUpperCase(),
+          Text(normalized,
               style: Theme.of(context)
                   .textTheme
                   .labelLarge
