@@ -79,6 +79,63 @@ void main() {
       expect(matrix, contains('realistic Supabase/PostgREST claim semantics'));
     });
 
+    test('requires operational truth for production Control features', () {
+      for (final term in [
+        'Production operational truth',
+        'the production data source exists',
+        'the schema matches the client contract',
+        'visible filters alter the authoritative backend query',
+        'server-side authorization matches UI authorization',
+        'mutations have an existing executable backend contract',
+        'NOT INSTRUMENTED',
+        'UNKNOWN',
+        'ERROR',
+        'Synthetic, sample, seed, mock, or development data must never be created in production',
+      ]) {
+        expect(execution, contains(term));
+      }
+      for (final term in [
+        'production data source exists',
+        'visible filters alter authoritative backend predicates',
+        'synthetic/sample/dev data is not created in production',
+      ]) {
+        expect(matrix, contains(term));
+      }
+    });
+
+    test('requires cross-repo contract and admin action completeness', () {
+      for (final term in [
+        'Cross-repository contract verification',
+        'current `curavult-app` main',
+        'current production Supabase schema/functions',
+        'current Control implementation',
+        'Legacy compatibility fields must not be selected as authoritative',
+        'Administrative action completeness',
+        'production RPC or Edge Function exists',
+        'concurrency/idempotency where relevant',
+        'downstream user effect',
+        'production blocker',
+      ]) {
+        expect(execution, contains(term));
+      }
+      expect(matrix, contains('production Supabase schema/functions'));
+      expect(matrix, contains('canonical/effective fields or resolvers'));
+    });
+
+    test('locks metric integrity and PHI minimisation rules', () {
+      for (final term in [
+        'Metric integrity',
+        'exact source, aggregation, date/window semantics, freshness',
+        'authoritative, derived, estimated, or unavailable',
+        'Hard-coded health states',
+        'PHI minimisation',
+        'Normal Control operations manage account and service metadata',
+        'Access to raw health content requires a separate explicit architecture',
+      ]) {
+        expect(execution, contains(term));
+      }
+    });
+
     test('defines adversarial review attacks and verdicts', () {
       for (final verdict in ['PASS TO MERGE', 'WAIT', 'FAIL']) {
         expect(adversarial, contains(verdict));
@@ -93,6 +150,10 @@ void main() {
         '`service_role` exposure',
         'migration ordering',
         'rollback and recovery',
+        'fabricated production metrics',
+        'visible filters that do not alter the authoritative backend query',
+        'placeholder or mock-only admin mutations',
+        'legacy compatibility fields',
       ]) {
         expect(adversarial, contains(attack));
       }

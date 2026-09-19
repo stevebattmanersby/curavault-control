@@ -32,6 +32,11 @@ Reviewers must actively test or reason about:
 - duplicate dispatch, retry, or idempotency failure
 - privacy leakage
 - raw PHI/customer/secrets exposure
+- fabricated production metrics or sample-data substitution
+- missing instrumentation presented as healthy, zero, successful, or empty
+- visible filters that do not alter the authoritative backend query
+- placeholder or mock-only admin mutations
+- legacy compatibility fields used instead of canonical/effective fields
 - production-action safety
 - migration ordering
 - rollback and recovery
@@ -39,6 +44,8 @@ Reviewers must actively test or reason about:
 ## Evidence standards
 
 For HIGH changes, independent review should include disposable runtime evidence wherever authorization is affected. Repository tests are necessary but not sufficient when database authorization, Supabase claims, RLS, grants, or RPC behavior is in scope.
+
+For production Control reporting or administrative actions, review must prove operational truth, not merely UI rendering. The reviewer should verify the production data source, client/server schema match, metric semantics, backend predicates for visible filters, server-side authorization, audit behavior, downstream state changes, and honest unavailable states.
 
 ## Review boundaries
 

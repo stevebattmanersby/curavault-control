@@ -49,6 +49,9 @@ Examples:
 - billing or plan/entitlement changes
 - compliance/privacy workflows
 - account mutation
+- production Control reporting that claims authoritative live state
+- admin mutations or buttons that require backend execution
+- cross-repository contracts with `curavult-app` production state
 - production actions
 - trusted worker, Codex provider, release/deployment path
 - service-role or backend identity semantics
@@ -96,6 +99,20 @@ Every non-trivial change must state how it affects:
 - deployment dependencies
 - rollback/recovery
 - human validation
+
+Production Control features must additionally prove operational truth:
+
+- production data source exists
+- schema matches the client contract
+- displayed values have documented source and semantics
+- visible filters alter authoritative backend predicates
+- server authorization matches UI authorization
+- mutations have executable production RPC or Edge Function contracts
+- mutation outcomes are auditable and create the intended downstream state
+- missing instrumentation displays `NOT INSTRUMENTED`, `UNKNOWN`, or `ERROR`
+- synthetic/sample/dev data is not created in production for demonstration, audit, UI, or test purposes
+
+When Control reads or manages consumer-app state, review must compare current `curavult-app` main, production Supabase schema/functions, and the current Control implementation. Legacy compatibility fields are not authoritative when canonical/effective fields or resolvers exist.
 
 ## Validation tier mapping
 

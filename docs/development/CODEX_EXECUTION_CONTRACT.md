@@ -57,6 +57,60 @@ Access is governed by Supabase Auth, `admin_users`, route-level RBAC, database R
 - Anonymous users are denied.
 - Missing role, unknown role, malformed claims, stale session state, and unavailable MFA state fail closed.
 
+## Production operational truth
+
+A production Control feature is not implemented or production-ready merely because UI, models, repository methods, or tests exist. Production-readiness evidence must establish:
+
+- the production data source exists;
+- the schema matches the client contract;
+- the displayed value has documented source and semantics;
+- visible filters alter the authoritative backend query;
+- server-side authorization matches UI authorization;
+- mutations have an existing executable backend contract;
+- mutations are auditable and produce the intended downstream state;
+- unavailable instrumentation is displayed as `NOT INSTRUMENTED`, `UNKNOWN`, or `ERROR`, never as zero, healthy, successful, or empty.
+
+Synthetic, sample, seed, mock, or development data must never be created in production to satisfy a Control UI, audit, demonstration, or test. Missing instrumentation must fail honestly and must never silently degrade to fabricated, placeholder, hard-coded, or compatibility-only production data.
+
+## Cross-repository contract verification
+
+When Control reads or manages consumer-app state, review must validate the contract against all of:
+
+- current `curavult-app` main;
+- current production Supabase schema/functions;
+- current Control implementation.
+
+Legacy compatibility fields must not be selected as authoritative where a newer canonical/effective field or resolver exists.
+
+## Administrative action completeness
+
+An admin action is incomplete unless evidence proves all of:
+
+- UI authorization;
+- server authorization;
+- AAL requirement;
+- production RPC or Edge Function exists;
+- input validation;
+- state transition;
+- concurrency/idempotency where relevant;
+- audit event;
+- error/failure behaviour;
+- downstream user effect.
+
+A button wired to a missing, placeholder, mock-only, or non-executable backend contract is a production blocker, not a partial implementation.
+
+## Metric integrity
+
+Every Control metric must define exact source, aggregation, date/window semantics, freshness, and whether it is authoritative, derived, estimated, or unavailable. Every visible filter must be traceable to the backend predicate it changes.
+
+Hard-coded health states, current timestamps, zeros, empty lists, or placeholder values may not be presented as production evidence.
+
+## PHI minimisation
+
+Normal Control operations manage account and service metadata, not clinical record content. Support and admin reporting should prefer counts, states, identifiers, timestamps, error codes, processing status, entitlement metadata, and usage metadata.
+
+Access to raw health content requires a separate explicit architecture, consent model, time-bounded authorization, and audit design.
+
 ## Backend and service-role separation
 
 `service_role` and trusted backend/worker identities are server-side boundaries only. They must not be simulated by the browser, embedded in Flutter, exposed through build configuration, or used to bypass user-scoped RLS. Any backend or trusted-worker path must have its own proof, audit trail, and least-privilege contract.
