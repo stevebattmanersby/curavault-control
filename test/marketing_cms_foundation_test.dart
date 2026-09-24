@@ -34,142 +34,19 @@ void main() {
       );
       expect(
         isPublishedAndArrived(
-          status: MarketingContentStatus.review,
+          status: MarketingContentStatus.draft,
           publishedAt: now.subtract(const Duration(minutes: 1)),
           now: now,
         ),
         isFalse,
       );
     });
-  });
 
-  group('Marketing CMS migration', () {
-    late final String sql;
-    late final String migrationPath;
-
-    setUpAll(() {
-      final migrations = Directory('supabase/migrations')
-          .listSync()
-          .whereType<File>()
-          .where((file) =>
-              file.path.endsWith('_reconcile_existing_marketing_cms.sql'))
-          .toList();
-      expect(migrations, hasLength(1));
-      migrationPath = migrations.single.path;
-      sql = migrations.single.readAsStringSync();
-    });
-
-    test('replaces the unapplied foundation migration with a live delta', () {
+    test('matches the production CMS status constraint', () {
       expect(
-        File(
-          'supabase/migrations/20260809120000_cms_marketing_content_foundation.sql',
-        ).existsSync(),
-        isFalse,
+        MarketingContentStatus.values.map((status) => status.value),
+        ['draft', 'published', 'archived'],
       );
-      expect(migrationPath, contains('reconcile_existing_marketing_cms'));
-      expect(
-        sql,
-        contains(
-          'Reconcile the Control Site marketing CMS with the existing live CMS backend.',
-        ),
-      );
-    });
-
-    test('creates or extends the core marketing content tables', () {
-      for (final table in [
-        'marketing_pages',
-        'marketing_sections',
-        'marketing_blog_posts',
-        'marketing_blog_categories',
-        'marketing_blog_tags',
-        'marketing_media_assets',
-        'marketing_content_revisions',
-        'marketing_social_queue',
-      ]) {
-        expect(sql, contains('create table if not exists public.$table'));
-        expect(sql,
-            contains('alter table public.$table enable row level security'));
-      }
-      expect(sql, contains('alter table public.marketing_pages'));
-      expect(sql, contains('add column if not exists template'));
-      expect(sql, contains('add column if not exists scheduled_for'));
-      expect(sql, contains('alter table public.marketing_sections'));
-      expect(sql, contains('add column if not exists eyebrow'));
-      expect(sql, contains('alter table public.marketing_blog_posts'));
-      expect(sql, contains('add column if not exists category_id'));
-    });
-
-    test('keeps public reads limited to published or public assets', () {
-      expect(sql, contains('marketing_pages_public_published_read'));
-      expect(sql, contains("status = 'published'"));
-      expect(sql, contains('published_at <= now()'));
-      expect(sql, contains('archived_at is null'));
-      expect(sql, contains('marketing_sections_public_published_read'));
-      expect(sql, contains('marketing_blog_posts_public_published_read'));
-      expect(sql, contains("visibility = 'public'"));
-      expect(sql, contains('p.og_image_asset_id = marketing_media_assets.id'));
-      expect(
-          sql, contains('where p.category_id = marketing_blog_categories.id'));
-      expect(sql, contains('where pt.tag_id = marketing_blog_tags.id'));
-    });
-
-    test('allows read-only admins to inspect but not write', () {
-      expect(sql, contains("'owner', 'admin', 'read_only'"));
-      expect(sql, contains("'owner', 'admin'"));
-      expect(
-          sql,
-          contains(
-              'drop policy if exists "marketing_pages_write_active_admin"'));
-      expect(
-          sql,
-          contains(
-              'drop policy if exists "marketing_sections_write_active_admin"'));
-      expect(
-          sql,
-          contains(
-              'drop policy if exists "marketing_blog_posts_write_active_admin"'));
-      expect(
-          sql,
-          isNot(contains(
-              "current_admin_role() in ('owner', 'admin', 'read_only')\n) with check")));
-    });
-
-    test('reviews Data API grants separately from RLS', () {
-      expect(
-          sql,
-          contains(
-              'revoke all on public.marketing_pages from anon, authenticated'));
-      expect(
-          sql,
-          contains(
-              'grant select on public.marketing_pages to anon, authenticated'));
-      expect(
-          sql,
-          contains(
-              'grant insert, update, delete on public.marketing_pages to authenticated'));
-      expect(sql, isNot(contains('auth.role()')));
-    });
-
-    test('broadens existing workflow status constraints deliberately', () {
-      for (final constraint in [
-        'marketing_pages_status_check',
-        'marketing_sections_status_check',
-        'marketing_blog_posts_status_check',
-      ]) {
-        expect(sql, contains('drop constraint if exists $constraint'));
-        expect(sql, contains('add constraint $constraint'));
-      }
-
-      for (final status in MarketingContentStatus.values) {
-        expect(
-          sql,
-          contains("'${status.value}'"),
-          reason: '${status.value} must be accepted by the CMS status checks',
-        );
-      }
-
-      expect(sql, isNot(contains("'deleted'")));
-      expect(sql, isNot(contains("'in_review'")));
     });
   });
 
@@ -212,13 +89,77 @@ void main() {
       expect(sidebar, isNot(contains('stripePrep')));
     });
 
-    test('uses the canonical media assets table for Website assets', () {
-      expect(page,
-          contains("WebsiteCmsSection.assets => 'marketing_media_assets'"));
-      expect(repository, contains("'marketing_media_assets'"));
-      expect(page,
-          isNot(contains("WebsiteCmsSection.assets => 'marketing_assets'")));
-      expect(repository, isNot(contains("'marketing_assets'")));
+    test('does not require optional production-missing CMS tables', () {
+      for (final source in [page, repository]) {
+        expect(source, isNot(contains('marketing_blog_categories')));
+        expect(source, isNot(contains('marketing_media_assets')));
+        expect(source, isNot(contains('category_id')));
+        expect(source, isNot(contains('scheduled_for')));
+        expect(source, isNot(contains('og_image_asset_id')));
+      }
+      expect(page, contains('asset_library_backend'));
+      expect(page, contains('Asset library backend not yet provisioned'));
+    });
+
+    test('uses only production page, section, and blog columns', () {
+      expect(repository, contains('og_title'));
+      expect(repository, contains('og_description'));
+      expect(repository, contains('canonical_url'));
+      expect(repository, contains('is_enabled'));
+      expect(repository, contains('subtitle'));
+      expect(repository, contains('cta_label'));
+      expect(repository, contains('media_url'));
+      expect(repository, contains('category'));
+      expect(repository, contains('tags'));
+
+      expect(repository, isNot(contains("'template'")));
+      expect(repository, isNot(contains("'eyebrow'")));
+      final sectionSave = repository.substring(
+        repository.indexOf('Future<void> saveMarketingSection'),
+        repository.indexOf('Future<void> saveMarketingBlogPost'),
+      );
+      expect(sectionSave, isNot(contains("'created_by'")));
+      expect(sectionSave, isNot(contains("'updated_by'")));
+    });
+
+    test('implements global SEO settings support', () {
+      expect(repository, contains("'marketing_seo_settings'"));
+      expect(repository, contains('saveMarketingSeoSettings'));
+      for (final field in [
+        'site_name',
+        'default_title',
+        'default_description',
+        'default_og_image',
+        'twitter_handle',
+        'canonical_base_url',
+        'robots_policy',
+        'sitemap_include_pages',
+        'sitemap_include_blog',
+        'sitemap_include_campaigns',
+        'schema_organisation_name',
+        'schema_website_url',
+        'schema_logo_url',
+        'schema_support_email',
+      ]) {
+        expect(repository, contains(field));
+      }
+      expect(page, contains('class _SeoSettingsEditorSheet'));
+      expect(page, contains('Global SEO'));
+    });
+
+    test('implements management for supported marketing tables', () {
+      for (final symbol in [
+        'saveMarketingSeoSettings',
+        'saveMarketingPricingPlan',
+        'saveMarketingFaq',
+        'saveMarketingTestimonial',
+        'saveMarketingCampaign',
+      ]) {
+        expect(repository, contains(symbol));
+        expect(page, contains(symbol));
+      }
+      expect(page, contains('class _SimpleCmsEditorSheet'));
+      expect(repository, isNot(contains('saveMarketingMediaAsset')));
     });
   });
 }

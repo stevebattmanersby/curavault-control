@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
 import 'package:curavault_admin/admin/utils/audit_redactor.dart';
@@ -28,6 +29,8 @@ class AdminLoginDiagnostics {
   final String? loginAuditExceptionMessage;
   final bool? loginAuditAuthUidPresent;
   final bool? loginAuditRolePresent;
+  final String? loginAuditAalClaim;
+  final bool? loginAuditHasAal2Claim;
   final String? exceptionType;
   final String? exceptionMessage;
 
@@ -51,6 +54,8 @@ class AdminLoginDiagnostics {
     required this.loginAuditExceptionMessage,
     required this.loginAuditAuthUidPresent,
     required this.loginAuditRolePresent,
+    required this.loginAuditAalClaim,
+    required this.loginAuditHasAal2Claim,
     required this.exceptionType,
     required this.exceptionMessage,
   });
@@ -75,6 +80,8 @@ class AdminLoginDiagnostics {
     String? loginAuditExceptionMessage,
     bool? loginAuditAuthUidPresent,
     bool? loginAuditRolePresent,
+    String? loginAuditAalClaim,
+    bool? loginAuditHasAal2Claim,
     String? exceptionType,
     String? exceptionMessage,
   }) {
@@ -105,6 +112,9 @@ class AdminLoginDiagnostics {
           loginAuditAuthUidPresent ?? this.loginAuditAuthUidPresent,
       loginAuditRolePresent:
           loginAuditRolePresent ?? this.loginAuditRolePresent,
+      loginAuditAalClaim: loginAuditAalClaim ?? this.loginAuditAalClaim,
+      loginAuditHasAal2Claim:
+          loginAuditHasAal2Claim ?? this.loginAuditHasAal2Claim,
       exceptionType: exceptionType ?? this.exceptionType,
       exceptionMessage: exceptionMessage ?? this.exceptionMessage,
     );
@@ -130,6 +140,8 @@ class AdminLoginDiagnostics {
         loginAuditExceptionMessage: null,
         loginAuditAuthUidPresent: null,
         loginAuditRolePresent: null,
+        loginAuditAalClaim: null,
+        loginAuditHasAal2Claim: null,
         exceptionType: null,
         exceptionMessage: null,
       );
@@ -219,7 +231,7 @@ class AdminAuthStore extends ChangeNotifier {
 
   static bool _initialized = false;
 
-  /// Temporary debug output to verify Supabase bootstrap behavior in Dreamflow.
+  /// Debug output to verify Supabase bootstrap behavior in local/preview builds.
   ///
   /// Prints only true/false flags—never secret values.
   static void debugPrintSupabaseBootstrapStatus(
@@ -427,7 +439,7 @@ class AdminAuthStore extends ChangeNotifier {
     if (_tryGetExistingSupabaseClient() == null) {
       _fatalConfigError = 'Supabase failed to initialize in this build.\n\n'
           'This usually means required public configuration is missing.\n\n'
-          'Recommended (Dreamflow Web Deployments):\n'
+          'Recommended (Control Site Web Deployments):\n'
           '- Edit assets/config/control_site_config.json and set:\n'
           '  • SUPABASE_URL\n'
           '  • SUPABASE_ANON_KEY (publishable/anon key only)\n'
@@ -768,6 +780,7 @@ class AdminAuthStore extends ChangeNotifier {
         factorId: factorToVerify,
         code: normalizedCode,
       );
+      await _client!.auth.refreshSession();
       _session = _client!.auth.currentSession;
       _mfaEnrollment = null;
       await _refreshAdminProfile();
@@ -790,6 +803,8 @@ class AdminAuthStore extends ChangeNotifier {
     final token = _client?.auth.currentSession?.accessToken;
     if (actor == null || actor.isEmpty || token == null) return;
     if (_loginAuditWrittenForAccessToken == token) return;
+    final aalClaim = _jwtClaim(token, 'aal');
+    final hasAal2Claim = aalClaim == 'aal2';
 
     const actionType = 'admin_login';
     _recordLoginDiag(
@@ -800,18 +815,23 @@ class AdminAuthStore extends ChangeNotifier {
         loginAuditActionType: actionType,
         loginAuditAuthUidPresent: true,
         loginAuditRolePresent: role != null,
+        loginAuditAalClaim: aalClaim,
+        loginAuditHasAal2Claim: hasAal2Claim,
         loginAuditExceptionType: null,
         loginAuditExceptionMessage: null,
       ),
     );
     try {
-      await _writeAudit(
+      final inserted = await _writeAudit(
         adminUserId: actor,
         actionType: actionType,
         result: 'success',
         newValue: {'email': email ?? _adminEmail ?? ''},
         failClosed: false,
       );
+      if (!inserted) {
+        throw StateError('admin_login audit insert was not accepted.');
+      }
       _loginAuditWrittenForAccessToken = token;
       _recordLoginDiag(loginDiagnostics.copyWith(loginAuditSucceeded: true));
     } catch (e) {
@@ -820,14 +840,42 @@ class AdminAuthStore extends ChangeNotifier {
       _recordLoginDiag(
         loginDiagnostics.copyWith(
           loginAuditSucceeded: false,
-          loginAuditExceptionType: e.runtimeType.toString(),
-          loginAuditExceptionMessage: e.toString(),
+          loginAuditExceptionType: _safeAuditExceptionType(e),
+          loginAuditExceptionMessage: _safeAuditExceptionMessage(e),
         ),
       );
     }
   }
 
-  Future<void> _writeAudit({
+  String? _jwtClaim(String token, String claim) {
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return null;
+      final normalized = base64Url.normalize(parts[1]);
+      final decoded = utf8.decode(base64Url.decode(normalized));
+      final payload = jsonDecode(decoded);
+      if (payload is Map<String, dynamic>) return payload[claim]?.toString();
+    } catch (_) {}
+    return null;
+  }
+
+  String _safeAuditExceptionType(Object e) {
+    if (e is PostgrestException) {
+      final code = e.code;
+      return code == null ? 'PostgrestException' : 'PostgrestException:$code';
+    }
+    return e.runtimeType.toString();
+  }
+
+  String _safeAuditExceptionMessage(Object e) {
+    if (e is PostgrestException) {
+      final code = e.code ?? 'unknown';
+      return 'PostgREST insert failed (code $code).';
+    }
+    return e.toString();
+  }
+
+  Future<bool> _writeAudit({
     required String adminUserId,
     String? targetUserId,
     required String actionType,
@@ -844,7 +892,7 @@ class AdminAuthStore extends ChangeNotifier {
         throw StateError(
             'Supabase client not initialized; cannot write audit log.');
       }
-      return;
+      return false;
     }
     try {
       final row = <String, dynamic>{
@@ -868,6 +916,7 @@ class AdminAuthStore extends ChangeNotifier {
       };
 
       await c.from('admin_audit_log').insert(row);
+      return true;
     } catch (e) {
       debugPrint('AdminAuthStore._writeAudit failed: $e');
       if (failClosed) {
@@ -883,6 +932,7 @@ class AdminAuthStore extends ChangeNotifier {
         notifyListeners();
         throw StateError('Audit log write failed (fail-closed).');
       }
+      rethrow;
     }
   }
 

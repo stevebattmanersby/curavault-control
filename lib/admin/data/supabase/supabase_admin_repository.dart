@@ -1000,24 +1000,24 @@ class SupabaseAdminRepository implements AdminRepository {
       'marketing_pages': true,
       'marketing_sections': true,
       'marketing_blog_posts': true,
+      'marketing_seo_settings': true,
       'marketing_faqs': true,
       'marketing_pricing_plans': true,
       'marketing_testimonials': true,
       'marketing_campaigns': true,
-      'marketing_seo_settings': true,
-      'marketing_media_assets': true,
+      'asset_library_backend': false,
     };
 
     const tables = <String>[
       'marketing_pages',
       'marketing_sections',
       'marketing_blog_posts',
+      'marketing_seo_settings',
       'marketing_faqs',
       'marketing_pricing_plans',
       'marketing_testimonials',
       'marketing_campaigns',
-      'marketing_seo_settings',
-      'marketing_media_assets',
+      'asset_library_backend',
     ];
 
     try {
@@ -1118,36 +1118,70 @@ class SupabaseAdminRepository implements AdminRepository {
       final pageRows = await client
           .from('marketing_pages')
           .select(
-              'id, slug, title, status, template, excerpt, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+              'id, slug, title, status, seo_title, seo_description, og_title, og_description, og_image_url, canonical_url, published_at, updated_at, created_at')
           .order('updated_at', ascending: false);
       final sectionRows = await client
           .from('marketing_sections')
           .select(
-              'id, page_id, section_key, section_type, sort_order, status, eyebrow, title, body, updated_at')
-          .order('sort_order', ascending: true);
-      final categoryRows = await client
-          .from('marketing_blog_categories')
-          .select('id, slug, name, description, is_active')
+              'id, page_id, section_key, section_type, sort_order, is_enabled, title, subtitle, body, cta_label, cta_url, media_url, updated_at')
           .order('sort_order', ascending: true);
       final postRows = await client
           .from('marketing_blog_posts')
           .select(
-              'id, slug, title, status, excerpt, category_id, seo_title, seo_description, published_at, scheduled_for, updated_at, created_at')
+              'id, slug, title, status, excerpt, category, tags, seo_title, seo_description, og_image_url, published_at, updated_at, created_at')
+          .order('updated_at', ascending: false);
+      final seoRows = await client
+          .from('marketing_seo_settings')
+          .select(
+              'id, site_name, default_title, default_description, default_og_image, twitter_handle, canonical_base_url, robots_policy, sitemap_include_pages, sitemap_include_blog, sitemap_include_campaigns, schema_organisation_name, schema_website_url, schema_logo_url, schema_support_email, updated_at')
+          .order('updated_at', ascending: false)
+          .limit(1);
+      final pricingRows = await client
+          .from('marketing_pricing_plans')
+          .select(
+              'id, plan_key, name, description, monthly_price, annual_price, currency, features, is_featured, is_active, sort_order, updated_at')
+          .order('sort_order', ascending: true);
+      final faqRows = await client
+          .from('marketing_faqs')
+          .select(
+              'id, question, answer, category, sort_order, is_published, updated_at')
+          .order('sort_order', ascending: true);
+      final testimonialRows = await client
+          .from('marketing_testimonials')
+          .select(
+              'id, quote, name, role, organisation, avatar_url, is_published, sort_order, updated_at')
+          .order('sort_order', ascending: true);
+      final campaignRows = await client
+          .from('marketing_campaigns')
+          .select(
+              'id, campaign_key, name, status, landing_page_slug, headline, subheadline, cta_label, cta_url, utm_source, utm_medium, utm_campaign, starts_at, ends_at, updated_at')
           .order('updated_at', ascending: false);
 
       final snapshot = MarketingCmsSnapshot(
         pages: _asList(pageRows).map(_marketingPageFromRow).toList(),
         sections: _asList(sectionRows).map(_marketingSectionFromRow).toList(),
-        categories:
-            _asList(categoryRows).map(_marketingCategoryFromRow).toList(),
         blogPosts: _asList(postRows).map(_marketingBlogPostFromRow).toList(),
+        seoSettings: _asList(seoRows).isEmpty
+            ? null
+            : _marketingSeoSettingsFromRow(_asList(seoRows).first),
+        pricingPlans:
+            _asList(pricingRows).map(_marketingPricingPlanFromRow).toList(),
+        faqs: _asList(faqRows).map(_marketingFaqFromRow).toList(),
+        testimonials:
+            _asList(testimonialRows).map(_marketingTestimonialFromRow).toList(),
+        campaigns:
+            _asList(campaignRows).map(_marketingCampaignFromRow).toList(),
         generatedAt: DateTime.now().toUtc(),
       );
       _setLive(AdminDataSourceKey.websiteCms,
           queryName: 'marketing CMS snapshot',
           rowCount: snapshot.pages.length +
               snapshot.sections.length +
-              snapshot.blogPosts.length);
+              snapshot.blogPosts.length +
+              snapshot.pricingPlans.length +
+              snapshot.faqs.length +
+              snapshot.testimonials.length +
+              snapshot.campaigns.length);
       return snapshot;
     } catch (e) {
       debugPrint('SupabaseAdminRepository.getMarketingCmsSnapshot failed: $e');
@@ -1178,11 +1212,12 @@ class SupabaseAdminRepository implements AdminRepository {
       'slug': draft.slug,
       'title': draft.title,
       'status': draft.status.value,
-      'template': draft.template,
-      'excerpt': _blankToNull(draft.excerpt),
       'seo_title': _blankToNull(draft.seoTitle),
       'seo_description': _blankToNull(draft.seoDescription),
-      'scheduled_for': draft.scheduledFor?.toUtc().toIso8601String(),
+      'og_title': _blankToNull(draft.ogTitle),
+      'og_description': _blankToNull(draft.ogDescription),
+      'og_image_url': _blankToNull(draft.ogImageUrl),
+      'canonical_url': _blankToNull(draft.canonicalUrl),
       'updated_by': admin.id,
       if (!isUpdate) 'created_by': admin.id,
     };
@@ -1206,19 +1241,19 @@ class SupabaseAdminRepository implements AdminRepository {
     if (client == null) {
       throw StateError('Supabase not initialized/configured.');
     }
-    final admin = await _admin();
     final isUpdate = draft.id != null;
     final row = <String, dynamic>{
       'page_id': draft.pageId,
       'section_key': draft.sectionKey,
       'section_type': draft.sectionType,
       'sort_order': draft.sortOrder,
-      'status': draft.status.value,
-      'eyebrow': _blankToNull(draft.eyebrow),
+      'is_enabled': draft.isEnabled,
       'title': _blankToNull(draft.title),
+      'subtitle': _blankToNull(draft.subtitle),
       'body': _blankToNull(draft.body),
-      'updated_by': admin.id,
-      if (!isUpdate) 'created_by': admin.id,
+      'cta_label': _blankToNull(draft.ctaLabel),
+      'cta_url': _blankToNull(draft.ctaUrl),
+      'media_url': _blankToNull(draft.mediaUrl),
     };
     if (isUpdate) {
       await client.from('marketing_sections').update(row).eq('id', draft.id!);
@@ -1232,7 +1267,7 @@ class SupabaseAdminRepository implements AdminRepository {
       newValue: {
         'page_id': draft.pageId,
         'section_key': draft.sectionKey,
-        'status': draft.status.value
+        'is_enabled': draft.isEnabled
       },
     );
   }
@@ -1252,10 +1287,11 @@ class SupabaseAdminRepository implements AdminRepository {
       'status': draft.status.value,
       'excerpt': _blankToNull(draft.excerpt),
       'body_markdown': _blankToNull(draft.bodyMarkdown),
-      'category_id': _blankToNull(draft.categoryId),
+      'category': _blankToNull(draft.category),
+      'tags': draft.tags,
       'seo_title': _blankToNull(draft.seoTitle),
       'seo_description': _blankToNull(draft.seoDescription),
-      'scheduled_for': draft.scheduledFor?.toUtc().toIso8601String(),
+      'og_image_url': _blankToNull(draft.ogImageUrl),
       'updated_by': admin.id,
       if (!isUpdate) 'created_by': admin.id,
     };
@@ -1269,6 +1305,174 @@ class SupabaseAdminRepository implements AdminRepository {
       resourceType: 'marketing_blog_post',
       resourceId: draft.id,
       newValue: {'slug': draft.slug, 'status': draft.status.value},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingSeoSettings(
+      {required MarketingSeoSettingsDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final row = <String, dynamic>{
+      'site_name': _blankToNull(draft.siteName),
+      'default_title': _blankToNull(draft.defaultTitle),
+      'default_description': _blankToNull(draft.defaultDescription),
+      'default_og_image': _blankToNull(draft.defaultOgImage),
+      'twitter_handle': _blankToNull(draft.twitterHandle),
+      'canonical_base_url': _blankToNull(draft.canonicalBaseUrl),
+      'robots_policy': _blankToNull(draft.robotsPolicy),
+      'sitemap_include_pages': draft.sitemapIncludePages,
+      'sitemap_include_blog': draft.sitemapIncludeBlog,
+      'sitemap_include_campaigns': draft.sitemapIncludeCampaigns,
+      'schema_organisation_name': _blankToNull(draft.schemaOrganisationName),
+      'schema_website_url': _blankToNull(draft.schemaWebsiteUrl),
+      'schema_logo_url': _blankToNull(draft.schemaLogoUrl),
+      'schema_support_email': _blankToNull(draft.schemaSupportEmail),
+    };
+    await client.from('marketing_seo_settings').update(row).eq('id', draft.id);
+    await _auditCmsAction(
+      actionType: 'cms_global_seo_updated',
+      resourceType: 'marketing_seo_settings',
+      resourceId: draft.id,
+      newValue: {'site_name': draft.siteName},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingPricingPlan(
+      {required MarketingPricingPlanDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'plan_key': draft.planKey,
+      'name': draft.name,
+      'description': _blankToNull(draft.description),
+      'monthly_price': draft.monthlyPrice,
+      'annual_price': draft.annualPrice,
+      'currency': draft.currency,
+      'features': draft.features,
+      'is_featured': draft.isFeatured,
+      'is_active': draft.isActive,
+      'sort_order': draft.sortOrder,
+    };
+    if (isUpdate) {
+      await client
+          .from('marketing_pricing_plans')
+          .update(row)
+          .eq('id', draft.id!);
+    } else {
+      await client.from('marketing_pricing_plans').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_pricing_updated' : 'cms_pricing_created',
+      resourceType: 'marketing_pricing_plan',
+      resourceId: draft.id,
+      newValue: {'plan_key': draft.planKey, 'is_active': draft.isActive},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingFaq({required MarketingFaqDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'question': draft.question,
+      'answer': draft.answer,
+      'category': _blankToNull(draft.category),
+      'sort_order': draft.sortOrder,
+      'is_published': draft.isPublished,
+    };
+    if (isUpdate) {
+      await client.from('marketing_faqs').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_faqs').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_faq_updated' : 'cms_faq_created',
+      resourceType: 'marketing_faq',
+      resourceId: draft.id,
+      newValue: {'category': draft.category, 'is_published': draft.isPublished},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingTestimonial(
+      {required MarketingTestimonialDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'quote': draft.quote,
+      'name': _blankToNull(draft.name),
+      'role': _blankToNull(draft.role),
+      'organisation': _blankToNull(draft.organisation),
+      'avatar_url': _blankToNull(draft.avatarUrl),
+      'is_published': draft.isPublished,
+      'sort_order': draft.sortOrder,
+    };
+    if (isUpdate) {
+      await client
+          .from('marketing_testimonials')
+          .update(row)
+          .eq('id', draft.id!);
+    } else {
+      await client.from('marketing_testimonials').insert(row);
+    }
+    await _auditCmsAction(
+      actionType:
+          isUpdate ? 'cms_testimonial_updated' : 'cms_testimonial_created',
+      resourceType: 'marketing_testimonial',
+      resourceId: draft.id,
+      newValue: {'is_published': draft.isPublished},
+    );
+  }
+
+  @override
+  Future<void> saveMarketingCampaign(
+      {required MarketingCampaignDraft draft}) async {
+    final client = _client;
+    if (client == null) {
+      throw StateError('Supabase not initialized/configured.');
+    }
+    final isUpdate = draft.id != null;
+    final row = <String, dynamic>{
+      'campaign_key': draft.campaignKey,
+      'name': draft.name,
+      'status': draft.status.value,
+      'landing_page_slug': _blankToNull(draft.landingPageSlug),
+      'headline': _blankToNull(draft.headline),
+      'subheadline': _blankToNull(draft.subheadline),
+      'cta_label': _blankToNull(draft.ctaLabel),
+      'cta_url': _blankToNull(draft.ctaUrl),
+      'utm_source': _blankToNull(draft.utmSource),
+      'utm_medium': _blankToNull(draft.utmMedium),
+      'utm_campaign': _blankToNull(draft.utmCampaign),
+      'starts_at': draft.startsAt?.toUtc().toIso8601String(),
+      'ends_at': draft.endsAt?.toUtc().toIso8601String(),
+    };
+    if (isUpdate) {
+      await client.from('marketing_campaigns').update(row).eq('id', draft.id!);
+    } else {
+      await client.from('marketing_campaigns').insert(row);
+    }
+    await _auditCmsAction(
+      actionType: isUpdate ? 'cms_campaign_updated' : 'cms_campaign_created',
+      resourceType: 'marketing_campaign',
+      resourceId: draft.id,
+      newValue: {
+        'campaign_key': draft.campaignKey,
+        'status': draft.status.value
+      },
     );
   }
 
@@ -1294,15 +1498,7 @@ class SupabaseAdminRepository implements AdminRepository {
       'updated_by': admin.id,
       if (status == MarketingContentStatus.published) ...{
         'published_at': now,
-        'published_by': admin.id,
-        'scheduled_for': null,
-        'archived_at': null,
       },
-      if (status == MarketingContentStatus.draft) ...{
-        'scheduled_for': null,
-        'archived_at': null,
-      },
-      if (status == MarketingContentStatus.archived) 'archived_at': now,
     };
     await client.from(table).update(row).eq('id', resourceId);
     await _auditCmsAction(
@@ -1310,8 +1506,6 @@ class SupabaseAdminRepository implements AdminRepository {
         MarketingContentStatus.published => 'cms_${resourceType}_published',
         MarketingContentStatus.archived => 'cms_${resourceType}_archived',
         MarketingContentStatus.draft => 'cms_${resourceType}_unpublished',
-        MarketingContentStatus.review => 'cms_${resourceType}_sent_to_review',
-        MarketingContentStatus.scheduled => 'cms_${resourceType}_scheduled',
       },
       resourceType: 'marketing_$resourceType',
       resourceId: resourceId,
@@ -1339,18 +1533,35 @@ class SupabaseAdminRepository implements AdminRepository {
       _tryParseDateTime(value) ??
       DateTime.fromMillisecondsSinceEpoch(0, isUtc: true);
 
+  int _intValue(dynamic value) =>
+      value is int ? value : int.tryParse(value?.toString() ?? '') ?? 0;
+
+  bool _boolValue(dynamic value) =>
+      value == true || value?.toString().toLowerCase() == 'true';
+
+  num? _numValue(dynamic value) {
+    if (value is num) return value;
+    return num.tryParse(value?.toString() ?? '');
+  }
+
+  List<String> _stringList(dynamic value) {
+    if (value is List) return value.map((item) => item.toString()).toList();
+    return const [];
+  }
+
   MarketingPageRow _marketingPageFromRow(Map<String, dynamic> row) =>
       MarketingPageRow(
         id: row['id']?.toString() ?? '',
         slug: row['slug']?.toString() ?? '',
         title: row['title']?.toString() ?? 'Untitled page',
         status: MarketingContentStatus.parse(row['status']?.toString()),
-        template: row['template']?.toString(),
-        excerpt: row['excerpt']?.toString(),
         seoTitle: row['seo_title']?.toString(),
         seoDescription: row['seo_description']?.toString(),
+        ogTitle: row['og_title']?.toString(),
+        ogDescription: row['og_description']?.toString(),
+        ogImageUrl: row['og_image_url']?.toString(),
+        canonicalUrl: row['canonical_url']?.toString(),
         publishedAt: _tryParseDateTime(row['published_at']),
-        scheduledFor: _tryParseDateTime(row['scheduled_for']),
         updatedAt: _requiredDate(row['updated_at']),
         createdAt: _requiredDate(row['created_at']),
       );
@@ -1364,21 +1575,14 @@ class SupabaseAdminRepository implements AdminRepository {
         sortOrder: row['sort_order'] is int
             ? row['sort_order'] as int
             : int.tryParse(row['sort_order']?.toString() ?? '') ?? 0,
-        status: MarketingContentStatus.parse(row['status']?.toString()),
-        eyebrow: row['eyebrow']?.toString(),
+        isEnabled: _boolValue(row['is_enabled']),
         title: row['title']?.toString(),
+        subtitle: row['subtitle']?.toString(),
         body: row['body']?.toString(),
+        ctaLabel: row['cta_label']?.toString(),
+        ctaUrl: row['cta_url']?.toString(),
+        mediaUrl: row['media_url']?.toString(),
         updatedAt: _requiredDate(row['updated_at']),
-      );
-
-  MarketingBlogCategoryRow _marketingCategoryFromRow(
-          Map<String, dynamic> row) =>
-      MarketingBlogCategoryRow(
-        id: row['id']?.toString() ?? '',
-        slug: row['slug']?.toString() ?? '',
-        name: row['name']?.toString() ?? 'Uncategorised',
-        description: row['description']?.toString(),
-        isActive: row['is_active'] == true,
       );
 
   MarketingBlogPostRow _marketingBlogPostFromRow(Map<String, dynamic> row) =>
@@ -1388,13 +1592,96 @@ class SupabaseAdminRepository implements AdminRepository {
         title: row['title']?.toString() ?? 'Untitled post',
         status: MarketingContentStatus.parse(row['status']?.toString()),
         excerpt: row['excerpt']?.toString(),
-        categoryId: row['category_id']?.toString(),
+        category: row['category']?.toString(),
+        tags: _stringList(row['tags']),
         seoTitle: row['seo_title']?.toString(),
         seoDescription: row['seo_description']?.toString(),
+        ogImageUrl: row['og_image_url']?.toString(),
         publishedAt: _tryParseDateTime(row['published_at']),
-        scheduledFor: _tryParseDateTime(row['scheduled_for']),
         updatedAt: _requiredDate(row['updated_at']),
         createdAt: _requiredDate(row['created_at']),
+      );
+
+  MarketingSeoSettingsRow _marketingSeoSettingsFromRow(
+          Map<String, dynamic> row) =>
+      MarketingSeoSettingsRow(
+        id: row['id']?.toString() ?? '',
+        siteName: row['site_name']?.toString(),
+        defaultTitle: row['default_title']?.toString(),
+        defaultDescription: row['default_description']?.toString(),
+        defaultOgImage: row['default_og_image']?.toString(),
+        twitterHandle: row['twitter_handle']?.toString(),
+        canonicalBaseUrl: row['canonical_base_url']?.toString(),
+        robotsPolicy: row['robots_policy']?.toString(),
+        sitemapIncludePages: _boolValue(row['sitemap_include_pages']),
+        sitemapIncludeBlog: _boolValue(row['sitemap_include_blog']),
+        sitemapIncludeCampaigns: _boolValue(row['sitemap_include_campaigns']),
+        schemaOrganisationName: row['schema_organisation_name']?.toString(),
+        schemaWebsiteUrl: row['schema_website_url']?.toString(),
+        schemaLogoUrl: row['schema_logo_url']?.toString(),
+        schemaSupportEmail: row['schema_support_email']?.toString(),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingPricingPlanRow _marketingPricingPlanFromRow(
+          Map<String, dynamic> row) =>
+      MarketingPricingPlanRow(
+        id: row['id']?.toString() ?? '',
+        planKey: row['plan_key']?.toString() ?? '',
+        name: row['name']?.toString() ?? 'Untitled plan',
+        description: row['description']?.toString(),
+        monthlyPrice: _numValue(row['monthly_price']),
+        annualPrice: _numValue(row['annual_price']),
+        currency: row['currency']?.toString() ?? 'EUR',
+        features: _stringList(row['features']),
+        isFeatured: _boolValue(row['is_featured']),
+        isActive: _boolValue(row['is_active']),
+        sortOrder: _intValue(row['sort_order']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingFaqRow _marketingFaqFromRow(Map<String, dynamic> row) =>
+      MarketingFaqRow(
+        id: row['id']?.toString() ?? '',
+        question: row['question']?.toString() ?? '',
+        answer: row['answer']?.toString() ?? '',
+        category: row['category']?.toString(),
+        sortOrder: _intValue(row['sort_order']),
+        isPublished: _boolValue(row['is_published']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingTestimonialRow _marketingTestimonialFromRow(
+          Map<String, dynamic> row) =>
+      MarketingTestimonialRow(
+        id: row['id']?.toString() ?? '',
+        quote: row['quote']?.toString() ?? '',
+        name: row['name']?.toString(),
+        role: row['role']?.toString(),
+        organisation: row['organisation']?.toString(),
+        avatarUrl: row['avatar_url']?.toString(),
+        isPublished: _boolValue(row['is_published']),
+        sortOrder: _intValue(row['sort_order']),
+        updatedAt: _requiredDate(row['updated_at']),
+      );
+
+  MarketingCampaignRow _marketingCampaignFromRow(Map<String, dynamic> row) =>
+      MarketingCampaignRow(
+        id: row['id']?.toString() ?? '',
+        campaignKey: row['campaign_key']?.toString() ?? '',
+        name: row['name']?.toString() ?? 'Untitled campaign',
+        status: MarketingContentStatus.parse(row['status']?.toString()),
+        landingPageSlug: row['landing_page_slug']?.toString(),
+        headline: row['headline']?.toString(),
+        subheadline: row['subheadline']?.toString(),
+        ctaLabel: row['cta_label']?.toString(),
+        ctaUrl: row['cta_url']?.toString(),
+        utmSource: row['utm_source']?.toString(),
+        utmMedium: row['utm_medium']?.toString(),
+        utmCampaign: row['utm_campaign']?.toString(),
+        startsAt: _tryParseDateTime(row['starts_at']),
+        endsAt: _tryParseDateTime(row['ends_at']),
+        updatedAt: _requiredDate(row['updated_at']),
       );
 
   Future<void> _auditCmsAction(

@@ -456,6 +456,36 @@ class AdminStore extends ChangeNotifier {
     await refreshAuditLogs();
   }
 
+  Future<void> saveMarketingSeoSettings(MarketingSeoSettingsDraft draft) async {
+    await _repository.saveMarketingSeoSettings(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingPricingPlan(MarketingPricingPlanDraft draft) async {
+    await _repository.saveMarketingPricingPlan(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingFaq(MarketingFaqDraft draft) async {
+    await _repository.saveMarketingFaq(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingTestimonial(MarketingTestimonialDraft draft) async {
+    await _repository.saveMarketingTestimonial(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
+  Future<void> saveMarketingCampaign(MarketingCampaignDraft draft) async {
+    await _repository.saveMarketingCampaign(draft: draft);
+    await refreshWebsiteCmsStatus();
+    await refreshAuditLogs();
+  }
+
   Future<void> updateMarketingContentStatus(
       {required String resourceType,
       required String resourceId,

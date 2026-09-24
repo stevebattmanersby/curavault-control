@@ -137,6 +137,7 @@ class _UsersPageState extends State<UsersPage> {
                 }
 
                 return AdminCard(
+                  expandChild: true,
                   header: Row(
                     children: [
                       Text('User summaries',
@@ -152,8 +153,8 @@ class _UsersPageState extends State<UsersPage> {
                               ?.copyWith(color: cs.onSurfaceVariant)),
                     ],
                   ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
+                  child: AdminScrollableTable(
+                    minWidth: canEmail ? 1160 : 980,
                     child: DataTable(
                       headingTextStyle: Theme.of(context)
                           .textTheme

@@ -28,28 +28,62 @@ class AdminPageScaffold extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final compact = constraints.maxWidth < AdminBreakpoints.tablet;
+              final heading = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.w700)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 6),
+                    Text(subtitle!,
+                        style: textTheme.bodyMedium?.copyWith(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant)),
+                  ],
+                ],
+              );
+              final pageActions = actions;
+              if (pageActions == null || pageActions.isEmpty) {
+                return heading;
+              }
+              if (compact) {
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w700)),
-                    if (subtitle != null) ...[
-                      const SizedBox(height: 6),
-                      Text(subtitle!,
-                          style: textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurfaceVariant)),
-                    ],
+                    heading,
+                    const SizedBox(height: AppSpacing.md),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: pageActions,
+                    ),
                   ],
-                ),
-              ),
-              if (actions != null) ...actions!,
-            ],
+                );
+              }
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(child: heading),
+                  const SizedBox(width: AppSpacing.md),
+                  Flexible(
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: Wrap(
+                        alignment: WrapAlignment.end,
+                        spacing: AppSpacing.sm,
+                        runSpacing: AppSpacing.sm,
+                        children: pageActions,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.lg),
           Expanded(child: child),
@@ -65,12 +99,14 @@ class AdminCard extends StatelessWidget {
       required this.child,
       this.padding,
       this.header,
-      this.aiEmphasis = false});
+      this.aiEmphasis = false,
+      this.expandChild = false});
 
   final Widget? header;
   final Widget child;
   final EdgeInsets? padding;
   final bool aiEmphasis;
+  final bool expandChild;
 
   @override
   Widget build(BuildContext context) {
@@ -102,11 +138,90 @@ class AdminCard extends StatelessWidget {
               header!,
               const SizedBox(height: AppSpacing.sm)
             ],
-            child,
+            if (expandChild) Expanded(child: child) else child,
           ],
         ),
       ),
     );
+  }
+}
+
+class AdminScrollableTable extends StatefulWidget {
+  const AdminScrollableTable({
+    super.key,
+    required this.child,
+    this.minWidth = 900,
+    this.bottomPadding = AppSpacing.xl,
+    this.showVerticalScrollbar = true,
+    this.showHorizontalScrollbar = true,
+  });
+
+  final Widget child;
+  final double minWidth;
+  final double bottomPadding;
+  final bool showVerticalScrollbar;
+  final bool showHorizontalScrollbar;
+
+  @override
+  State<AdminScrollableTable> createState() => _AdminScrollableTableState();
+}
+
+class _AdminScrollableTableState extends State<AdminScrollableTable> {
+  late final ScrollController _verticalController;
+  late final ScrollController _horizontalController;
+
+  @override
+  void initState() {
+    super.initState();
+    _verticalController = ScrollController();
+    _horizontalController = ScrollController();
+  }
+
+  @override
+  void dispose() {
+    _verticalController.dispose();
+    _horizontalController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final horizontal = SingleChildScrollView(
+      controller: _horizontalController,
+      scrollDirection: Axis.horizontal,
+      primary: false,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minWidth: widget.minWidth),
+        child: widget.child,
+      ),
+    );
+
+    final horizontalWithScrollbar = widget.showHorizontalScrollbar
+        ? Scrollbar(
+            controller: _horizontalController,
+            thumbVisibility: true,
+            notificationPredicate: (notification) =>
+                notification.metrics.axis == Axis.horizontal,
+            child: horizontal,
+          )
+        : horizontal;
+
+    final vertical = SingleChildScrollView(
+      controller: _verticalController,
+      primary: false,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: widget.bottomPadding),
+        child: horizontalWithScrollbar,
+      ),
+    );
+
+    return widget.showVerticalScrollbar
+        ? Scrollbar(
+            controller: _verticalController,
+            thumbVisibility: true,
+            child: vertical,
+          )
+        : vertical;
   }
 }
 

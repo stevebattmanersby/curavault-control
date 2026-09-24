@@ -523,6 +523,8 @@ class DevLoginStagePanel extends StatelessWidget {
       line('attempted action_type', diagnostics.loginAuditActionType),
       line('auth.uid present', diagnostics.loginAuditAuthUidPresent),
       line('admin role present', diagnostics.loginAuditRolePresent),
+      line('audit JWT aal', diagnostics.loginAuditAalClaim),
+      line('audit JWT aal2', diagnostics.loginAuditHasAal2Claim),
       line('audit exception type', diagnostics.loginAuditExceptionType),
       line('audit exception message', diagnostics.loginAuditExceptionMessage),
       line('exception type', diagnostics.exceptionType),

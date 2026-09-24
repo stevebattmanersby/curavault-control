@@ -8,6 +8,8 @@ void main() {
     late final String nav;
     late final String setPasswordPage;
     late final String mfaPage;
+    late final String topBar;
+    late final String auditPolicyMigration;
 
     setUpAll(() {
       authStore =
@@ -16,6 +18,11 @@ void main() {
       setPasswordPage =
           File('lib/admin/pages/set_password_page.dart').readAsStringSync();
       mfaPage = File('lib/admin/pages/mfa_page.dart').readAsStringSync();
+      topBar =
+          File('lib/admin/pages/widgets/admin_top_bar.dart').readAsStringSync();
+      auditPolicyMigration = File(
+        'supabase/migrations/20260915160930_harden_admin_audit_log_insert_roles.sql',
+      ).readAsStringSync();
     });
 
     test(
@@ -51,6 +58,88 @@ void main() {
       final auditIndex = authStore.indexOf('_writeSuccessfulAdminLoginAudit');
       expect(mfaRequiredIndex, greaterThanOrEqualTo(0));
       expect(auditIndex, greaterThan(mfaRequiredIndex));
+    });
+
+    test('only marks admin_login audit written after insert success', () {
+      expect(authStore, contains('Future<bool> _writeAudit'));
+      expect(
+        authStore,
+        contains(
+            "throw StateError('admin_login audit insert was not accepted.')"),
+      );
+      final insertIndex = authStore.indexOf(
+        'final inserted = await _writeAudit(',
+      );
+      final guardIndex = authStore.indexOf('if (!inserted) {');
+      final successIndex =
+          authStore.indexOf('_loginAuditWrittenForAccessToken = token;');
+      expect(insertIndex, greaterThanOrEqualTo(0));
+      expect(guardIndex, greaterThan(insertIndex));
+      expect(successIndex, greaterThan(insertIndex));
+      expect(successIndex, greaterThan(guardIndex));
+    });
+
+    test('admin audit insert policy requires privileged AAL2 admins', () {
+      expect(
+        auditPolicyMigration,
+        contains(
+            'create or replace function public.admin_can_insert_audit_log()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("coalesce(auth.jwt() ->> 'aal', '') = 'aal2'"),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('admin_user.admin_user_id = auth.uid()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('admin_user.is_active = true'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains(
+          "admin_user.role in ('owner', 'admin', 'billing', 'compliance')",
+        ),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('with check (public.admin_can_insert_audit_log())'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains(
+          'create or replace function public.set_admin_audit_log_trustworthy_actor()',
+        ),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('new.admin_user_id := auth.uid()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("if request_role = 'authenticated' then"),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("elsif request_role = 'anon' then"),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("new.admin_email := nullif(auth.jwt() ->> 'email', '')"),
+      );
+      expect(auditPolicyMigration, contains('new.created_at := now()'));
+      expect(
+        auditPolicyMigration,
+        contains('before insert on public.admin_audit_log'),
+      );
+      expect(
+        auditPolicyMigration,
+        isNot(contains('with check (public.is_active_admin())')),
+      );
+      expect(auditPolicyMigration, isNot(contains("'support'")));
+      expect(auditPolicyMigration, isNot(contains("'read_only'")));
     });
 
     test('routes AAL1 active admins to the protected MFA gate', () {
@@ -136,6 +225,12 @@ void main() {
         mfaPage,
         contains('auth.isMfaStateAvailable && !hasVerifiedTotp'),
       );
+    });
+
+    test('environment badge does not default missing config to LIVE', () {
+      expect(topBar, contains("'CONTROL_SITE_ENV_LABEL'"));
+      expect(topBar, contains("defaultValue: 'DEV'"));
+      expect(topBar, isNot(contains("defaultValue: 'LIVE'")));
     });
   });
 }
