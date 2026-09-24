@@ -43,10 +43,14 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  request_role text := coalesce(
+    nullif(auth.jwt() ->> 'role', ''),
+    nullif(current_setting('request.jwt.claim.role', true), ''),
+    ''
+  );
 begin
-  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role'
-    and coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
-  then
+  if request_role = 'authenticated' then
     if auth.uid() is null then
       raise exception using
         errcode = '42501',
@@ -56,6 +60,10 @@ begin
     new.admin_user_id := auth.uid();
     new.admin_email := nullif(auth.jwt() ->> 'email', '');
     new.created_at := now();
+  elsif request_role = 'anon' then
+    raise exception using
+      errcode = '42501',
+      message = 'Authenticated audit actor required.';
   end if;
 
   return new;

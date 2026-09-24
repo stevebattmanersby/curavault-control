@@ -119,6 +119,14 @@ void main() {
       );
       expect(
         auditPolicyMigration,
+        contains("if request_role = 'authenticated' then"),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("elsif request_role = 'anon' then"),
+      );
+      expect(
+        auditPolicyMigration,
         contains("new.admin_email := nullif(auth.jwt() ->> 'email', '')"),
       );
       expect(auditPolicyMigration, contains('new.created_at := now()'));
