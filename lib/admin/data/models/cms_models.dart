@@ -2,34 +2,23 @@ import 'package:flutter/foundation.dart';
 
 enum MarketingContentStatus {
   draft,
-  review,
-  scheduled,
   published,
   archived;
 
   String get value => switch (this) {
         MarketingContentStatus.draft => 'draft',
-        MarketingContentStatus.review => 'review',
-        MarketingContentStatus.scheduled => 'scheduled',
         MarketingContentStatus.published => 'published',
         MarketingContentStatus.archived => 'archived',
       };
 
   String get label => switch (this) {
         MarketingContentStatus.draft => 'Draft',
-        MarketingContentStatus.review => 'In review',
-        MarketingContentStatus.scheduled => 'Scheduled',
         MarketingContentStatus.published => 'Published',
         MarketingContentStatus.archived => 'Archived',
       };
 
   static MarketingContentStatus parse(String? raw) {
     switch ((raw ?? '').trim().toLowerCase()) {
-      case 'review':
-      case 'in_review':
-        return MarketingContentStatus.review;
-      case 'scheduled':
-        return MarketingContentStatus.scheduled;
       case 'published':
         return MarketingContentStatus.published;
       case 'archived':
@@ -89,22 +78,6 @@ class MarketingCmsSnapshot {
       .where((page) => isPublishedAndArrived(
           status: page.status, publishedAt: page.publishedAt))
       .length;
-
-  int get scheduledItems =>
-      pages
-          .where((page) => page.status == MarketingContentStatus.scheduled)
-          .length +
-      blogPosts
-          .where((post) => post.status == MarketingContentStatus.scheduled)
-          .length;
-
-  int get reviewItems =>
-      pages
-          .where((page) => page.status == MarketingContentStatus.review)
-          .length +
-      blogPosts
-          .where((post) => post.status == MarketingContentStatus.review)
-          .length;
 
   List<MarketingPageSectionRow> sectionsForPage(String pageId) =>
       sections.where((section) => section.pageId == pageId).toList()

@@ -34,11 +34,18 @@ void main() {
       );
       expect(
         isPublishedAndArrived(
-          status: MarketingContentStatus.review,
+          status: MarketingContentStatus.draft,
           publishedAt: now.subtract(const Duration(minutes: 1)),
           now: now,
         ),
         isFalse,
+      );
+    });
+
+    test('matches the production CMS status constraint', () {
+      expect(
+        MarketingContentStatus.values.map((status) => status.value),
+        ['draft', 'published', 'archived'],
       );
     });
   });

@@ -233,14 +233,6 @@ class _WebsiteCmsWorkspaceState extends State<_WebsiteCmsWorkspace> {
                 label: 'Blog posts',
                 value: cms.blogPosts.length.toString(),
                 icon: Icons.article_outlined),
-            _MetricPill(
-                label: 'Review queue',
-                value: cms.reviewItems.toString(),
-                icon: Icons.rate_review_outlined),
-            _MetricPill(
-                label: 'Scheduled',
-                value: cms.scheduledItems.toString(),
-                icon: Icons.schedule_outlined),
           ],
         ),
         const SizedBox(height: AppSpacing.md),
@@ -2647,16 +2639,6 @@ class _StatusChip extends StatelessWidget {
           context.tokens.success.withValues(alpha: 0.16),
           context.tokens.success,
           Icons.check_circle_outline
-        ),
-      MarketingContentStatus.scheduled => (
-          context.tokens.info.withValues(alpha: 0.14),
-          context.tokens.info,
-          Icons.schedule_outlined
-        ),
-      MarketingContentStatus.review => (
-          context.tokens.warning.withValues(alpha: 0.16),
-          context.tokens.warning,
-          Icons.rate_review_outlined
         ),
       MarketingContentStatus.archived => (
           cs.surfaceContainerHighest,

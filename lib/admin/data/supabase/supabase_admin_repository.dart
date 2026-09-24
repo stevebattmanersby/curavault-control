@@ -1506,8 +1506,6 @@ class SupabaseAdminRepository implements AdminRepository {
         MarketingContentStatus.published => 'cms_${resourceType}_published',
         MarketingContentStatus.archived => 'cms_${resourceType}_archived',
         MarketingContentStatus.draft => 'cms_${resourceType}_unpublished',
-        MarketingContentStatus.review => 'cms_${resourceType}_sent_to_review',
-        MarketingContentStatus.scheduled => 'cms_${resourceType}_scheduled',
       },
       resourceType: 'marketing_$resourceType',
       resourceId: resourceId,

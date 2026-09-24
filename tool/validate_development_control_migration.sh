@@ -80,6 +80,17 @@ assert_count 'same authenticated session refresh creates no database duplicate w
 run_sql <<'SQL'
 set role authenticated;
 select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', false);
+select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","email":"audit-owner@example.test","role":"authenticated","aal":"aal2"}', false);
+insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id, created_at)
+values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2', 'forged-actor@example.test', 'admin_login', 'success', 'audit-actor-regression', '2000-01-01T00:00:00Z');
+reset role;
+SQL
+assert_count 'AAL2 browser audit actor is normalized from auth context' 1 "select count(*) from public.admin_audit_log where ticket_id = 'audit-actor-regression' and admin_user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1' and admin_email = 'audit-owner@example.test' and created_at > now() - interval '1 minute'"
+assert_count 'AAL2 browser cannot preserve forged audit actor fields' 0 "select count(*) from public.admin_audit_log where ticket_id = 'audit-actor-regression' and (admin_user_id = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2' or admin_email = 'forged-actor@example.test' or created_at = '2000-01-01T00:00:00Z')"
+
+run_sql <<'SQL'
+set role authenticated;
+select set_config('request.jwt.claim.sub', 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', false);
 select set_config('request.jwt.claims', '{"sub":"aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1","role":"authenticated","aal":"aal2"}', false);
 insert into public.admin_audit_log (admin_user_id, admin_email, action_type, result, ticket_id)
 values ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1', 'audit-owner@example.test', 'admin_login', 'success', 'audit-policy-regression');

@@ -32,6 +32,45 @@ revoke all on function public.admin_can_insert_audit_log()
   from public, anon;
 grant execute on function public.admin_can_insert_audit_log()
   to authenticated, service_role;
+
+-- Browser clients must not be able to forge the actor or timestamp on an
+-- append-only audit row. Trusted service-role writers retain their explicit
+-- server-side attribution behavior; authenticated browser writes are always
+-- normalized from the verified request context before the RLS WITH CHECK runs.
+create or replace function public.set_admin_audit_log_trustworthy_actor()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role'
+    and coalesce(current_setting('request.jwt.claim.role', true), '') <> 'service_role'
+  then
+    if auth.uid() is null then
+      raise exception using
+        errcode = '42501',
+        message = 'Authenticated audit actor required.';
+    end if;
+
+    new.admin_user_id := auth.uid();
+    new.admin_email := nullif(auth.jwt() ->> 'email', '');
+    new.created_at := now();
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.set_admin_audit_log_trustworthy_actor()
+  from public, anon, authenticated;
+
+drop trigger if exists set_admin_audit_log_trustworthy_actor
+  on public.admin_audit_log;
+create trigger set_admin_audit_log_trustworthy_actor
+before insert on public.admin_audit_log
+for each row execute function public.set_admin_audit_log_trustworthy_actor();
+
 grant insert on table public.admin_audit_log
   to authenticated;
 

@@ -109,6 +109,25 @@ void main() {
       );
       expect(
         auditPolicyMigration,
+        contains(
+          'create or replace function public.set_admin_audit_log_trustworthy_actor()',
+        ),
+      );
+      expect(
+        auditPolicyMigration,
+        contains('new.admin_user_id := auth.uid()'),
+      );
+      expect(
+        auditPolicyMigration,
+        contains("new.admin_email := nullif(auth.jwt() ->> 'email', '')"),
+      );
+      expect(auditPolicyMigration, contains('new.created_at := now()'));
+      expect(
+        auditPolicyMigration,
+        contains('before insert on public.admin_audit_log'),
+      );
+      expect(
+        auditPolicyMigration,
         isNot(contains('with check (public.is_active_admin())')),
       );
       expect(auditPolicyMigration, isNot(contains("'support'")));
