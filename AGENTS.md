@@ -10,3 +10,9 @@
 - HIGH and CRITICAL work requires the appropriate recorded approval; no execution job may auto-merge or deploy. Execution must remain attributable, idempotent, auditable, recoverable, and protected from duplicate dispatches.
 - Phase 2 supports a deterministic mock executor. Phase 3 adds a disabled-by-default Codex provider control plane; real execution requires an isolated trusted worker, separate architecture/security enablement, and never exposes credentials to the browser.
 - Use least privilege. Keep support and billing out of development-control write paths unless a dedicated, reviewed permission is introduced.
+
+## Development framework discovery
+
+- Substantial Control repository work must follow `docs/development/CODEX_EXECUTION_CONTRACT.md` and classify risk with `docs/development/CHANGE_RISK_AND_VALIDATION_MATRIX.md` before implementation.
+- Independent security/release reviews must use `docs/development/CODEX_ADVERSARIAL_REVIEW.md`.
+- Validation tiers are defined in `docs/development/VALIDATION_TIERS.md`; Tier 3 is a separately authorized release gate and must not be invoked implicitly by development or PR checks.
