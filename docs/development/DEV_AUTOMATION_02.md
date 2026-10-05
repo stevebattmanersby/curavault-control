@@ -34,6 +34,11 @@ verify, active allowlist self lookup, dashboard V1 aggregate, settings route/RBA
 read_only self role UPDATE denial, fixture-only Auth Admin create/delete, audit
 cleanup and absence checks. No real users or medical rows are test inputs.
 
+Browser proof exposed a pre-existing shell accessibility defect: nested Navigator
+modal semantics suppressed header/sidebar controls. A semantics container around
+the existing child Navigator isolates that behavior. The regression fails before
+the boundary and passes after it; route definitions and ownership are unchanged.
+
 ## Validation and acceptance
 
 Baseline: analyzer zero issues; 67 Flutter tests pass; release web build passes.

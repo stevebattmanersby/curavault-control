@@ -111,7 +111,9 @@ test('intent journal recovers an Auth creation whose response was lost', async (
   const fake = fakeApi({ loseCreateResponse: true }); const fixtures = new Fixtures(fake.api, file);
   await assert.rejects(fixtures.create());
   assert.equal(JSON.parse(fs.readFileSync(file)).fixtures[1].id, null);
-  await Fixtures.load(fake.api, file).cleanup(); assert.equal(fake.users.size, 0);
+  const recovery = Fixtures.load(fake.api, file);
+  await recovery.cleanup(); assert.equal(fake.users.size, 0);
+  assert.equal(recovery.created, 2); assert.equal(recovery.cleaned, 2);
 }));
 test('cleanup outage is fatal and retains an unresolved recovery journal', async () => withJournal(async file => {
   const fake = fakeApi({ failDelete: true }); const fixtures = new Fixtures(fake.api, file); await fixtures.create();

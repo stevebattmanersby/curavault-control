@@ -1,8 +1,8 @@
 import 'dart:ui' show SemanticsAction;
 
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
+import 'package:curavault_admin/admin/pages/admin_shell.dart';
 import 'package:curavault_admin/admin/pages/login_page.dart';
-import 'package:curavault_admin/admin/pages/widgets/admin_top_bar.dart';
 import 'package:curavault_admin/admin/state/admin_theme_store.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -26,6 +26,10 @@ class _SyntheticAuth extends AdminAuthStore {
 void main() {
   testWidgets('identified logout remains an accessible, actionable button',
       (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1440, 1000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
     final semantics = tester.ensureSemantics();
     try {
       final auth = _SyntheticAuth();
@@ -38,8 +42,13 @@ void main() {
           ChangeNotifierProvider<AdminThemeStore>.value(value: theme),
         ],
         child: MaterialApp(
-          home: Scaffold(
-            body: AdminTopBar(isDesktop: true, onMenuPressed: () {}),
+          home: AdminShell(
+            currentLocation: '/settings',
+            child: Navigator(
+              onGenerateRoute: (_) => MaterialPageRoute<void>(
+                builder: (_) => const Center(child: Text('Synthetic route')),
+              ),
+            ),
           ),
         ),
       ));
@@ -48,6 +57,7 @@ void main() {
           widget.properties.identifier == 'control-logout');
       final data = tester.getSemantics(button).getSemanticsData();
       expect(data.label, 'Logout');
+      expect(data.identifier, 'control-logout');
       expect(data.flagsCollection.isButton, isTrue);
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       await tester.tap(button);

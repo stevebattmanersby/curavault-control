@@ -71,6 +71,7 @@ async function main() {
       evidence.fixtureCreationCount = fixtures.created;
       try { await fixtures.cleanup(); evidence.cleanupVerified = true; }
       catch { evidence.cleanupFailure = 'STOP: run cleanup.cjs with the retained journal'; }
+      evidence.fixtureCreationCount = fixtures.created;
       evidence.fixtureCleanupCount = fixtures.cleaned;
     }
     clearTimeout(timeout); process.removeListener('SIGINT', interrupt); process.removeListener('SIGTERM', interrupt);

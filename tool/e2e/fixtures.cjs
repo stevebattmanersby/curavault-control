@@ -96,9 +96,12 @@ class Fixtures {
           }
         }
         assert.equal(await this.discover(entry), null, 'Synthetic email remains');
-        entry.cleaned = true; this.cleaned++; this.save();
+        entry.cleaned = true;
+        if (entry.id) this.cleaned++;
+        this.save();
       } catch { failures.push(entry.scenario); }
     }
+    this.created = this.journal.fixtures.filter(entry => entry.id).length;
     if (failures.length) throw new Error(`Cleanup failed: ${failures.join(', ')}; retain journal and run cleanup recovery`);
   }
 }
