@@ -5,14 +5,16 @@ const { totp } = require('./totp.cjs');
 const { security } = require('./security.cjs');
 async function apiScenario(api, user, upgrade) {
   let session = await api.ok('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: user.email, password: user.password } });
-  assert.equal(claims(session.access_token).aal, 'aal1');
+  const initial = claims(session.access_token);
+  security(initial.aal === 'aal1' && initial.role === 'authenticated' && initial.sub === user.id, 'Auth fixture claims mismatch');
   const denied = await api.request('/rest/v1/rpc/admin_get_dashboard_metrics', { method: 'POST', body: {}, token: session.access_token });
   security(denied.status === 403 && denied.data?.code === '42501', 'AAL1 reporting denial changed');
   if (upgrade) {
     const factor = await api.ok('/auth/v1/factors', { method: 'POST', token: session.access_token, body: { factor_type: 'totp', friendly_name: 'Synthetic E2E' } });
     const challenge = await api.ok(`/auth/v1/factors/${factor.id}/challenge`, { method: 'POST', token: session.access_token, body: {} });
     session = await api.ok(`/auth/v1/factors/${factor.id}/verify`, { method: 'POST', token: session.access_token, body: { challenge_id: challenge.id, code: totp(factor.totp.secret) } });
-    assert.equal(claims(session.access_token).aal, 'aal2');
+    const upgraded = claims(session.access_token);
+    security(upgraded.aal === 'aal2' && upgraded.role === 'authenticated' && upgraded.sub === user.id, 'AAL2 fixture claims mismatch');
     const raw = await api.ok('/rest/v1/rpc/admin_get_dashboard_metrics', { method: 'POST', body: {}, token: session.access_token });
     const metrics = Array.isArray(raw) ? raw[0] : raw;
     assert.ok(Number.isInteger(metrics.total_admin_users) && metrics.total_admin_users >= 6, 'Synthetic counts absent');

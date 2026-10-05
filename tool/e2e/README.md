@@ -52,7 +52,8 @@ captures only run/role-scenario/email/id/cleanup status. Teardown closes browser
 deletes only synthetic actor audit rows, removes allowlist rows, deletes Auth
 users, verifies Auth absence and zero allowlist/audit/usage rows, then verifies
 email absence. Auth deletion removes its MFA/identity/session descendants.
-Cleanup verifies the synthetic run metadata before deleting any discovered user.
+Cleanup verifies the server-managed `app_metadata` run marker before deleting any
+discovered user. Mutable `user_metadata` cannot authorize fixture deletion.
 
 On setup/browser failure, SIGINT/SIGTERM or the suite's ten-minute limit, teardown
 still runs. API requests time out after 15 seconds, selectors after 25 seconds.

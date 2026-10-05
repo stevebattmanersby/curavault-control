@@ -122,7 +122,8 @@ async function browserScenario(browser, api, fixture, evidence) {
     await status.waitFor({ state: 'attached' });
     assert.ok((await semanticText(status)).includes('Dashboard metrics loaded: Yes'), 'UI reporting status did not confirm loaded data');
     await Promise.all(pending);
-    assert.equal(claims(session.access_token).aal, 'aal2');
+    const upgraded = claims(session.access_token);
+    security(upgraded.aal === 'aal2' && upgraded.role === 'authenticated' && upgraded.sub === fixture.id, 'Browser AAL2 fixture claims mismatch');
     // Known v2 probes are acceptable only when their documented V1 fallback succeeds.
     for (const [probe, fallback] of [['admin_get_ai_usage_summary_v2', 'admin_get_ai_usage_summary'], ['admin_get_storage_summary_v2', 'admin_get_storage_summary']]) {
       if (evidence.networkFailures.some(failure => failure.scenario === scenario && failure.endpoint.endsWith('/' + probe)))

@@ -69,7 +69,7 @@ function fakeApi(options = {}) {
   const api = {
     async ok(endpoint, operation = {}) {
       if (endpoint === '/auth/v1/admin/users' && operation.method === 'POST') {
-        const user = { id: crypto.randomUUID(), email: operation.body.email, user_metadata: operation.body.user_metadata };
+        const user = { id: crypto.randomUUID(), email: operation.body.email, app_metadata: operation.body.app_metadata };
         users.set(user.id, user); creates++;
         if (options.loseCreateResponse && creates === 2) throw new Error('Response lost');
         return user;
@@ -132,8 +132,15 @@ test('forged IDs cannot delete a different existing user, even when synthetic em
   const journal = JSON.parse(fs.readFileSync(file));
   const original = journal.fixtures[0]; fake.users.delete(original.id);
   const realId = crypto.randomUUID();
-  fake.users.set(realId, { id: realId, email: 'other-user@example.invalid', user_metadata: {} });
+  fake.users.set(realId, { id: realId, email: 'other-user@example.invalid', app_metadata: {} });
   original.id = realId; fs.writeFileSync(file, JSON.stringify(journal));
   await assert.rejects(Fixtures.load(fake.api, file).cleanup());
   assert.ok(fake.users.has(realId), 'Unrelated identity was deleted');
+}));
+test('mutable user metadata cannot authorize privileged fixture deletion', async () => withJournal(async file => {
+  const fake = fakeApi(); const fixtures = new Fixtures(fake.api, file); await fixtures.create();
+  const user = fake.users.get(fixtures.users[0].id);
+  user.user_metadata = user.app_metadata; user.app_metadata = {};
+  await assert.rejects(fixtures.cleanup());
+  assert.ok(fake.users.has(user.id), 'User-controlled marker authorized deletion');
 }));

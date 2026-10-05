@@ -28,7 +28,7 @@ class Fixtures {
       const password = crypto.randomBytes(32).toString('base64url') + 'aA1!';
       const user = await this.api.ok('/auth/v1/admin/users', {
         admin: true, method: 'POST', body: { email, password, email_confirm: true,
-          user_metadata: { control_e2e_run: this.journal.runId } },
+          app_metadata: { control_e2e_run: this.journal.runId } },
       }, [200, 201]);
       assert.match(user.id, /^[0-9a-f-]{36}$/);
       entry.id = user.id; this.created++; this.save();
@@ -72,7 +72,7 @@ class Fixtures {
       try {
         const found = await this.discover(entry);
         if (found) {
-          assert.equal(found.user_metadata?.control_e2e_run, this.journal.runId, 'Synthetic ownership mismatch');
+          assert.equal(found.app_metadata?.control_e2e_run, this.journal.runId, 'Synthetic ownership mismatch');
           if (entry.id) assert.equal(found.id, entry.id, 'Fixture identity changed');
           entry.id = found.id; this.save();
         }
@@ -81,7 +81,7 @@ class Fixtures {
           assert.ok([200, 404].includes(existing.status), 'Cannot verify cleanup identity');
           if (existing.status === 200) {
             assert.equal(existing.data.email, entry.email, 'Cleanup email mismatch');
-            assert.equal(existing.data.user_metadata?.control_e2e_run, this.journal.runId, 'Cleanup run mismatch');
+            assert.equal(existing.data.app_metadata?.control_e2e_run, this.journal.runId, 'Cleanup run mismatch');
           }
           const query = `admin_user_id=eq.${entry.id}`;
           // Audit FK uses SET NULL; remove only fixture actor rows before deleting Auth.
