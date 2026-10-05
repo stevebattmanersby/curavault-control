@@ -49,23 +49,30 @@ class AdminTopBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           _UserChip(email: email, role: role),
           const SizedBox(width: AppSpacing.sm),
-          TextButton.icon(
-            onPressed: () {
-              auth.signOut();
-            },
-            icon: Icon(Icons.logout, color: cs.onSurface),
-            label: Text('Logout',
-                style: Theme.of(context)
-                    .textTheme
-                    .labelLarge
-                    ?.copyWith(color: cs.onSurface)),
-            style: TextButton.styleFrom(
-              splashFactory: NoSplash.splashFactory,
-              foregroundColor: cs.onSurface,
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.lg)),
+          Semantics(
+            identifier: 'control-logout',
+            button: true,
+            label: 'Logout',
+            onTap: auth.signOut,
+            excludeSemantics: true,
+            child: TextButton.icon(
+              onPressed: () {
+                auth.signOut();
+              },
+              icon: Icon(Icons.logout, color: cs.onSurface),
+              label: Text('Logout',
+                  style: Theme.of(context)
+                      .textTheme
+                      .labelLarge
+                      ?.copyWith(color: cs.onSurface)),
+              style: TextButton.styleFrom(
+                splashFactory: NoSplash.splashFactory,
+                foregroundColor: cs.onSurface,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.lg)),
+              ),
             ),
           ),
         ],

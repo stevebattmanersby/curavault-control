@@ -50,7 +50,11 @@ class _AdminShellState extends State<AdminShell> {
                         onMenuPressed: () =>
                             _scaffoldKey.currentState?.openDrawer(),
                       ),
-                      Expanded(child: widget.child),
+                      Expanded(
+                        // Nested Navigator modal semantics must not suppress
+                        // the surrounding shell's header/sidebar controls.
+                        child: Semantics(container: true, child: widget.child),
+                      ),
                     ],
                   ),
                 ),

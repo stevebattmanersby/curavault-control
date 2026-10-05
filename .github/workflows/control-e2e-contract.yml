@@ -1,0 +1,27 @@
+name: Control E2E safety contract
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  safety-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Credential-free fail-closed and lifecycle tests
+        run: node --test tool/e2e/test/*.test.cjs
+      - name: Check harness syntax
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find tool/e2e -name '*.cjs' -not -path '*/node_modules/*' -print0)
+
+# Live execution is deliberately absent. Activation requires the separately
+# reviewed environment/secret/cleanup gates in tool/e2e/README.md.
