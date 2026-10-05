@@ -10,6 +10,7 @@ const { BUILD, ROOT, verifyBuild, sha } = require('./build.cjs');
 const { serve } = require('./server.cjs');
 const { browserScenario, playwright } = require('./browser.cjs');
 const { apiScenario } = require('./api-scenarios.cjs');
+const { browserEnv } = require('./browser-env.cjs');
 async function main() {
   const started = Date.now(); const cfg = config(); const api = new Api(cfg);
   const folder = path.join(ROOT, 'build/control-e2e/runs', crypto.randomUUID());
@@ -43,9 +44,7 @@ async function main() {
     const users = await fixtures.create();
     evidence.fixtureIsolation = new Set(users.map(user => user.id)).size === users.length;
     server = await serve(BUILD);
-    const browserEnv = { ...process.env };
-    delete browserEnv.CONTROL_E2E_ADMIN_KEY;
-    browser = await playwright().chromium.launch({ headless: true, env: browserEnv,
+    browser = await playwright().chromium.launch({ headless: true, env: browserEnv(),
       ...(process.env.CHROME_EXECUTABLE ? { executablePath: process.env.CHROME_EXECUTABLE } : {}) });
     for (const user of users) {
       if (interrupted) throw new Error('Run interrupted or suite time limit reached');

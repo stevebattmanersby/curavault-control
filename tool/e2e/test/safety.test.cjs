@@ -10,9 +10,15 @@ const { Api } = require('../api.cjs');
 const { Fixtures } = require('../fixtures.cjs');
 const { classify } = require('../contracts.cjs');
 const { totp } = require('../totp.cjs');
+const { browserEnv } = require('../browser-env.cjs');
 const jwt = (ref, role) => `header.${Buffer.from(JSON.stringify({ ref, role })).toString('base64url')}.signature`;
 const env = () => ({ CONTROL_E2E_SUPABASE_URL: `https://${REF}.supabase.co`,
   CONTROL_E2E_ANON_KEY: jwt(REF, 'anon'), CONTROL_E2E_ADMIN_KEY: jwt(REF, 'service_role') });
+test('browser subprocess environment excludes fixture and unrelated provider secrets', () => {
+  assert.deepEqual(browserEnv({ PATH: '/trusted/bin', TEMP: '/tmp', CONTROL_E2E_ADMIN_KEY: 'fixture-secret',
+    SUPABASE_SERVICE_ROLE_KEY: 'production-secret', OPENAI_API_KEY: 'provider-secret', GITHUB_TOKEN: 'write-secret' }),
+  { PATH: '/trusted/bin', TEMP: '/tmp' });
+});
 test('configuration fails closed on missing, production, mixed or privileged browser credentials', () => {
   assert.equal(config(env()).ref, REF);
   for (const override of [ { CONTROL_E2E_SUPABASE_URL: undefined },

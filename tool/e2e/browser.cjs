@@ -150,8 +150,13 @@ async function browserScenario(browser, api, fixture, evidence) {
     } else {
       await page.waitForURL('**/#/settings');
       step('ui-logout');
-      await page.locator('[flt-semantics-identifier="control-logout"]').click();
+      const logout = page.locator('[flt-semantics-identifier="control-logout"]');
+      await logout.waitFor({ state: 'attached' });
+      // Dispatch the accessible DOM action; Flutter's canvas overlay can intercept
+      // synthesized pointer clicks even when the semantics action is available.
+      await logout.evaluate(element => element.click());
     }
+    step('logout-route');
     await page.waitForURL('**/#/login');
     step('logout-refresh-replay-and-route-denial');
     const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
