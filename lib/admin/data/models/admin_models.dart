@@ -768,8 +768,9 @@ class RevenueCatSyncHealth {
   final int webhookFailedRows;
   final int webhookUnmappedAppUserIdRows;
 
-  final int entitlementsRows;
-  final int activeEntitlementsRows;
+  // Null means no authorized global RevenueCat entitlement/store contract.
+  final int? entitlementsRows;
+  final int? activeEntitlementsRows;
 
   final DateTime? latestWebhookReceivedAt;
   final DateTime? latestWebhookProcessedAt;

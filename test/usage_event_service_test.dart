@@ -3,6 +3,33 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test(
+      'canonical telemetry keeps account ownership and emits only schema columns',
+      () {
+    final payload = UsageEventService.canonicalPayload(
+        userId: 'synthetic-account',
+        eventName: 'control_login',
+        featureArea: 'control',
+        result: 'failure',
+        errorCode: 'denied',
+        durationMs: 42,
+        safeProps: {'attempt': 1});
+    expect(payload.keys.toSet(), {
+      'user_id',
+      'owner_user_id',
+      'event_key',
+      'event_type',
+      'success',
+      'failure_code',
+      'properties'
+    });
+    expect(payload['owner_user_id'], payload['user_id']);
+    expect(payload['event_key'], 'control_login');
+    expect(payload['success'], false);
+    expect(payload['failure_code'], 'denied');
+    expect(payload['properties'], containsPair('duration_ms', 42));
+    expect(payload['properties'], containsPair('attempt', 1));
+  });
   group('UsageEventService property guards', () {
     test('rejects unsafe keys', () {
       final props =

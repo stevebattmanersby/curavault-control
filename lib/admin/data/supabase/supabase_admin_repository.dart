@@ -670,14 +670,14 @@ class SupabaseAdminRepository implements AdminRepository {
       if (_isMissingRelationError(e)) {
         if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.storage,
-              queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
+              queryName: SupabaseAdminQueries.rpcStorageSummaryV1);
         }
         _setMock(AdminDataSourceKey.storage,
-            queryName: SupabaseAdminQueries.rpcStorageSummaryV2);
+            queryName: SupabaseAdminQueries.rpcStorageSummaryV1);
         return _fallback.getStorageSnapshot(query: query);
       }
       _setError(AdminDataSourceKey.storage,
-          queryName: SupabaseAdminQueries.rpcStorageSummaryV2, error: e);
+          queryName: SupabaseAdminQueries.rpcStorageSummaryV1, error: e);
       rethrow;
     }
   }
@@ -700,14 +700,14 @@ class SupabaseAdminRepository implements AdminRepository {
       if (_isMissingRelationError(e)) {
         if (_mustFailClosed) {
           _throwNotInstrumented(AdminDataSourceKey.aiUsage,
-              queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
+              queryName: SupabaseAdminQueries.rpcAiUsageSummaryV1);
         }
         _setMock(AdminDataSourceKey.aiUsage,
-            queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2);
+            queryName: SupabaseAdminQueries.rpcAiUsageSummaryV1);
         return _fallback.getAiUsageSnapshot(query: query);
       }
       _setError(AdminDataSourceKey.aiUsage,
-          queryName: SupabaseAdminQueries.rpcAiUsageSummaryV2, error: e);
+          queryName: SupabaseAdminQueries.rpcAiUsageSummaryV1, error: e);
       rethrow;
     }
   }
@@ -817,15 +817,24 @@ class SupabaseAdminRepository implements AdminRepository {
         rowCount: null,
         lastRefreshedAt: now));
 
-    await addCount('Entitlements', 'user_entitlements', cap: 5000);
-    await addCount('Entitlements (RevenueCat)', 'user_entitlements',
-        eq: {'provider': 'revenuecat'}, cap: 5000);
-    await addCount('Subscription events', 'subscription_events', cap: 5000);
+    // Account-scoped entitlement rows are not a global billing diagnostic.
+    // Subscription events remain service-only; the existing summary RPC owns
+    // authorized aggregates. Missing Stripe instrumentation is not probed.
+    for (final source in const {
+      'Entitlement detail': 'user_entitlements',
+      'Subscription event detail': 'subscription_events',
+      'Stripe events': 'stripe_webhook_events',
+    }.entries) {
+      out.add(BillingDataSourceStatusRow(
+        name: source.key,
+        queryOrTable: source.value,
+        kind: AdminDataSourceKind.notInstrumented,
+        safeError:
+            'Browser detail is unavailable. Use the authorized billing summary.',
+      ));
+    }
     await addCount('RevenueCat webhooks', 'revenuecat_webhook_events',
         cap: 5000);
-
-    // Stripe tables are not expected in this project; probe defensively.
-    await addCount('Stripe events', 'stripe_webhook_events', cap: 2000);
 
     if (base == null) {
       return BillingDiagnostics(
@@ -1024,6 +1033,17 @@ class SupabaseAdminRepository implements AdminRepository {
       final rows = <WebsiteCmsTableStatusRow>[];
       for (final table in tables) {
         final uiConnected = uiConnectedByTable[table] ?? false;
+        if (table == 'asset_library_backend') {
+          // Future capability, absent in the authoritative schema; no REST probe.
+          rows.add(const WebsiteCmsTableStatusRow(
+            tableName: 'asset_library_backend',
+            exists: false,
+            uiConnected: false,
+            status: WebsiteCmsTableOverallStatus.missingTable,
+            safeErrorMessage: 'Asset library backend not yet provisioned.',
+          ));
+          continue;
+        }
         try {
           final rowCount = await _safeCountTable(client, table);
 
