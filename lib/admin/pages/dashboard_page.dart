@@ -173,20 +173,27 @@ class _DataSourceStatusPanel extends StatelessWidget {
                   ? 'No (loading/empty)'
                   : 'No';
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: iconColor),
-            const SizedBox(width: 10),
-            Expanded(
-                child:
-                    Text(label, style: Theme.of(context).textTheme.labelLarge)),
-            Text(value,
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    color: ok ? cs.primary : cs.onSurfaceVariant,
-                    fontWeight: FontWeight.w700)),
-          ],
+      return Semantics(
+        identifier: label == 'Dashboard metrics loaded'
+            ? 'control-dashboard-status'
+            : '',
+        label: '$label: $value',
+        excludeSemantics: true,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: iconColor),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: Text(label,
+                      style: Theme.of(context).textTheme.labelLarge)),
+              Text(value,
+                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: ok ? cs.primary : cs.onSurfaceVariant,
+                      fontWeight: FontWeight.w700)),
+            ],
+          ),
         ),
       );
     }

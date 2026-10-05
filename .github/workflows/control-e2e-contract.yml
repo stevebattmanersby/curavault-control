@@ -17,7 +17,11 @@ jobs:
       - name: Credential-free fail-closed and lifecycle tests
         run: node --test tool/e2e/test/*.test.cjs
       - name: Check harness syntax
-        run: find tool/e2e -name '*.cjs' -not -path '*/node_modules/*' -exec node --check {} \;
+        shell: bash
+        run: |
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find tool/e2e -name '*.cjs' -not -path '*/node_modules/*' -print0)
 
 # Live execution is deliberately absent. Activation requires the separately
 # reviewed environment/secret/cleanup gates in tool/e2e/README.md.

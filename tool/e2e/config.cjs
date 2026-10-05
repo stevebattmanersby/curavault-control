@@ -26,6 +26,10 @@ function allowed(raw, origin) {
   if (raw.includes(PRODUCTION)) return false;
   if (url.username || url.password) return false;
   return (url.origin === `https://${REF}.supabase.co` && url.protocol === 'https:') ||
-    (!!origin && url.origin === origin && url.protocol === 'http:' && url.hostname === '127.0.0.1');
+    (!!origin && url.origin === origin && url.protocol === 'http:' && url.hostname === '127.0.0.1') ||
+    // Flutter still fetches fallback fonts with --no-web-resources-cdn.
+    // This exception exists only in the browser policy, never the server API.
+    (!!origin && url.origin === 'https://fonts.gstatic.com' && !url.search &&
+      /^\/s\/[a-zA-Z0-9/_-]+\.(woff2|ttf)$/.test(url.pathname));
 }
 module.exports = { REF, PRODUCTION, claims, config, allowed };

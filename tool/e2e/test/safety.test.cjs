@@ -29,9 +29,12 @@ test('network allowlist rejects production, other projects, credential URLs and 
   const origin = 'http://127.0.0.1:4178';
   assert.ok(allowed(`https://${REF}.supabase.co/rest/v1/admin_users`, origin));
   assert.ok(allowed(origin + '/main.dart.js', origin));
+  assert.ok(allowed('https://fonts.gstatic.com/s/roboto/v32/static.woff2', origin));
+  assert.equal(allowed('https://fonts.gstatic.com/s/roboto/v32/static.woff2'), false);
   for (const raw of [`https://${PRODUCTION}.supabase.co`, `https://${REF}.supabase.co.evil.example`,
     `https://user@${REF}.supabase.co`, `http://${REF}.supabase.co`, 'http://localhost:4178',
-    origin + '/?override=' + PRODUCTION, 'https://other.supabase.co', 'https://fonts.googleapis.com'])
+    origin + '/?override=' + PRODUCTION, 'https://other.supabase.co', 'https://fonts.googleapis.com',
+    'https://fonts.gstatic.com/s/font.ttf?apikey=secret', 'https://fonts.gstatic.com/auth/v1/token'])
     assert.equal(allowed(raw, origin), false);
 });
 test('privileged API prevents target escape and tells transport never to follow redirects', async () => {

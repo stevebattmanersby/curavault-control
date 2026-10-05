@@ -2,11 +2,12 @@
 const assert = require('node:assert/strict');
 const { claims } = require('./config.cjs');
 const { totp } = require('./totp.cjs');
+const { security } = require('./security.cjs');
 async function apiScenario(api, user, upgrade) {
   let session = await api.ok('/auth/v1/token?grant_type=password', { method: 'POST', body: { email: user.email, password: user.password } });
   assert.equal(claims(session.access_token).aal, 'aal1');
   const denied = await api.request('/rest/v1/rpc/admin_get_dashboard_metrics', { method: 'POST', body: {}, token: session.access_token });
-  assert.equal(denied.status, 403); assert.equal(denied.data.code, '42501');
+  security(denied.status === 403 && denied.data?.code === '42501', 'AAL1 reporting denial changed');
   if (upgrade) {
     const factor = await api.ok('/auth/v1/factors', { method: 'POST', token: session.access_token, body: { factor_type: 'totp', friendly_name: 'Synthetic E2E' } });
     const challenge = await api.ok(`/auth/v1/factors/${factor.id}/challenge`, { method: 'POST', token: session.access_token, body: {} });
@@ -18,6 +19,6 @@ async function apiScenario(api, user, upgrade) {
   }
   await api.ok('/auth/v1/logout', { method: 'POST', token: session.access_token }, [204]);
   const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
-  assert.equal(replay.status, 400); assert.ok(['refresh_token_not_found', 'refresh_token_already_used'].includes(replay.data.error_code));
+  security(replay.status === 400 && ['refresh_token_not_found', 'refresh_token_already_used'].includes(replay.data.error_code), 'Refresh replay denial changed');
 }
 module.exports = { apiScenario };

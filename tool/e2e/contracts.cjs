@@ -9,6 +9,10 @@ function classify(method, pathname, status, code, scenario) {
     return { category: 'E', expected: true, reason: 'Unsupported v2 probe; require successful V1 fallback separately' };
   if (status === 403 && pathname === '/rest/v1/admin_audit_log' && method === 'POST' && code === '42501' && scenario === 'readonly-ui')
     return { category: 'C', expected: true, reason: 'read_only audit INSERT denied by policy' };
+  if (status === 403 && pathname === '/rest/v1/subscription_events' && method === 'GET' && code === '42501')
+    return { category: 'C', defect: 'A', expected: false, reason: 'Service-only billing event table correctly denies browser; stale client dependency needs separate billing review' };
+  if (status === 404 && ['/rest/v1/stripe_webhook_events', '/rest/v1/asset_library_backend'].includes(pathname) && method === 'GET' && code === 'PGRST205')
+    return { category: 'A', defect: 'E', expected: false, reason: 'Client calls relation absent on disposable and production; separate contract remediation' };
   return { category: 'A', expected: false, reason: 'Unclassified backend/network failure' };
 }
 module.exports = { classify };

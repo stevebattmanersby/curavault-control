@@ -31,8 +31,11 @@ the copied runtime config. Source production assets remain untouched. Build
 output is scanned for the production ref. The fixture key is removed from the
 Flutter child environment and never written to a build define/file.
 Browser contexts block service workers; CSP, request allowlist, redirect rejection
-and WebSocket rejection constrain traffic to loopback and the pinned disposable
-host. Server API requests enforce the same host and reject redirects. No retries
+and WebSocket rejection constrain backend traffic to loopback and the pinned disposable
+host. Flutter fallback fonts have one browser-only exception: HTTPS static
+`fonts.gstatic.com/s/` font files, GET only, no query, credentials or redirects.
+This fixes harness-induced CSP font errors without permitting other backend hosts.
+Server API requests enforce the disposable host and reject redirects. No retries
 can accidentally send fixture credentials to another project.
 
 ## Fixtures and failure recovery

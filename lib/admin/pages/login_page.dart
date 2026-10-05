@@ -265,6 +265,8 @@ class _LoginPageState extends State<LoginPage> {
                                   const EdgeInsets.only(bottom: AppSpacing.md),
                               child: Semantics(
                                 identifier: 'control-login-error',
+                                label: _error!,
+                                excludeSemantics: true,
                                 child: Text(_error!,
                                     style: Theme.of(context)
                                         .textTheme

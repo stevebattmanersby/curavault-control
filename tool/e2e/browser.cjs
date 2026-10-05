@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const { allowed, PRODUCTION, claims } = require('./config.cjs');
 const { classify } = require('./contracts.cjs');
 const { totp } = require('./totp.cjs');
+const { security } = require('./security.cjs');
 function playwright() {
   return process.env.PLAYWRIGHT_MODULE_PATH ? require(process.env.PLAYWRIGHT_MODULE_PATH) : require('playwright');
 }
@@ -11,6 +12,7 @@ async function browserScenario(browser, api, fixture, evidence) {
   const pending = []; const successful = new Set();
   let session; const scenario = fixture.scenario;
   const origin = 'http://127.0.0.1:4178';
+  const step = name => { fixture.step = name; };
   await context.route('**/*', async route => {
     const url = route.request().url();
     if (url.includes(PRODUCTION)) evidence.productionRequestAttempts++;
@@ -19,6 +21,12 @@ async function browserScenario(browser, api, fixture, evidence) {
       return route.abort('blockedbyclient');
     }
     if (new URL(url).origin === origin) return route.continue();
+    if (new URL(url).origin === 'https://fonts.gstatic.com') {
+      const headers = route.request().headers();
+      if (route.request().method() !== 'GET' || headers.authorization || headers.apikey) {
+        evidence.blockedRequests++; return route.abort('blockedbyclient');
+      }
+    }
     try {
       // Disallow redirects BEFORE following them, including redirects from an allowed host.
       const response = await route.fetch({ maxRedirects: 0, maxRetries: 0, timeout: 15000 });
@@ -71,11 +79,13 @@ async function browserScenario(browser, api, fixture, evidence) {
     })().catch(() => { evidence.pageErrors++; }));
   });
   try {
+    step('login');
     await page.goto(origin + '/#/login');
     await page.locator('flt-semantics-placeholder').evaluate(element => element.click());
     await type(page, 'Email', fixture.email); await type(page, 'Password', fixture.password);
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     if (!fixture.active) {
+      step('denial-message');
       await page.locator('[flt-semantics-identifier="control-login-error"]').waitFor();
       const label = await page.locator('[flt-semantics-identifier="control-login-error"]').getAttribute('aria-label');
       assert.ok(/Access denied|inactive|not allow-listed/i.test(label || ''), 'Explicit denial missing');
@@ -84,25 +94,31 @@ async function browserScenario(browser, api, fixture, evidence) {
       await page.waitForURL('**/#/login');
       // Verify ordinary/inactive reporting denial with the captured pre-revocation JWT.
       await Promise.all(pending);
+      step('denied-session-backend-and-refresh');
       assert.ok(session, 'Denied sign-in session not captured');
       const denial = await api.request('/rest/v1/rpc/admin_get_dashboard_metrics', { method: 'POST', body: {}, token: session.access_token });
-      assert.equal(denial.status, 403); assert.equal(denial.data.code, '42501');
+      security(denial.status === 403 && denial.data?.code === '42501', 'Non-admin reporting denial changed');
       const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
-      assert.equal(replay.status, 400, 'Denied session refresh survived sign-out');
+      security(replay.status === 400, 'Denied session refresh survived sign-out');
       return;
     }
     await page.waitForURL('**/#/mfa');
-    const enrollmentResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/auth/v1/factors' && response.request().method() === 'POST' && response.status() === 200);
+    step('totp-enrollment');
+    const enrollmentResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/auth/v1/factors' && response.request().method() === 'POST' && response.status() === 200).catch(() => null);
     await page.getByRole('button', { name: 'Start setup', exact: true }).click();
-    const enrollment = await (await enrollmentResponse).json();
-    const metricsResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/rest/v1/rpc/admin_get_dashboard_metrics' && response.status() === 200);
+    const response = await enrollmentResponse; assert.ok(response, 'Enrollment response missing');
+    const enrollment = await response.json();
+    step('aal2-upgrade');
+    const metricsResponse = page.waitForResponse(response => new URL(response.url()).pathname === '/rest/v1/rpc/admin_get_dashboard_metrics' && response.status() === 200).catch(() => null);
     await type(page, '6-digit code', totp(enrollment.totp.secret));
     await page.getByRole('button', { name: 'Verify and continue', exact: true }).click();
     await page.waitForURL('**/#/dashboard');
-    const raw = await (await metricsResponse).json();
+    step('reporting-rpc-and-ui');
+    const metricsReply = await metricsResponse; assert.ok(metricsReply, 'Reporting response missing');
+    const raw = await metricsReply.json();
     const metrics = Array.isArray(raw) ? raw[0] : raw;
     assert.ok(Number.isInteger(metrics.total_admin_users) && metrics.total_admin_users >= 6);
-    await page.getByText('Dashboard metrics loaded', { exact: true }).waitFor({ state: 'attached' });
+    await page.locator('[flt-semantics-identifier="control-dashboard-status"][aria-label="Dashboard metrics loaded: Yes"]').waitFor({ state: 'attached' });
     await Promise.all(pending);
     assert.equal(claims(session.access_token).aal, 'aal2');
     // Known v2 probes are acceptable only when their documented V1 fallback succeeds.
@@ -110,23 +126,31 @@ async function browserScenario(browser, api, fixture, evidence) {
       if (evidence.networkFailures.some(failure => failure.scenario === scenario && failure.endpoint.endsWith('/' + probe)))
         assert.ok(successful.has('/rest/v1/rpc/' + fallback), 'V1 fallback did not succeed');
     }
+    step('settings-rbac');
     await page.goto(origin + '/#/settings');
-    if (fixture.role === 'read_only') {
+    await semantics(page);
+    if (fixture.role !== 'owner') {
       await page.waitForURL('**/#/unauthorized');
       await page.getByText('Access denied', { exact: true }).waitFor();
+      if (fixture.role === 'read_only') {
+      step('readonly-backend-mutation-denial');
       const update = await api.request(`/rest/v1/admin_users?admin_user_id=eq.${fixture.id}`, { method: 'PATCH', token: session.access_token,
         prefer: 'return=representation', body: { role: 'owner' } });
-      assert.equal(update.status, 200); assert.deepEqual(update.data, [], 'read_only mutation unexpectedly accepted');
+      security(update.status === 200 && Array.isArray(update.data) && update.data.length === 0, 'read_only mutation denial changed');
       const unchanged = await api.ok(`/rest/v1/admin_users?admin_user_id=eq.${fixture.id}&select=role`, { admin: true });
-      assert.equal(unchanged[0].role, 'read_only');
+      security(unchanged[0].role === 'read_only', 'read_only fixture role changed');
+      }
+      step('ui-logout');
       await page.getByRole('button', { name: 'Logout', exact: true }).click();
     } else {
       await page.waitForURL('**/#/settings');
+      step('ui-logout');
       await page.locator('[flt-semantics-identifier="control-logout"]').click();
     }
     await page.waitForURL('**/#/login');
+    step('logout-refresh-replay-and-route-denial');
     const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
-    assert.equal(replay.status, 400, 'Logout refresh replay accepted');
+    security(replay.status === 400, 'Logout refresh replay accepted');
     await page.goto(origin + '/#/dashboard'); await page.waitForURL('**/#/login');
     // No MFA, credentials, traces, HAR, raw response bodies or console strings are saved.
   } finally {
@@ -137,5 +161,10 @@ async function browserScenario(browser, api, fixture, evidence) {
 async function type(page, name, value) {
   const input = page.getByRole('textbox', { name, exact: true });
   await input.click(); await input.pressSequentially(value); await input.press('Tab');
+}
+async function semantics(page) {
+  await page.waitForFunction(() => document.querySelector('flt-semantics-placeholder') || document.querySelector('flt-semantics[role="button"]'));
+  const placeholder = page.locator('flt-semantics-placeholder');
+  if (await placeholder.count()) await placeholder.evaluate(element => element.click());
 }
 module.exports = { browserScenario, playwright };

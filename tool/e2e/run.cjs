@@ -50,13 +50,18 @@ async function main() {
     for (const user of users) {
       if (interrupted) throw new Error('Run interrupted or suite time limit reached');
       const time = Date.now();
+      console.log(`SCENARIO_START ${user.scenario}`);
       try {
         if (user.scenario.endsWith('-api')) await apiScenario(api, user, user.scenario === 'aal2-api');
         else await browserScenario(browser, api, user, evidence);
         evidence.scenarioResults.push({ scenario: user.scenario, result: 'PASS', elapsedMs: Date.now() - time });
       } catch (error) {
         // Error messages/stacks from Playwright can contain typed credentials and DOM secrets.
-        evidence.scenarioResults.push({ scenario: user.scenario, result: 'FAIL', errorKind: error.name || 'Error', elapsedMs: Date.now() - time });
+        evidence.scenarioResults.push({ scenario: user.scenario, result: 'FAIL', step: user.step || 'api-contract', errorKind: error.name || 'Error', elapsedMs: Date.now() - time });
+        if (error.name === 'SecurityContractFailure') {
+          evidence.securityBlock = error.safeReason;
+          break; // Required auth/RLS contract drift: teardown immediately, no further scenarios.
+        }
       }
     }
   } catch (error) { evidence.setupFailure = error.name || 'Error'; }

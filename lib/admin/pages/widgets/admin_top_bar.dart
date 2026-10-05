@@ -51,6 +51,10 @@ class AdminTopBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Semantics(
             identifier: 'control-logout',
+            button: true,
+            label: 'Logout',
+            onTap: auth.signOut,
+            excludeSemantics: true,
             child: TextButton.icon(
               onPressed: () {
                 auth.signOut();

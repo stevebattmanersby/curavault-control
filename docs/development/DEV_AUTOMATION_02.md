@@ -21,6 +21,9 @@ Read the execution contract, risk matrix, validation tiers and adversarial revie
 | AI/storage v2 RPC 404 | v2 absent on both; V1 present on both | E unsupported capability probe | Require V1 HTTP 200 and truthful partial/fallback status; separately remove dead probes or design v2 |
 | read_only audit INSERT 403 | Policy permits owner/admin/billing/compliance via AAL2 role gate | C expected authorization | Assert denial, preserve policy; optional audit client behavior follow-up |
 | Console HTTP resource failures | Browser reports failed HTTP calls above | Same classification as exact network responses | Preserve counts, no blanket ignore |
+| `subscription_events` GET 403 | `authenticated` has no SELECT grant on either target; `service_role` does | C correct denial with A stale browser dependency | Separate billing contract review; do not grant browser access |
+| `stripe_webhook_events` / `asset_library_backend` GET 404 | Both relations absent on both targets | A missing client/backend contract / E stale call | Separate contract review; no disposable-only fabrication |
+| Initial harness CSP font errors | Flutter fallback fonts use `fonts.gstatic.com` despite no CanvasKit CDN | Harness configuration defect | Browser-only static font exception; backend allowlist stays pinned |
 
 No B reconstruction omission was established for these calls. The retained branch
 still records `MIGRATIONS_FAILED` despite prior explicit reconstruction; this task

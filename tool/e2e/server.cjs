@@ -14,7 +14,7 @@ async function serve(root) {
       const real = fs.realpathSync(file);
       if (!real.startsWith(fs.realpathSync(root) + path.sep)) throw new Error('Symlink');
       res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream',
-        'Cache-Control': 'no-store', 'Content-Security-Policy': "connect-src 'self' https://evvksortjegefsldamwb.supabase.co; img-src 'self' data: blob:; font-src 'self' data:" });
+        'Cache-Control': 'no-store', 'Content-Security-Policy': "connect-src 'self' https://evvksortjegefsldamwb.supabase.co https://fonts.gstatic.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com" });
       fs.createReadStream(file).pipe(res);
     } catch { res.writeHead(400); res.end(); }
   });
