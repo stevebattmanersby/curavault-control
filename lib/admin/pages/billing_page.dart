@@ -2065,12 +2065,16 @@ class _RevenueCatReadinessChecklist extends StatelessWidget {
               ok: hasWebhook,
               detail: hasWebhook
                   ? 'Latest: ${latestReceived == null ? '—' : AdminFormatters.relativeTime(latestReceived)}'
-                  : 'No webhook events recorded.'),
+                  : revenueCat == null
+                      ? 'NOT INSTRUMENTED: webhook sync summary unavailable.'
+                      : 'No webhook events recorded.'),
           row('Latest webhook received',
               ok: hasWebhook,
               detail: hasWebhook
                   ? 'Events: ${revenueCat?.webhookEventRows ?? 0}'
-                  : null),
+                  : revenueCat == null
+                      ? 'NOT INSTRUMENTED: webhook sync summary unavailable.'
+                      : 'Events: 0'),
           row('user_entitlements updated by webhook',
               ok: hasEntitlements,
               detail: revenueCat?.entitlementsRows == null

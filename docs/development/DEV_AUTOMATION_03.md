@@ -48,7 +48,17 @@ cannot be recovered from that artifact. New diagnostics preserve only an allowli
 loopback pathname, request type, bounded error-code enum and test phase; no query,
 headers, bodies, tokens, TOTP or arbitrary error strings. Every transport failure
 remains unexpected and blocks PASS; no blanket ignore or automatic scenario retry.
-Current exact-head artifacts record any reproduction and clean repeat results.
+Diagnostic run `1325c9d1-d1cf-4315-9eaf-de21697ed6c3` at `300a30c` reproduced
+two `net::ERR_ABORTED` fetches for loopback `/assets/FontManifest.json`, during
+login in admin/inactive scenarios. All seven scenarios passed and cleanup7/7;
+the run correctly failed. No application page error or production attempt.
+Six unauthenticated isolated load diagnostics completed this required resource
+with HTTP200, indicating intermittent bootstrap timing rather than a missing file.
+The harness now waits for manifest HTTP200, complete body, valid structure and
+bounded network readiness before dispatching semantics/input actions. An aborted,
+missing or malformed asset still fails; no retry or error suppression. Interaction
+with bootstrap is the working timing explanation; the browser's internal reason
+for the historical cancellation is not proven. Final repeats test this correction.
 
 ## Validation and rollback
 

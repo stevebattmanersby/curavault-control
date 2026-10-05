@@ -5,6 +5,7 @@ const { classify } = require('./contracts.cjs');
 const { totp } = require('./totp.cjs');
 const { security } = require('./security.cjs');
 const { observeLogout, verifyRevocation } = require('./logout.cjs');
+const { loadLogin } = require('./bootstrap.cjs');
 function playwright() {
   return process.env.PLAYWRIGHT_MODULE_PATH ? require(process.env.PLAYWRIGHT_MODULE_PATH) : require('playwright');
 }
@@ -96,7 +97,7 @@ async function browserScenario(browser, api, fixture, evidence) {
   });
   try {
     step('login');
-    await page.goto(origin + '/#/login');
+    await loadLogin(page, origin);
     await page.locator('flt-semantics-placeholder').evaluate(element => element.click());
     await type(page, 'Email', fixture.email); await type(page, 'Password', fixture.password);
     let logoutResponse = !fixture.active ? observeLogout(page, api.config.url) : null;

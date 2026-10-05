@@ -1,5 +1,10 @@
 import 'dart:convert';
 import 'package:curavault_admin/admin/auth/admin_rbac.dart';
+import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
+import 'package:curavault_admin/admin/state/admin_store.dart';
+import 'package:curavault_admin/admin/pages/billing_page.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:curavault_admin/admin/data/data_source_status.dart';
 import 'package:curavault_admin/admin/data/models/admin_models.dart';
 import 'package:curavault_admin/admin/data/supabase/supabase_admin_queries.dart';
@@ -167,6 +172,37 @@ void main() {
       expect(requests.where((r) => r.url.path.endsWith('/$table')), isEmpty);
     }
   });
+  testWidgets('unavailable sync summary never claims zero webhook events',
+      (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1600, 2200);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    final billing = await tester.runAsync(() => SupabaseAdminQueries()
+        .getBillingSummary(
+            admin: admin,
+            query: const BillingQuery(range: AdminDateRangePreset.days30)));
+    final auth = AdminAuthStore();
+    final store = _FixtureStore(auth, billing!);
+    addTearDown(store.dispose);
+    addTearDown(auth.dispose);
+    await tester.pumpWidget(MultiProvider(providers: [
+      ChangeNotifierProvider<AdminAuthStore>.value(value: auth),
+      ChangeNotifierProvider<AdminStore>.value(value: store),
+    ], child: const MaterialApp(home: Scaffold(body: BillingPage()))));
+    await tester.pumpAndSettle();
+    expect(find.text('NOT INSTRUMENTED: webhook sync summary unavailable.'),
+        findsNWidgets(2));
+    expect(find.text('No webhook events recorded.'), findsNothing);
+    expect(find.text('Events: 0'), findsNothing);
+  });
+}
+
+class _FixtureStore extends AdminStore {
+  _FixtureStore(AdminAuthStore auth, this.snapshot) : super(auth: auth);
+  final BillingSnapshot snapshot;
+  @override
+  BillingSnapshot get billing => snapshot;
 }
 
 class _FixtureQueries extends SupabaseAdminQueries {
