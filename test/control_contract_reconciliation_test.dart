@@ -127,10 +127,14 @@ void main() {
     final billing = await SupabaseAdminQueries().getBillingSummary(
         admin: admin,
         query: const BillingQuery(range: AdminDateRangePreset.days30));
-    expect(billing.revenueCat?.webhookEventRows, 4);
+    expect(billing.revenueCat, isNull);
     expect(billing.revenueCat?.entitlementsRows, isNull);
     expect(billing.revenueCat?.activeEntitlementsRows, isNull);
     expect(requests.where((r) => r.url.path.endsWith('/user_entitlements')),
+        isEmpty);
+    expect(
+        requests
+            .where((r) => r.url.path.endsWith('/revenuecat_sync_health_v1')),
         isEmpty);
   });
   test(

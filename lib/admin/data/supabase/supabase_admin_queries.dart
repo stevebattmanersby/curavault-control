@@ -87,13 +87,6 @@ class SupabaseAdminQueries {
     return c;
   }
 
-  DateTime? _tryParseDateTime(dynamic raw) {
-    if (raw == null) return null;
-    if (raw is DateTime) return raw;
-    if (raw is String) return DateTime.tryParse(raw);
-    return null;
-  }
-
   Future<AdminUser> getCurrentAdminUser() async {
     final authUser = _client.auth.currentUser;
     if (authUser == null) throw StateError('Not signed in.');
@@ -879,7 +872,8 @@ class SupabaseAdminQueries {
           revenueSource = BillingRevenueSource.none;
         }
 
-        final revenueCat = await _tryGetRevenueCatSyncHealth();
+        const RevenueCatSyncHealth? revenueCat =
+            null; // No deployed sync-health aggregate.
         return BillingSnapshot(
           query: query,
           overview: BillingOverviewMetrics(
@@ -954,7 +948,8 @@ class SupabaseAdminQueries {
           params: _billingQueryParams(query));
       if (res is Map<String, dynamic>) {
         final snapshot = _parseBillingSnapshot(res, query);
-        final revenueCat = await _tryGetRevenueCatSyncHealth();
+        const RevenueCatSyncHealth? revenueCat =
+            null; // No deployed sync-health aggregate.
         final revenueInstrumented =
             snapshot.overview.monthlyRecurringRevenueUsd > 0 ||
                 snapshot.overview.annualRecurringRevenueUsd > 0;
@@ -1030,67 +1025,6 @@ class SupabaseAdminQueries {
     }
     throw StateError(
         'Billing summary unavailable (no admin-safe RPC deployed).');
-  }
-
-  Future<RevenueCatSyncHealth?> _tryGetRevenueCatSyncHealth() async {
-    final c = _client;
-    try {
-      // Prefer the small, aggregate-only view if present.
-      final viewRow =
-          await c.from('revenuecat_sync_health_v1').select().maybeSingle();
-
-      int readInt(String k) {
-        final v = viewRow?[k];
-        if (v is num) return v.toInt();
-        return int.tryParse((v ?? '0').toString()) ?? 0;
-      }
-
-      DateTime? readDt(String k) {
-        final v = viewRow?[k];
-        if (v == null) return null;
-        if (v is DateTime) return v;
-        return DateTime.tryParse(v.toString());
-      }
-
-      // Latest event processing result (safe string only).
-      String? latestResult;
-      DateTime? latestProcessed;
-      DateTime? latestReceived;
-      try {
-        final latest = await c
-            .from('revenuecat_webhook_events')
-            .select('created_at, processed_at, processing_result')
-            .order('created_at', ascending: false)
-            .limit(1)
-            .maybeSingle();
-        latestResult = latest?['processing_result']?.toString();
-        latestProcessed = _tryParseDateTime(latest?['processed_at']);
-        latestReceived = _tryParseDateTime(latest?['created_at']);
-      } catch (e) {
-        debugPrint('RevenueCatSyncHealth latest webhook fetch skipped: $e');
-      }
-
-      // Global entitlement/store detail has no authorized browser contract.
-      // Do not turn an account-scoped read into a false global zero.
-      return RevenueCatSyncHealth(
-        webhookEventRows: readInt('webhook_event_rows'),
-        latestWebhookReceivedAt:
-            latestReceived ?? readDt('latest_webhook_received_at'),
-        latestWebhookProcessedAt:
-            latestProcessed ?? readDt('latest_webhook_processed_at'),
-        webhookFailedRows: readInt('webhook_failed_rows'),
-        webhookUnmappedAppUserIdRows:
-            readInt('webhook_unmapped_app_user_id_rows'),
-        entitlementsRows: null,
-        activeEntitlementsRows: null,
-        latestWebhookProcessingResult: latestResult,
-        storeBreakdown: const {},
-      );
-    } catch (e) {
-      // View/table not deployed yet or blocked by RLS.
-      debugPrint('RevenueCatSyncHealth unavailable: $e');
-      return null;
-    }
   }
 
   Future<UsageAnalyticsSnapshot> getUsageAnalyticsSummary(

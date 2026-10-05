@@ -36,7 +36,6 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
     'admin_get_user_usage_summary()': 'admin_get_user_usage_summary',
     'admin_get_usage_events_summary()': 'admin_get_usage_events_summary',
     'admin_get_ai_usage_summary()': 'admin_get_ai_usage_summary',
-    'admin_get_ai_usage_summary_v2()': 'admin_get_ai_usage_summary_v2',
     'admin_get_billing_summary()': 'admin_get_billing_summary',
     'admin_get_country_usage_summary()': 'admin_get_country_usage_summary',
     'admin_get_storage_summary()': 'admin_get_storage_summary',
@@ -177,24 +176,13 @@ class _ProductionReadinessPageState extends State<ProductionReadinessPage> {
       });
     }
 
-    // 2) Aggregate-only sync health view.
-    try {
-      final row =
-          await client.from('revenuecat_sync_health_v1').select().maybeSingle();
-      if (!mounted) return;
-      setState(() {
-        _revenueCatHealthRow = row;
-        _revenueCatHealthError = null;
-      });
-    } catch (e) {
-      debugPrint(
-          'ProductionReadiness: revenuecat_sync_health_v1 unavailable: $e');
-      if (!mounted) return;
-      setState(() {
-        _revenueCatHealthRow = null;
-        _revenueCatHealthError = formatAdminSafeError(e);
-      });
-    }
+    // No deployed aggregate; do not probe a nonexistent relation.
+    if (!mounted) return;
+    setState(() {
+      _revenueCatHealthRow = null;
+      _revenueCatHealthError =
+          'NOT INSTRUMENTED: sync-health aggregate unavailable.';
+    });
   }
 
   Future<_RpcProbeResult> _callRpc(

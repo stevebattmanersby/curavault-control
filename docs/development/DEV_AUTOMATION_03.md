@@ -32,6 +32,11 @@ authority by this task. Effective entitlement/source resolver, revenue authority
 and new provider/store aggregates would require separate architecture work.
 No data from account-scoped reads is presented as a global population.
 
+The associated `revenuecat_sync_health_v1` view is also absent on both targets.
+Its stale fallback query is removed; sync health stays unavailable, while existing
+authorized webhook row diagnostics remain. Regression uses a nonempty billing
+aggregate to cover the path hidden by empty synthetic billing populations.
+
 Telemetry has no medical document/profile association; it describes the signed-in
 Control account only. Existing property sanitization/PHI rejection is preserved.
 RevenueCat webhook metadata remains under existing admin SELECT policy.
