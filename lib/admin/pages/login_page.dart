@@ -263,11 +263,14 @@ class _LoginPageState extends State<LoginPage> {
                             Padding(
                               padding:
                                   const EdgeInsets.only(bottom: AppSpacing.md),
-                              child: Text(_error!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(color: cs.error)),
+                              child: Semantics(
+                                identifier: 'control-login-error',
+                                child: Text(_error!,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: cs.error)),
+                              ),
                             ),
                           if (_info != null)
                             Padding(
