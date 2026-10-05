@@ -87,7 +87,7 @@ async function browserScenario(browser, api, fixture, evidence) {
     if (!fixture.active) {
       step('denial-message');
       await page.locator('[flt-semantics-identifier="control-login-error"]').waitFor();
-      const label = await page.locator('[flt-semantics-identifier="control-login-error"]').getAttribute('aria-label');
+      const label = await semanticText(page.locator('[flt-semantics-identifier="control-login-error"]'));
       assert.ok(/Access denied|inactive|not allow-listed/i.test(label || ''), 'Explicit denial missing');
       assert.ok(page.url().endsWith('/login'));
       await page.goto(origin + '/#/dashboard');
@@ -118,7 +118,9 @@ async function browserScenario(browser, api, fixture, evidence) {
     const raw = await metricsReply.json();
     const metrics = Array.isArray(raw) ? raw[0] : raw;
     assert.ok(Number.isInteger(metrics.total_admin_users) && metrics.total_admin_users >= 6);
-    await page.locator('[flt-semantics-identifier="control-dashboard-status"][aria-label="Dashboard metrics loaded: Yes"]').waitFor({ state: 'attached' });
+    const status = page.locator('[flt-semantics-identifier="control-dashboard-status"]');
+    await status.waitFor({ state: 'attached' });
+    assert.ok((await semanticText(status)).includes('Dashboard metrics loaded: Yes'), 'UI reporting status did not confirm loaded data');
     await Promise.all(pending);
     assert.equal(claims(session.access_token).aal, 'aal2');
     // Known v2 probes are acceptable only when their documented V1 fallback succeeds.
@@ -139,6 +141,9 @@ async function browserScenario(browser, api, fixture, evidence) {
       security(update.status === 200 && Array.isArray(update.data) && update.data.length === 0, 'read_only mutation denial changed');
       const unchanged = await api.ok(`/rest/v1/admin_users?admin_user_id=eq.${fixture.id}&select=role`, { admin: true });
       security(unchanged[0].role === 'read_only', 'read_only fixture role changed');
+      const audit = await api.request('/rest/v1/admin_audit_log', { method: 'POST', token: session.access_token,
+        body: { admin_user_id: fixture.id, admin_email: fixture.email, action_type: 'control_e2e_denied', result: 'success' } });
+      security(audit.status === 403 && audit.data?.code === '42501', 'read_only audit INSERT denial changed');
       }
       step('ui-logout');
       await page.getByRole('button', { name: 'Logout', exact: true }).click();
@@ -166,5 +171,9 @@ async function semantics(page) {
   await page.waitForFunction(() => document.querySelector('flt-semantics-placeholder') || document.querySelector('flt-semantics[role="button"]'));
   const placeholder = page.locator('flt-semantics-placeholder');
   if (await placeholder.count()) await placeholder.evaluate(element => element.click());
+}
+async function semanticText(locator) {
+  // Flutter renders text semantics as DOM text and interactive labels as ARIA.
+  return `${await locator.getAttribute('aria-label') || ''} ${await locator.textContent() || ''}`.trim();
 }
 module.exports = { browserScenario, playwright };

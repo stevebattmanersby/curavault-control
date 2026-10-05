@@ -1,4 +1,4 @@
-import 'dart:ui' show SemanticsAction, SemanticsFlag;
+import 'dart:ui' show SemanticsAction;
 
 import 'package:curavault_admin/admin/auth/admin_auth_store.dart';
 import 'package:curavault_admin/admin/pages/login_page.dart';
@@ -48,7 +48,7 @@ void main() {
           widget.properties.identifier == 'control-logout');
       final data = tester.getSemantics(button).getSemanticsData();
       expect(data.label, 'Logout');
-      expect(data.hasFlag(SemanticsFlag.isButton), isTrue);
+      expect(data.flagsCollection.isButton, isTrue);
       expect(data.hasAction(SemanticsAction.tap), isTrue);
       await tester.tap(button);
       await tester.pump();

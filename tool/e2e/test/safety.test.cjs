@@ -119,3 +119,13 @@ test('forged journals cannot select arbitrary identities or production', async (
   journal.ref = REF; journal.fixtures[0].email = 'real-user@example.com';
   fs.writeFileSync(file, JSON.stringify(journal)); assert.throws(() => Fixtures.load(fake.api, file));
 }));
+test('forged IDs cannot delete a different existing user, even when synthetic email is absent', async () => withJournal(async file => {
+  const fake = fakeApi(); const fixtures = new Fixtures(fake.api, file); await fixtures.create();
+  const journal = JSON.parse(fs.readFileSync(file));
+  const original = journal.fixtures[0]; fake.users.delete(original.id);
+  const realId = crypto.randomUUID();
+  fake.users.set(realId, { id: realId, email: 'other-user@example.invalid', user_metadata: {} });
+  original.id = realId; fs.writeFileSync(file, JSON.stringify(journal));
+  await assert.rejects(Fixtures.load(fake.api, file).cleanup());
+  assert.ok(fake.users.has(realId), 'Unrelated identity was deleted');
+}));
