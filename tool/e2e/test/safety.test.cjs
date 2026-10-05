@@ -144,3 +144,21 @@ test('mutable user metadata cannot authorize privileged fixture deletion', async
   await assert.rejects(fixtures.cleanup());
   assert.ok(fake.users.has(user.id), 'User-controlled marker authorized deletion');
 }));
+test('nonexistent forged Auth UUID never authorizes dependent deletion', async () => withJournal(async file => {
+  const fake = fakeApi(); const fixtures = new Fixtures(fake.api, file); await fixtures.create();
+  const journal = JSON.parse(fs.readFileSync(file));
+  fake.users.delete(journal.fixtures[0].id);
+  const orphanId = crypto.randomUUID(); journal.fixtures[0].id = orphanId;
+  fs.writeFileSync(file, JSON.stringify(journal));
+  const original = fake.api.ok; let orphanDeletes = 0;
+  fake.api.ok = async (endpoint, operation = {}) => {
+    if (endpoint.includes(orphanId)) {
+      if (operation.method === 'DELETE') orphanDeletes++;
+      if (!operation.method) return [{ admin_user_id: orphanId }];
+    }
+    return original(endpoint, operation);
+  };
+  await assert.rejects(Fixtures.load(fake.api, file).cleanup(), /Cleanup failed/);
+  assert.equal(orphanDeletes, 0);
+  assert.equal(JSON.parse(fs.readFileSync(file)).fixtures[0].cleaned, false);
+}));

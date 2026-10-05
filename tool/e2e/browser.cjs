@@ -4,6 +4,7 @@ const { allowed, PRODUCTION, claims } = require('./config.cjs');
 const { classify } = require('./contracts.cjs');
 const { totp } = require('./totp.cjs');
 const { security } = require('./security.cjs');
+const { observeLogout, verifyRevocation } = require('./logout.cjs');
 function playwright() {
   return process.env.PLAYWRIGHT_MODULE_PATH ? require(process.env.PLAYWRIGHT_MODULE_PATH) : require('playwright');
 }
@@ -83,6 +84,7 @@ async function browserScenario(browser, api, fixture, evidence) {
     await page.goto(origin + '/#/login');
     await page.locator('flt-semantics-placeholder').evaluate(element => element.click());
     await type(page, 'Email', fixture.email); await type(page, 'Password', fixture.password);
+    let logoutResponse = !fixture.active ? observeLogout(page, api.config.url) : null;
     await page.getByRole('button', { name: 'Sign in', exact: true }).click();
     if (!fixture.active) {
       step('denial-message');
@@ -98,8 +100,7 @@ async function browserScenario(browser, api, fixture, evidence) {
       assert.ok(session, 'Denied sign-in session not captured');
       const denial = await api.request('/rest/v1/rpc/admin_get_dashboard_metrics', { method: 'POST', body: {}, token: session.access_token });
       security(denial.status === 403 && denial.data?.code === '42501', 'Non-admin reporting denial changed');
-      const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
-      security(replay.status === 400, 'Denied session refresh survived sign-out');
+      await verifyRevocation(logoutResponse, api, session.refresh_token);
       return;
     }
     await page.waitForURL('**/#/mfa');
@@ -130,6 +131,7 @@ async function browserScenario(browser, api, fixture, evidence) {
         assert.ok(successful.has('/rest/v1/rpc/' + fallback), 'V1 fallback did not succeed');
     }
     step('settings-rbac');
+    logoutResponse = observeLogout(page, api.config.url);
     await page.goto(origin + '/#/settings');
     await semantics(page);
     if (fixture.role !== 'owner') {
@@ -160,8 +162,7 @@ async function browserScenario(browser, api, fixture, evidence) {
     step('logout-route');
     await page.waitForURL('**/#/login');
     step('logout-refresh-replay-and-route-denial');
-    const replay = await api.request('/auth/v1/token?grant_type=refresh_token', { method: 'POST', body: { refresh_token: session.refresh_token } });
-    security(replay.status === 400, 'Logout refresh replay accepted');
+    await verifyRevocation(logoutResponse, api, session.refresh_token);
     await page.goto(origin + '/#/dashboard'); await page.waitForURL('**/#/login');
     // No MFA, credentials, traces, HAR, raw response bodies or console strings are saved.
   } finally {

@@ -82,12 +82,12 @@ class Fixtures {
           if (existing.status === 200) {
             assert.equal(existing.data.email, entry.email, 'Cleanup email mismatch');
             assert.equal(existing.data.app_metadata?.control_e2e_run, this.journal.runId, 'Cleanup run mismatch');
-          }
           const query = `admin_user_id=eq.${entry.id}`;
           // Audit FK uses SET NULL; remove only fixture actor rows before deleting Auth.
           await this.api.ok(`/rest/v1/admin_audit_log?${query}`, { admin: true, method: 'DELETE' }, [204]);
           await this.api.ok(`/rest/v1/admin_users?${query}`, { admin: true, method: 'DELETE' }, [204]);
-          if (found) await this.api.ok(`/auth/v1/admin/users/${entry.id}`, { admin: true, method: 'DELETE' }, [200]);
+          await this.api.ok(`/auth/v1/admin/users/${entry.id}`, { admin: true, method: 'DELETE' }, [200]);
+          }
           const absence = await this.api.request(`/auth/v1/admin/users/${entry.id}`, { admin: true });
           assert.equal(absence.status, 404, 'Auth fixture remains');
           for (const [table, column] of [['admin_users', 'admin_user_id'], ['admin_audit_log', 'admin_user_id'], ['usage_events', 'user_id'], ['usage_events', 'owner_user_id']]) {
