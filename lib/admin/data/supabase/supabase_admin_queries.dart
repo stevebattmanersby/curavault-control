@@ -543,16 +543,8 @@ class SupabaseAdminQueries {
     _requireRole(admin, AdminRbac.analytics, capability: 'ai_usage');
 
     try {
-      dynamic res;
-      String rpcName = rpcAiUsageSummaryV2;
-      try {
-        res = await _client.rpc(rpcAiUsageSummaryV2);
-      } catch (e) {
-        debugPrint(
-            'SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary_v2 not available: $e');
-        rpcName = rpcAiUsageSummaryV1;
-        res = await _client.rpc(rpcAiUsageSummaryV1);
-      }
+      const rpcName = rpcAiUsageSummaryV1;
+      final res = await _client.rpc(rpcName);
 
       final row = _firstRpcRow(res);
 
@@ -599,9 +591,7 @@ class SupabaseAdminQueries {
         );
       }
 
-      return (rpcName == rpcAiUsageSummaryV2)
-          ? _parseAiUsageV2(query: query, row: row, rpcName: rpcName)
-          : _parseAiUsageLegacy(query: query, row: row, rpcName: rpcName);
+      return _parseAiUsageLegacy(query: query, row: row, rpcName: rpcName);
     } catch (e) {
       debugPrint(
           'SupabaseAdminQueries.getAIUsage admin_get_ai_usage_summary(_v2) failed: $e');
@@ -704,168 +694,6 @@ class SupabaseAdminQueries {
     );
   }
 
-  AiUsageSnapshot _parseAiUsageV2(
-      {required AiUsageQuery query,
-      required Map<String, dynamic> row,
-      required String rpcName}) {
-    List<Map<String, dynamic>> asListOfMaps(Object? v) {
-      if (v is! List) return const [];
-      return v
-          .whereType<Map>()
-          .map((m) => m.cast<String, dynamic>())
-          .toList(growable: false);
-    }
-
-    final totalRequests = (row['total_request_count'] as num?)?.toInt() ?? 0;
-    final totalCost = (row['total_cost_usd'] as num?)?.toDouble() ?? 0;
-    final inputTokens = (row['total_input_tokens'] as num?)?.toInt() ?? 0;
-    final outputTokens = (row['total_output_tokens'] as num?)?.toInt() ?? 0;
-    final pagesProcessed = (row['total_pages_processed'] as num?)?.toInt() ?? 0;
-    final filesProcessed = (row['total_files_processed'] as num?)?.toInt() ?? 0;
-    final failures = (row['total_failures'] as num?)?.toInt() ?? 0;
-
-    final usageByFeatureArea =
-        asListOfMaps(row['usage_by_feature_area']).map((m) {
-      final feature =
-          _parseAiFeatureArea((m['feature_area'] as String?) ?? '') ??
-              AiFeatureArea.aiAssistant;
-      return AiFeatureUsageRow(
-        featureArea: feature,
-        requests: (m['request_count'] as num?)?.toInt() ?? 0,
-        inputTokens: 0,
-        outputTokens: 0,
-        failedRequests: (m['failed_request_count'] as num?)?.toInt() ?? 0,
-        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
-      );
-    }).toList(growable: false);
-
-    AiProviderServiceUsageRow psRow(Map<String, dynamic> m,
-        {String? defaultProvider, String? defaultService}) {
-      return AiProviderServiceUsageRow(
-        provider: (m['provider'] as String?) ?? defaultProvider ?? 'unknown',
-        service: (m['service'] as String?) ?? defaultService ?? 'unknown',
-        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
-        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
-        inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
-        outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
-        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
-        pagesProcessed: (m['pages_processed'] as num?)?.toInt() ?? 0,
-        filesProcessed: (m['files_processed'] as num?)?.toInt() ?? 0,
-        imagesProcessed: (m['images_processed'] as num?)?.toInt() ?? 0,
-        failedRequestCount: (m['failed_request_count'] as num?)?.toInt() ?? 0,
-      );
-    }
-
-    final usageByProvider = asListOfMaps(row['usage_by_provider'])
-        .map((m) => psRow(m, defaultService: 'unknown'))
-        .toList(growable: false);
-
-    final usageByService = asListOfMaps(row['usage_by_service'])
-        .map((m) => psRow(m, defaultProvider: 'unknown'))
-        .toList(growable: false);
-
-    final usageByProviderService =
-        asListOfMaps(row['usage_by_provider_service'])
-            .map((m) => psRow(m))
-            .toList(growable: false);
-
-    final usageByModelV2 = asListOfMaps(row['usage_by_model']).map((m) {
-      return AiModelUsageRowV2(
-        provider: (m['provider'] as String?) ?? 'unknown',
-        service: (m['service'] as String?) ?? 'unknown',
-        model: (m['model'] as String?) ?? 'unknown',
-        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
-        inputTokens: (m['input_tokens'] as num?)?.toInt() ?? 0,
-        outputTokens: (m['output_tokens'] as num?)?.toInt() ?? 0,
-        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
-        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
-        failedRequestCount: (m['failed_request_count'] as num?)?.toInt() ?? 0,
-      );
-    }).toList(growable: false);
-
-    final failuresByProvider = asListOfMaps(row['failures_by_provider'])
-        .map((m) => AiProviderServiceUsageRow(
-              provider: (m['provider'] as String?) ?? 'unknown',
-              service: (m['service'] as String?) ?? 'unknown',
-              requestCount: 0,
-              estimatedCostUsd: 0,
-              inputTokens: 0,
-              outputTokens: 0,
-              totalTokens: 0,
-              pagesProcessed: 0,
-              filesProcessed: 0,
-              imagesProcessed: 0,
-              failedRequestCount: (m['failure_count'] as num?)?.toInt() ?? 0,
-            ))
-        .toList(growable: false);
-
-    final failuresByErrorCode = asListOfMaps(row['failures_by_error_code'])
-        .map((m) => AiFailureBreakdownRow(
-              provider: (m['provider'] as String?) ?? 'unknown',
-              service: (m['service'] as String?) ?? 'unknown',
-              errorCode: (m['error_code'] as String?) ?? 'unknown',
-              failureCount: (m['failure_count'] as num?)?.toInt() ?? 0,
-            ))
-        .toList(growable: false);
-
-    final dailyUsage = asListOfMaps(row['daily_usage']).map((m) {
-      DateTime day;
-      try {
-        day = DateTime.parse((m['day'] as String?) ?? '').toUtc();
-      } catch (_) {
-        day = DateTime.now().toUtc();
-      }
-      return AiDailyUsageRow(
-        day: day,
-        requestCount: (m['request_count'] as num?)?.toInt() ?? 0,
-        estimatedCostUsd: (m['estimated_cost_usd'] as num?)?.toDouble() ?? 0,
-        totalTokens: (m['total_tokens'] as num?)?.toInt() ?? 0,
-        pagesProcessed: (m['pages_processed'] as num?)?.toInt() ?? 0,
-        filesProcessed: (m['files_processed'] as num?)?.toInt() ?? 0,
-        imagesProcessed: (m['images_processed'] as num?)?.toInt() ?? 0,
-        failures: (m['failures'] as num?)?.toInt() ?? 0,
-      );
-    }).toList(growable: false);
-
-    return AiUsageSnapshot(
-      query: query,
-      source: rpcName,
-      sourceNote: null,
-      aiRequestsThisMonth: totalRequests,
-      inputTokensThisMonth: inputTokens,
-      outputTokensThisMonth: outputTokens,
-      estimatedCostThisMonthUsd: totalCost,
-      pagesProcessedThisMonth: pagesProcessed,
-      filesProcessedThisMonth: filesProcessed,
-      failedAiRequestsThisMonth: failures,
-      usersNearAiLimit: 0,
-      usersOverAiLimit: 0,
-      tokensByDay: const [],
-      tokensByFeature: const <AiFeatureArea, int>{},
-      tokensByPlan: const <String, int>{},
-      tokensByPlatform: const <String, int>{},
-      tokensByCountry: const <String, int>{},
-      dailyCost: const [],
-      estimatedDailyCostUsd: 0,
-      estimatedMonthlyCostUsd: 0,
-      costByPlan: const <String, double>{},
-      costByFeature: const <AiFeatureArea, double>{},
-      costPerActiveUserUsd: 0,
-      highCostUsers: const [],
-      limitMonitoring: const [],
-      aiErrors: const [],
-      usageByFeature: usageByFeatureArea,
-      usageByProvider: usageByProvider,
-      usageByService: usageByService,
-      usageByProviderService: usageByProviderService,
-      usageByModelV2: usageByModelV2,
-      failuresByProvider: failuresByProvider,
-      failuresByErrorCode: failuresByErrorCode,
-      dailyUsage: dailyUsage,
-      generatedAt: DateTime.now().toUtc(),
-    );
-  }
-
   Future<AdminQueryResult<StorageSnapshot>> getStorageUsage(
       {required AdminUser admin, required StorageQuery query}) async {
     _requireRole(
@@ -873,17 +701,8 @@ class SupabaseAdminQueries {
         capability: 'storage_usage');
 
     try {
-      dynamic res;
-      String rpcName = rpcStorageSummaryV2;
-      try {
-        // Prefer v2 (privacy-safe storage metadata table + better failure counting).
-        res = await _client.rpc(rpcStorageSummaryV2);
-      } catch (e) {
-        debugPrint(
-            'SupabaseAdminQueries.getStorageUsage admin_get_storage_summary_v2 not available: $e');
-        rpcName = rpcStorageSummaryV1;
-        res = await _client.rpc(rpcStorageSummaryV1);
-      }
+      const rpcName = rpcStorageSummaryV1;
+      final res = await _client.rpc(rpcName);
       final row = _firstRpcRow(res);
 
       if (row == null) {
@@ -1251,35 +1070,8 @@ class SupabaseAdminQueries {
         debugPrint('RevenueCatSyncHealth latest webhook fetch skipped: $e');
       }
 
-      // Count entitlements rows + active subset (cap-based; small table expected).
-      int entitlements = 0;
-      int activeEntitlements = 0;
-      final storeBreakdown = <String, int>{};
-      try {
-        final dynamic rows = await c
-            .from('user_entitlements')
-            .select('user_id, provider, store, status, subscription_status')
-            .eq('provider', 'revenuecat')
-            .limit(5000);
-        if (rows is List) {
-          entitlements = rows.length;
-          for (final r in rows) {
-            if (r is! Map) continue;
-            final status = (r['status'] ?? r['subscription_status'] ?? '')
-                .toString()
-                .toLowerCase();
-            if (status == 'active') {
-              activeEntitlements++;
-              final store = (r['store'] ?? 'unknown').toString().trim();
-              storeBreakdown[store.isEmpty ? 'unknown' : store] =
-                  (storeBreakdown[store.isEmpty ? 'unknown' : store] ?? 0) + 1;
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('RevenueCatSyncHealth entitlements scan skipped: $e');
-      }
-
+      // Global entitlement/store detail has no authorized browser contract.
+      // Do not turn an account-scoped read into a false global zero.
       return RevenueCatSyncHealth(
         webhookEventRows: readInt('webhook_event_rows'),
         latestWebhookReceivedAt:
@@ -1289,10 +1081,10 @@ class SupabaseAdminQueries {
         webhookFailedRows: readInt('webhook_failed_rows'),
         webhookUnmappedAppUserIdRows:
             readInt('webhook_unmapped_app_user_id_rows'),
-        entitlementsRows: entitlements,
-        activeEntitlementsRows: activeEntitlements,
+        entitlementsRows: null,
+        activeEntitlementsRows: null,
         latestWebhookProcessingResult: latestResult,
-        storeBreakdown: storeBreakdown,
+        storeBreakdown: const {},
       );
     } catch (e) {
       // View/table not deployed yet or blocked by RLS.

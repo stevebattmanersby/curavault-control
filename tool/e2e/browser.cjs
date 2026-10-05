@@ -11,7 +11,8 @@ function playwright() {
 async function browserScenario(browser, api, fixture, evidence) {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, serviceWorkers: 'block' });
   const pending = []; const successful = new Set();
-  let session; const scenario = fixture.scenario;
+  let closing = false;
+  let session; let telemetryWrites = 0; const scenario = fixture.scenario;
   const origin = 'http://127.0.0.1:4178';
   const step = name => { fixture.step = name; };
   await context.route('**/*', async route => {
@@ -57,7 +58,13 @@ async function browserScenario(browser, api, fixture, evidence) {
   page.on('requestfailed', request => {
     const url = new URL(request.url());
     // Closing a context intentionally aborts pending requests; still report it.
-    evidence.networkFailures.push({ scenario, endpoint: url.origin === origin ? 'local-resource' : url.pathname.replace(/[0-9a-f-]{36}/g, ':id'),
+    const local = url.origin === origin;
+    const safePath = local && /^\/[a-zA-Z0-9_./-]*$/.test(url.pathname) ? url.pathname : undefined;
+    const failure = request.failure()?.errorText;
+    evidence.networkFailures.push({ scenario, endpoint: local ? 'local-resource' : url.pathname.replace(/[0-9a-f-]{36}/g, ':id'),
+      ...(safePath ? { resourceUrl: origin + safePath } : {}), resourceType: request.resourceType(),
+      phase: closing ? 'context-close' : fixture.step,
+      failureCode: /^net::[A-Z_]+$/.test(failure || '') ? failure : 'unknown',
       status: 0, category: 'A', expected: false, reason: 'Transport failure' });
   });
   page.on('response', response => {
@@ -67,6 +74,14 @@ async function browserScenario(browser, api, fixture, evidence) {
       const pathname = url.pathname;
       if (response.status() < 400) {
         successful.add(pathname);
+        if (pathname === '/rest/v1/usage_events' && response.request().method() === 'POST') {
+          const payload = response.request().postDataJSON();
+          assert.equal(payload.user_id, fixture.id);
+          assert.equal(payload.owner_user_id, fixture.id);
+          assert.ok(payload.event_key && payload.event_type);
+          assert.ok(Object.keys(payload).every(key => ['user_id', 'owner_user_id', 'event_key', 'event_type', 'success', 'failure_code', 'properties'].includes(key)));
+          telemetryWrites++;
+        }
         if (pathname === '/auth/v1/token' || /\/verify$/.test(pathname)) {
           const data = await response.json();
           if (data.access_token) session = data;
@@ -123,6 +138,7 @@ async function browserScenario(browser, api, fixture, evidence) {
     await status.waitFor({ state: 'attached' });
     assert.ok((await semanticText(status)).includes('Dashboard metrics loaded: Yes'), 'UI reporting status did not confirm loaded data');
     await Promise.all(pending);
+    assert.ok(telemetryWrites > 0, 'Canonical telemetry did not persist');
     const upgraded = claims(session.access_token);
     security(upgraded.aal === 'aal2' && upgraded.role === 'authenticated' && upgraded.sub === fixture.id, 'Browser AAL2 fixture claims mismatch');
     // Known v2 probes are acceptable only when their documented V1 fallback succeeds.
@@ -167,6 +183,7 @@ async function browserScenario(browser, api, fixture, evidence) {
     // No MFA, credentials, traces, HAR, raw response bodies or console strings are saved.
   } finally {
     await Promise.all(pending);
+    closing = true;
     await context.close();
   }
 }

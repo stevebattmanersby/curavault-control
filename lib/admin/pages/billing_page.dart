@@ -841,11 +841,16 @@ class _RevenueCatSyncCard extends StatelessWidget {
                   Icons.link_off_rounded),
               metric(
                   'Entitlements rows',
-                  AdminFormatters.compactInt(health.entitlementsRows),
+                  health.entitlementsRows == null
+                      ? 'NOT INSTRUMENTED'
+                      : AdminFormatters.compactInt(health.entitlementsRows!),
                   Icons.badge_outlined),
               metric(
                   'Active entitlements',
-                  AdminFormatters.compactInt(health.activeEntitlementsRows),
+                  health.activeEntitlementsRows == null
+                      ? 'NOT INSTRUMENTED'
+                      : AdminFormatters.compactInt(
+                          health.activeEntitlementsRows!),
                   Icons.verified_outlined),
             ],
           ),
@@ -2068,7 +2073,9 @@ class _RevenueCatReadinessChecklist extends StatelessWidget {
                   : null),
           row('user_entitlements updated by webhook',
               ok: hasEntitlements,
-              detail: 'Rows: ${revenueCat?.entitlementsRows ?? 0}'),
+              detail: revenueCat?.entitlementsRows == null
+                  ? 'NOT INSTRUMENTED: global entitlement detail unavailable.'
+                  : 'Rows: ${revenueCat!.entitlementsRows}'),
           row('subscription_events updated by webhook',
               ok: false,
               detail:
@@ -2081,7 +2088,9 @@ class _RevenueCatReadinessChecklist extends StatelessWidget {
           if (!hasActiveEntitlements) ...[
             const SizedBox(height: 6),
             Text(
-              'Note: Active entitlements are currently ${revenueCat?.activeEntitlementsRows ?? 0}.',
+              revenueCat?.activeEntitlementsRows == null
+                  ? 'Active entitlements: NOT INSTRUMENTED.'
+                  : 'Note: Active entitlements are currently ${revenueCat!.activeEntitlementsRows}.',
               style: t.bodySmall?.copyWith(color: cs.onSurfaceVariant),
             ),
           ],

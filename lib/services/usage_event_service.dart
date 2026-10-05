@@ -269,28 +269,55 @@ class UsageEventService {
         return;
       }
 
-      final payload = <String, Object?>{
-        'user_id': userId,
-        'event_name': eventName,
-        'feature_area': featureArea,
-        'platform': _platformLabel,
-        'app_version': _appVersionLabel,
-        if (country != null && country.trim().isNotEmpty)
-          'country': country.trim(),
-        'result': result,
-        if (errorCode != null && errorCode.trim().isNotEmpty)
-          'error_code': errorCode.trim(),
-        if (durationMs != null) 'duration_ms': durationMs,
-        'properties': safeProps,
-        // created_at should be generated server-side, but we allow the column to
-        // default if present. We intentionally do not set it here.
-      };
+      final payload = canonicalPayload(
+          userId: userId,
+          eventName: eventName,
+          featureArea: featureArea,
+          result: result,
+          errorCode: errorCode,
+          durationMs: durationMs,
+          country: country,
+          safeProps: safeProps);
 
       await client.from(_table).insert(payload);
     } catch (e) {
       // Never throw; do not log payloads.
       if (kDebugMode) debugPrint('[usage_events] write failed: $e');
     }
+  }
+
+  /// Canonical account-owned telemetry; context belongs inside properties.
+  @visibleForTesting
+  static Map<String, Object?> canonicalPayload(
+      {required String userId,
+      required String eventName,
+      required String featureArea,
+      required String result,
+      String? errorCode,
+      int? durationMs,
+      String? country,
+      required Map<String, Object?> safeProps}) {
+    if (!validateSafeProperties(safeProps)) {
+      throw ArgumentError('Unsafe telemetry properties');
+    }
+    return {
+      'user_id': userId,
+      'owner_user_id': userId,
+      'event_key': eventName,
+      'event_type': featureArea,
+      'success': result == 'success',
+      if (errorCode != null && errorCode.trim().isNotEmpty)
+        'failure_code': errorCode.trim(),
+      'properties': {
+        ...safeProps,
+        'platform': _platformLabel,
+        'app_version': _appVersionLabel,
+        'result': result,
+        if (country != null && country.trim().isNotEmpty)
+          'country': country.trim(),
+        if (durationMs != null) 'duration_ms': durationMs
+      },
+    };
   }
 
   static String get _platformLabel {
